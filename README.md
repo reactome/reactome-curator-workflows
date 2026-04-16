@@ -12,7 +12,7 @@ Skills are added incrementally as we identify and vet repeatable workflows. See 
 
 Full setup and usage instructions are in:
 
- Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_1.docx
+ Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_2.docx
 
 This covers one-time prerequisites, cloning the repository, running each skill,
 and how to add new skills. Start here if you are setting up for the first time.
@@ -37,9 +37,14 @@ Set your Anthropic API key (add to ~/.zshrc):
 
  export ANTHROPIC_API_KEY=your-key-here
 
-Install Python dependencies:
+Install Python dependencies (use pip3, not pip, on macOS):
 
- pip install pandas openpyxl
+ pip3 install pandas openpyxl
+
+If you see a PATH warning after installing, add this to ~/.zshrc
+(replace 3.9 with the version number in your warning):
+
+ export PATH="/Users/[you]/Library/Python/3.9/bin:$PATH"
 
 ### 2. Clone the repository
 
@@ -85,7 +90,7 @@ Claude Code automatically reads CLAUDE.md and loads all skills at session start.
 
  generate-doi-batch
    DOIs.xlsx downloaded locally from the Reactome Team Drive
-   Python 3 with pandas and openpyxl installed
+   Python 3 with pandas and openpyxl installed (pip3 install pandas openpyxl)
 
 ## Contributing a Skill
 
@@ -95,14 +100,14 @@ Claude Code automatically reads CLAUDE.md and loads all skills at session start.
 4. Test it locally with Claude Code
 5. Open a PR with a brief description of what the skill does and when to use it
 
-See the full guide (Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_1.docx)
+See the full guide (Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_2.docx)
 for detailed instructions on writing and committing a new skill.
 
 ## Repository Structure
 
- README.md                                        <- this file
- CLAUDE.md                                        <- project context for Claude Code
- Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_1.docx  <- full setup guide
+ README.md                                             <- this file
+ CLAUDE.md                                             <- project context for Claude Code
+ Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_2.docx  <- full setup guide
  .gitignore
  .claude/
  └── skills/
