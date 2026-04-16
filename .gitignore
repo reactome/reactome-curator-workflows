@@ -1,0 +1,24 @@
+# Claude Code worktrees (local parallel sessions — never commit)
+.claude/worktrees/
+
+# Python
+*.pyc
+__pycache__/
+
+# Data files (kept in Team Drive, not in repo)
+*.xlsx
+*.xlsx~
+*.xls
+
+# Output files (generated locally by skills, not committed)
+output/
+
+# macOS
+.DS_Store
+
+# Editor artifacts
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
