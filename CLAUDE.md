@@ -106,7 +106,7 @@ The generate-doi-batch skill reads it from a local path specified at runtime.
 
 - Marc Gillespie (NYU / SJU) — repo maintainer
 - Lisa Matthews (NYU)
-- Joel Weiser (NYU)
+- Joel Weiser (OICR)
 - Guanming Wu (OHSU)
 - Adam Wright (OICR)
 
