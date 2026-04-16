@@ -12,10 +12,9 @@ Skills are added incrementally as we identify and vet repeatable workflows. See 
 
 Full setup and usage instructions are in:
 
- Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_2.docx
+**[Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_2.docx](./Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_2.docx)**
 
-This covers one-time prerequisites, cloning the repository, running each skill,
-and how to add new skills. Start here if you are setting up for the first time.
+This covers one-time prerequisites, cloning the repository, running each skill, and how to add new skills. Start here if you are setting up for the first time.
 
 ## Setup (Quick Reference)
 
@@ -27,98 +26,109 @@ Install Node.js (LTS): https://nodejs.org
 
 Install Claude Code:
 
- mkdir -p ~/.npm-global
- npm config set prefix '~/.npm-global'
- echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.zshrc
- source ~/.zshrc
- npm install -g @anthropic-ai/claude-code
+```bash
+mkdir -p ~/.npm-global
+npm config set prefix '~/.npm-global'
+echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.zshrc
+source ~/.zshrc
+npm install -g @anthropic-ai/claude-code
+```
 
 Set your Anthropic API key (add to ~/.zshrc):
 
- export ANTHROPIC_API_KEY=your-key-here
+```bash
+export ANTHROPIC_API_KEY=your-key-here
+```
 
-Install Python dependencies (use pip3, not pip, on macOS):
+Install Python dependencies (use pip3 on macOS):
 
- pip3 install pandas openpyxl
+```bash
+pip3 install pandas openpyxl
+```
 
 If you see a PATH warning after installing, add this to ~/.zshrc
-(replace 3.9 with the version number in your warning):
+(replace 3.9 with the version number shown in your warning):
 
- export PATH="/Users/[you]/Library/Python/3.9/bin:$PATH"
+```bash
+export PATH="/Users/[you]/Library/Python/3.9/bin:$PATH"
+```
 
 ### 2. Clone the repository
 
- git clone https://github.com/reactome/reactome-curator-workflows.git ~/Developer/reactome-curator-workflows
- cd ~/Developer/reactome-curator-workflows
+```bash
+git clone https://github.com/reactome/reactome-curator-workflows.git ~/Developer/reactome-curator-workflows
+cd ~/Developer/reactome-curator-workflows
+```
 
 ### 3. Run Claude Code
 
- cd ~/Developer/reactome-curator-workflows
- claude
+```bash
+cd ~/Developer/reactome-curator-workflows
+claude
+```
 
 Claude Code automatically reads CLAUDE.md and loads all skills at session start.
 
 ### 4. Keep up to date
 
- cd ~/Developer/reactome-curator-workflows
- git pull
+```bash
+cd ~/Developer/reactome-curator-workflows
+git pull
+```
 
 ## Available Skills
 
- /curation-review [pathway name] [ST_ID] [reviewer name] [date]
- Formal structured internal review of a Reactome pathway report against
- Curator Guide V94 standards. Produces a prioritized review DOCX with
- seven sections. Upload the pathway report DOCX and Curator Guide PDF
- to the conversation before invoking.
- Optional modifiers: disease, drug, large
+**`/curation-review`**
 
- Example:
- /curation-review "HHV8 Infection" R-HSA-9521541 "Lisa Matthews" 2026-04-15
+Formal structured internal review of a Reactome pathway report against Curator Guide V94 standards. Produces a prioritized review DOCX with seven sections. Upload the pathway report DOCX and Curator Guide PDF to the conversation before invoking. Optional modifiers: `disease`, `drug`, `large`.
 
- /generate-doi-batch [release version]
- Generates a CrossRef DOI batch XML file for a release using DOIs.xlsx.
- Requires DOIs.xlsx locally (from Team Drive) and Python 3 + pandas.
+```
+/curation-review "HHV8 Infection" R-HSA-9521541 "Lisa Matthews" 2026-04-15
+```
 
- Example:
- /generate-doi-batch V94
+**`/generate-doi-batch`**
+
+Generates a CrossRef DOI batch XML file for a release using DOIs.xlsx. Requires DOIs.xlsx locally (from Team Drive) and Python 3 + pandas.
+
+```
+/generate-doi-batch V94
+```
 
 ## Prerequisites by Skill
 
- curation-review
-   Active internet connection (queries Reactome ContentService API)
-   Pathway report DOCX and Curator Guide PDF uploaded to conversation
-
- generate-doi-batch
-   DOIs.xlsx downloaded locally from the Reactome Team Drive
-   Python 3 with pandas and openpyxl installed (pip3 install pandas openpyxl)
+| Skill | Requirements |
+|---|---|
+| curation-review | Active internet connection; pathway report DOCX and Curator Guide PDF uploaded to conversation |
+| generate-doi-batch | DOIs.xlsx from Team Drive; Python 3 with pandas and openpyxl (`pip3 install pandas openpyxl`) |
 
 ## Contributing a Skill
 
-1. Create a directory under .claude/skills/ named for your skill
-2. Add SKILL.md with YAML frontmatter (name, description) and instructions
+1. Create a directory under `.claude/skills/` named for your skill
+2. Add `SKILL.md` with YAML frontmatter (name, description) and instructions
 3. Add any supporting files (templates, scripts, reference docs)
 4. Test it locally with Claude Code
 5. Open a PR with a brief description of what the skill does and when to use it
 
-See the full guide (Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_2.docx)
-for detailed instructions on writing and committing a new skill.
+See the full guide for detailed instructions on writing and committing a new skill.
 
 ## Repository Structure
 
- README.md                                             <- this file
- CLAUDE.md                                             <- project context for Claude Code
- Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_2.docx  <- full setup guide
- .gitignore
- .claude/
- └── skills/
-     ├── curation-review/
-     │   ├── SKILL.md
-     │   ├── Reactome_InternalReview_PROMPT_v1_4.docx
-     │   ├── Reactome_InternalReview_TEMPLATE.docx
-     │   └── Curator_Guide_V94.pdf
-     └── generate-doi-batch/
-         ├── SKILL.md
-         └── generate_crossref_xml.py
+```
+README.md                                             ← this file
+CLAUDE.md                                             ← project context for Claude Code
+Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_2.docx  ← full setup guide
+.gitignore
+.claude/
+└── skills/
+   ├── curation-review/
+   │   ├── SKILL.md
+   │   ├── Reactome_InternalReview_PROMPT_v1_4.docx
+   │   ├── Reactome_InternalReview_TEMPLATE.docx
+   │   └── Curator_Guide_V94.pdf
+   └── generate-doi-batch/
+       ├── SKILL.md
+       └── generate_crossref_xml.py
+```
 
 ## Contact
 
