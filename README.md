@@ -8,67 +8,112 @@ This repository contains Claude Code skills — markdown-based instruction files
 
 Skills are added incrementally as we identify and vet repeatable workflows. See CLAUDE.md for full project context.
 
-## Setup
+## Documentation
 
-### 1. Install Claude Code
+Full setup and usage instructions are in:
 
-Claude Code requires Node.js 18 or higher.
+ Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_1.docx
 
+This covers one-time prerequisites, cloning the repository, running each skill,
+and how to add new skills. Start here if you are setting up for the first time.
+
+## Setup (Quick Reference)
+
+### 1. Prerequisites (one-time)
+
+Install Git: https://git-scm.com/downloads
+
+Install Node.js (LTS): https://nodejs.org
+
+Install Claude Code:
+
+ mkdir -p ~/.npm-global
+ npm config set prefix '~/.npm-global'
+ echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.zshrc
+ source ~/.zshrc
  npm install -g @anthropic-ai/claude-code
 
-You will need an Anthropic account and API key. Set your key:
+Set your Anthropic API key (add to ~/.zshrc):
 
  export ANTHROPIC_API_KEY=your-key-here
 
-For persistent setup, add the export line to your ~/.bashrc or ~/.zshrc.
+Install Python dependencies:
 
-### 2. Clone This Repository
+ pip install pandas openpyxl
 
- git clone https://github.com/reactome/reactome-curator-workflows.git
- cd reactome-curator-workflows
+### 2. Clone the repository
+
+ git clone https://github.com/reactome/reactome-curator-workflows.git ~/Developer/reactome-curator-workflows
+ cd ~/Developer/reactome-curator-workflows
 
 ### 3. Run Claude Code
 
+ cd ~/Developer/reactome-curator-workflows
  claude
 
-Claude Code automatically reads CLAUDE.md and loads all skills in .claude/skills/ at session start. No additional configuration needed.
+Claude Code automatically reads CLAUDE.md and loads all skills at session start.
+
+### 4. Keep up to date
+
+ cd ~/Developer/reactome-curator-workflows
+ git pull
 
 ## Available Skills
 
- /curation-review [DB_ID or ST_ID]
- Structured internal review of a Reactome pathway or reaction against
- Curator Guide V94 standards. Produces a prioritized markdown report.
- Example: /curation-review 9985686
+ /curation-review [pathway name] [ST_ID] [reviewer name] [date]
+ Formal structured internal review of a Reactome pathway report against
+ Curator Guide V94 standards. Produces a prioritized review DOCX with
+ seven sections. Upload the pathway report DOCX and Curator Guide PDF
+ to the conversation before invoking.
+ Optional modifiers: disease, drug, large
+
+ Example:
+ /curation-review "HHV8 Infection" R-HSA-9521541 "Lisa Matthews" 2026-04-15
 
  /generate-doi-batch [release version]
- Builds a CrossRef DOI batch XML file for a release using DOIs.xlsx.
- Validates against CrossRef schema 5.3.1 before writing output.
- Example: /generate-doi-batch 89
+ Generates a CrossRef DOI batch XML file for a release using DOIs.xlsx.
+ Requires DOIs.xlsx locally (from Team Drive) and Python 3 + pandas.
+
+ Example:
+ /generate-doi-batch V94
 
 ## Prerequisites by Skill
 
  curation-review
- - Active internet connection (queries Reactome ContentService API)
+   Active internet connection (queries Reactome ContentService API)
+   Pathway report DOCX and Curator Guide PDF uploaded to conversation
 
  generate-doi-batch
- - DOIs.xlsx downloaded locally from the Reactome Team Drive
- - Python 3 with openpyxl: pip install openpyxl
-
-## Keeping Skills Up to Date
-
- cd reactome-curator-workflows
- git pull
-
-New or updated skills are immediately available after pulling — no restart needed if Claude Code is already running.
+   DOIs.xlsx downloaded locally from the Reactome Team Drive
+   Python 3 with pandas and openpyxl installed
 
 ## Contributing a Skill
 
 1. Create a directory under .claude/skills/ named for your skill
-2. Add SKILL.md with YAML frontmatter (name, description) and step-by-step instructions
-3. Add any supporting files (templates, reference XML, scripts) the skill references
-4. Open a PR with a brief description of what the skill does and when to use it
+2. Add SKILL.md with YAML frontmatter (name, description) and instructions
+3. Add any supporting files (templates, scripts, reference docs)
+4. Test it locally with Claude Code
+5. Open a PR with a brief description of what the skill does and when to use it
 
-See an existing SKILL.md for the expected format.
+See the full guide (Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_1.docx)
+for detailed instructions on writing and committing a new skill.
+
+## Repository Structure
+
+ README.md                                        <- this file
+ CLAUDE.md                                        <- project context for Claude Code
+ Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_1.docx  <- full setup guide
+ .gitignore
+ .claude/
+ └── skills/
+     ├── curation-review/
+     │   ├── SKILL.md
+     │   ├── Reactome_InternalReview_PROMPT_v1_4.docx
+     │   ├── Reactome_InternalReview_TEMPLATE.docx
+     │   └── Curator_Guide_V94.pdf
+     └── generate-doi-batch/
+         ├── SKILL.md
+         └── generate_crossref_xml.py
 
 ## Contact
 
