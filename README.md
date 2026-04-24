@@ -111,6 +111,12 @@ Generates a CrossRef DOI batch XML file for a release using DOIs.xlsx. Requires 
 
 See the full guide for detailed instructions on writing and committing a new skill.
 
+## Using skills in Desktop browser (claude.ai)
+
+1. Take your `~/.claude/skills/skill-name/` folder
+2. ZIP it up: `zip -r skill-name.zip skill-name/`
+3. Go to **Customize > Skills > Upload ZIP** in the Desktop app
+
 ## Repository Structure
 
 ```
