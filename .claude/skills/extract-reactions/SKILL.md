@@ -1,6 +1,6 @@
 ---
 name: extract-reactions
-description: Extract a reaction graph for a named pathway from one or more medical/biology review PDFs, and emit a CSV (Title, Input, Output, Catalyst, Regulators, Source). Supports gaps and parallel branches. Use when a curator wants a first-pass reaction list from literature before drafting Reactome entries.
+description: Extract a reaction graph for a named pathway from one or more medical/biology review PDFs, and emit a CSV (Title, Input, Output, Catalyst, Regulators, Source1..Source5). Supports gaps and parallel branches. Use when a curator wants a first-pass reaction list from literature before drafting Reactome entries.
 ---
 
 # Extract Reactions Skill
@@ -55,10 +55,15 @@ Each reaction is one CSV row with these fields:
    enzyme-catalysed. Blank otherwise. (Just the entity — no GO MF term.)
  - **Regulators** — positive and negative regulators, prefixed `+` or `-`
    (e.g. `+ AMP [cytosol] | - ATP [cytosol]`). Blank if none.
- - **Source** — originating PDF filename plus section or figure reference
-   (e.g. `Smith2024.pdf, Fig. 3`), and when the reaction is attributable to a
-   specific cited primary reference, append a PubMed or PMC URL
-   (e.g. `https://pubmed.ncbi.nlm.nih.gov/12345678/`).
+ - **Source1 … Source5** — up to five separate source citations for the
+   reaction, one per column. Each cell holds a single source — either a PDF
+   reference (e.g. `Smith2024.pdf, Fig. 3`) or a PubMed / PMC URL
+   (e.g. `https://pubmed.ncbi.nlm.nih.gov/12345678/`). Fill `Source1` first
+   and leave the rest blank if you have fewer than five. **Never combine
+   multiple sources into one cell.** If a reaction has more than five
+   sources, keep the five most informative (originating review PDF first,
+   then primary references in order of relevance) and silently drop the
+   rest.
 
 ## Entity Rules
 
@@ -92,8 +97,8 @@ PDFs imply but do not spell out:
    is missing from the literature but needed to connect two described steps:
    emit a row with a fully parenthesized Title
    (e.g. `(Unknown step: F6P → F1,6BP)`) and parenthesized entities in Input
-   and Output. Leave Catalyst, Regulators, and Source blank, or set Source to
-   the PDF section that implies the gap.
+   and Output. Leave Catalyst, Regulators, and the Source columns blank, or
+   set `Source1` to the PDF section that implies the gap.
 
 Parentheses are reserved for gap markers. Do not use them for anything else
 (notes and qualifiers in the Title go without parens, except the explicit
@@ -112,10 +117,10 @@ by another reaction (whether or not they are connected in the graph), insert
 an explicit transport reaction — even when the review does not name a
 transporter and even when the transporter is unknown. Title such rows
 `Translocation of <entity> from <X> to <Y>`, with Input `<entity> [X]` and
-Output `<entity> [Y]`. Leave Catalyst blank if unknown; set Source to the PDF
-section that implies the compartment change and append `(transporter unknown)`
-to the Title if so. These inferred transport rows are policy inferences, not
-gaps — do not parenthesize them.
+Output `<entity> [Y]`. Leave Catalyst blank if unknown; set `Source1` to the
+PDF section that implies the compartment change and append `(transporter
+unknown)` to the Title if so. These inferred transport rows are policy
+inferences, not gaps — do not parenthesize them.
 
 **Reversible reactions.** Emit two rows — one forward, one reverse — with
 swapped Input and Output and titles reflecting direction
@@ -130,7 +135,13 @@ are permitted; order disconnected pieces by their appearance in the PDFs.
 
 ## Writing the CSV
 
- - Column order: `Title,Input,Output,Catalyst,Regulators,Source`
+ - Column order:
+   `Title,Input,Output,Catalyst,Regulators,Source1,Source2,Source3,Source4,Source5`
+ - Always emit all ten columns in every row, even when the trailing Source
+   columns are empty (so subtitle and gap rows look like
+   `## Canonical arm,,,,,,,,,`).
+ - One source per Source cell. Never combine multiple citations with `;`,
+   commas, or any other separator. Drop any 6th and beyond.
  - Filename: slugify the pathway name (lowercase, non-alphanumerics → single
    hyphen, trim leading/trailing hyphens) and write to
    `<pathway-slug>_reactions.csv` in the current working directory.
@@ -159,10 +170,10 @@ Report to the curator, briefly:
 
 Illustrative only — do not copy verbatim.
 
- Title,Input,Output,Catalyst,Regulators,Source
- ## Canonical arm,,,,,
- Hexokinase phosphorylates glucose,glucose [cytosol] | ATP [cytosol],glucose-6-phosphate [cytosol] | ADP [cytosol],hexokinase [cytosol],- glucose-6-phosphate [cytosol],"Smith2024.pdf, Fig. 2; https://pubmed.ncbi.nlm.nih.gov/12345678/"
- (Unknown step: F6P → F1,6BP),(fructose-6-phosphate [cytosol]),(fructose-1,6-bisphosphate [cytosol]),,,"Smith2024.pdf, Fig. 2 (step implied, not described)"
- Translocation of pyruvate from cytosol to mitochondrial matrix,pyruvate [cytosol],pyruvate [mitochondrial matrix],,,"Smith2024.pdf, §3.2 (transporter unknown)"
- ## Alternative arm,,,,,
- Glucose-6-phosphate dehydrogenase oxidises G6P,glucose-6-phosphate [cytosol] | NADP+ [cytosol],6-phosphogluconolactone [cytosol] | NADPH [cytosol],glucose-6-phosphate dehydrogenase [cytosol],,"Jones2023.pdf, Fig. 1"
+ Title,Input,Output,Catalyst,Regulators,Source1,Source2,Source3,Source4,Source5
+ ## Canonical arm,,,,,,,,,
+ Hexokinase phosphorylates glucose,glucose [cytosol] | ATP [cytosol],glucose-6-phosphate [cytosol] | ADP [cytosol],hexokinase [cytosol],- glucose-6-phosphate [cytosol],"Smith2024.pdf, Fig. 2",https://pubmed.ncbi.nlm.nih.gov/12345678/,https://pubmed.ncbi.nlm.nih.gov/23456789/,,
+ "(Unknown step: F6P → F1,6BP)",(fructose-6-phosphate [cytosol]),(fructose-1,6-bisphosphate [cytosol]),,,"Smith2024.pdf, Fig. 2 (step implied, not described)",,,,
+ Translocation of pyruvate from cytosol to mitochondrial matrix,pyruvate [cytosol],pyruvate [mitochondrial matrix],,,"Smith2024.pdf, §3.2 (transporter unknown)",,,,
+ ## Alternative arm,,,,,,,,,
+ Glucose-6-phosphate dehydrogenase oxidises G6P,glucose-6-phosphate [cytosol] | NADP+ [cytosol],6-phosphogluconolactone [cytosol] | NADPH [cytosol],glucose-6-phosphate dehydrogenase [cytosol],,"Jones2023.pdf, Fig. 1",,,,

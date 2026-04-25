@@ -96,7 +96,7 @@ Generates a CrossRef DOI batch XML file for a release using DOIs.xlsx. Requires 
 
 **`/extract-reactions`**
 
-Extracts a reaction graph for a named pathway from one or more medical/biology review PDFs and writes it to `<pathway-slug>_reactions.csv` with columns Title, Input, Output, Catalyst, Regulators, Source. Text labels with mandatory compartments; inserts transport reactions on compartment changes; emits reversible reactions as forward+reverse rows. Connectivity is not required — gaps are flagged with parenthesized entries and parallel branches get `##` subtitle rows. Pre-curation draft, not a curated entry. The skill will prompt for the pathway name and the PDF paths.
+Extracts a reaction graph for a named pathway from one or more medical/biology review PDFs and writes it to `<pathway-slug>_reactions.csv` with columns Title, Input, Output, Catalyst, Regulators, Source1, Source2, Source3, Source4, Source5. One source per Source cell — any 6th or further sources are dropped. Text labels with mandatory compartments; inserts transport reactions on compartment changes; emits reversible reactions as forward+reverse rows. Connectivity is not required — gaps are flagged with parenthesized entries and parallel branches get `##` subtitle rows. Pre-curation draft, not a curated entry. The skill will prompt for the pathway name and the PDF paths.
 
 ```
 /extract-reactions
