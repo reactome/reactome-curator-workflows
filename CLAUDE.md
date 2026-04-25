@@ -104,13 +104,16 @@ The generate-doi-batch skill reads it from a local path specified at runtime.
 
  /extract-reactions
  Extracts a reaction graph for a named pathway from one or more medical/biology
- review PDFs and writes it to <pathway-slug>_reactions.csv (Title, Input,
- Output, Catalyst, Regulators, Source1..Source5 — one source per cell, any
- 6th+ dropped). Text labels with mandatory compartments; inserts transport
- reactions on compartment changes; emits reversible reactions as forward+reverse
- rows. Connectivity is not required — gaps are flagged with parenthesized
- entries and parallel branches get ## subtitle rows. Pre-curation draft, not
- a curated entry.
+ review PDFs. Writes two artefacts: <pathway-slug>_reactions.csv (Title,
+ Input, Output, Catalyst, Regulators, Reviews, Source1..Source5 — Reviews
+ lists supplied PDFs; each Source cell holds one URL via PubMed > PMC > DOI
+ > publisher ladder; any 6th+ dropped) and <pathway-slug>_references.html
+ (companion link list of every cited primary reference). Text labels with
+ mandatory compartments; inserts transport reactions on compartment changes;
+ emits reversible reactions as forward+reverse rows. Connectivity is not
+ required — gaps are flagged with parenthesized entries and parallel
+ branches get ## subtitle rows. One batched DOI→PMID call to NCBI idconv;
+ otherwise offline. Pre-curation draft, not a curated entry.
 
 ---
 

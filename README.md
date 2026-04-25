@@ -96,7 +96,7 @@ Generates a CrossRef DOI batch XML file for a release using DOIs.xlsx. Requires 
 
 **`/extract-reactions`**
 
-Extracts a reaction graph for a named pathway from one or more medical/biology review PDFs and writes it to `<pathway-slug>_reactions.csv` with columns Title, Input, Output, Catalyst, Regulators, Source1, Source2, Source3, Source4, Source5. One source per Source cell — any 6th or further sources are dropped. Text labels with mandatory compartments; inserts transport reactions on compartment changes; emits reversible reactions as forward+reverse rows. Connectivity is not required — gaps are flagged with parenthesized entries and parallel branches get `##` subtitle rows. Pre-curation draft, not a curated entry. The skill will prompt for the pathway name and the PDF paths.
+Extracts a reaction graph for a named pathway from one or more medical/biology review PDFs. Writes two artefacts: `<pathway-slug>_reactions.csv` with columns Title, Input, Output, Catalyst, Regulators, Reviews, Source1, Source2, Source3, Source4, Source5; and a companion `<pathway-slug>_references.html` listing every cited primary reference as a link. Reviews holds pipe-delimited supplied-PDF basenames. Each Source cell holds exactly one URL chosen by a PubMed → PMC → DOI → publisher ladder; one source per cell, any 6th or further sources dropped. Text labels with mandatory compartments; inserts transport reactions on compartment changes; emits reversible reactions as forward+reverse rows. Connectivity is not required — gaps are flagged with parenthesized entries and parallel branches get `##` subtitle rows. Uses one batched call to NCBI idconv to resolve DOIs to PMIDs; otherwise offline. Pre-curation draft, not a curated entry. The skill will prompt for the pathway name and the PDF paths.
 
 ```
 /extract-reactions
@@ -108,7 +108,7 @@ Extracts a reaction graph for a named pathway from one or more medical/biology r
 |---|---|
 | curation-review | Active internet connection; pathway report DOCX and Curator Guide PDF uploaded to conversation |
 | generate-doi-batch | DOIs.xlsx from Team Drive; Python 3 with pandas and openpyxl (`pip3 install pandas openpyxl`) |
-| extract-reactions | One or more review-article PDFs available locally (absolute paths) |
+| extract-reactions | One or more review-article PDFs available locally (absolute paths); internet access for the single NCBI idconv DOI→PMID lookup (skill still runs offline; DOI/PMC/publisher fallback URLs are used in that case) |
 
 ## Contributing a Skill
 
