@@ -103,12 +103,13 @@ The generate-doi-batch skill reads it from a local path specified at runtime.
  Handles input validation, error interpretation, and post-run checklist.
 
  /extract-reactions
- Extracts a connected reaction graph for a named pathway from one or more
- medical/biology review PDFs and writes it to <pathway-slug>_reactions.csv
- (Title, Input, Output, Catalyst, Regulators, Source). Text labels with
- mandatory compartments; inserts transport reactions on compartment changes;
- emits reversible reactions as forward+reverse rows. Pre-curation draft,
- not a curated entry.
+ Extracts a reaction graph for a named pathway from one or more medical/biology
+ review PDFs and writes it to <pathway-slug>_reactions.csv (Title, Input,
+ Output, Catalyst, Regulators, Source). Text labels with mandatory compartments;
+ inserts transport reactions on compartment changes; emits reversible reactions
+ as forward+reverse rows. Connectivity is not required — gaps are flagged with
+ parenthesized entries and parallel branches get ## subtitle rows. Pre-curation
+ draft, not a curated entry.
 
 ---
 

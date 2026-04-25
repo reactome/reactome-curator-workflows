@@ -94,12 +94,21 @@ Generates a CrossRef DOI batch XML file for a release using DOIs.xlsx. Requires 
 /generate-doi-batch V94
 ```
 
+**`/extract-reactions`**
+
+Extracts a reaction graph for a named pathway from one or more medical/biology review PDFs and writes it to `<pathway-slug>_reactions.csv` with columns Title, Input, Output, Catalyst, Regulators, Source. Text labels with mandatory compartments; inserts transport reactions on compartment changes; emits reversible reactions as forward+reverse rows. Connectivity is not required — gaps are flagged with parenthesized entries and parallel branches get `##` subtitle rows. Pre-curation draft, not a curated entry. The skill will prompt for the pathway name and the PDF paths.
+
+```
+/extract-reactions
+```
+
 ## Prerequisites by Skill
 
 | Skill | Requirements |
 |---|---|
 | curation-review | Active internet connection; pathway report DOCX and Curator Guide PDF uploaded to conversation |
 | generate-doi-batch | DOIs.xlsx from Team Drive; Python 3 with pandas and openpyxl (`pip3 install pandas openpyxl`) |
+| extract-reactions | One or more review-article PDFs available locally (absolute paths) |
 
 ## Contributing a Skill
 
@@ -131,6 +140,8 @@ Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_2.docx  ← full setup guide
    │   ├── Reactome_InternalReview_PROMPT_v1_4.docx
    │   ├── Reactome_InternalReview_TEMPLATE.docx
    │   └── Curator_Guide_V94.pdf
+   ├── extract-reactions/
+   │   └── SKILL.md
    └── generate-doi-batch/
        ├── SKILL.md
        └── generate_crossref_xml.py
