@@ -112,8 +112,12 @@ The generate-doi-batch skill reads it from a local path specified at runtime.
  mandatory compartments; inserts transport reactions on compartment changes;
  emits reversible reactions as forward+reverse rows. Connectivity is not
  required — gaps are flagged with parenthesized entries and parallel
- branches get ## subtitle rows. One batched DOI→PMID call to NCBI idconv;
- otherwise offline. Pre-curation draft, not a curated entry.
+ branches get ## subtitle rows. PMID resolution uses NCBI E-utilities on
+ eutils.ncbi.nlm.nih.gov: one batched ESearch + one batched ESummary for
+ DOI-bearing refs, plus a per-ref title+author ESearch fallback (strict
+ single-match) for refs with no DOI. PMIDs are NEVER recovered from
+ training data; failed/ambiguous lookups fall through to DOI URLs or
+ blanks. Pre-curation draft, not a curated entry.
 
 ---
 

@@ -178,74 +178,150 @@ seen in (for the HTML deliverable's audit annotation). Also classify each
 ref as `primary research`, `meta-analysis`, or `review/editorial/commentary`
 — the triage step needs this.
 
-**3. One batched DOI→PMID lookup (one network call).** After all reactions
-are extracted, collect the unique DOIs in `seen_refs` whose entries have
-no PMID. Make **one** GET request to NCBI's idconv:
+**3. Resolution via NCBI E-utilities (two batched calls + per-ref
+fallback).** After all reactions are extracted, resolve PMIDs in three
+sub-steps against `eutils.ncbi.nlm.nih.gov`. Step 3a + 3b are batched;
+step 3c is one call per no-DOI ref.
 
-    https://pmc.ncbi.nlm.nih.gov/utils/idconv/v1.0/?ids=<doi1,doi2,...>&idtype=doi&format=json
+**3a. ESearch** — returns the PMIDs that exist in PubMed for the given
+DOIs, as one flat list (no per-DOI mapping yet):
 
-(NCBI moved the idconv endpoint to the `pmc.ncbi.nlm.nih.gov` host. The
-old `www.ncbi.nlm.nih.gov/pmc/utils/idconv/...` path may still resolve
-via redirect on some networks but is no longer the primary host — use
-`pmc.ncbi.nlm.nih.gov` directly.)
+    https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi
+        ?db=pubmed
+        &term=<doi1>[AID]+OR+<doi2>[AID]+OR+...+OR+<doiN>[AID]
+        &retmode=json
+        &retmax=<N>
 
-If the unique-DOI count exceeds idconv's batch limit (~200), split into
-the minimum number of batches and treat them as one logical call. Merge
-returned PMIDs into `seen_refs`. Do **not** issue ESearch lookups, do
-**not** make a second idconv call for PMC IDs, and do **not** follow DOI
-redirects to discover publisher URLs.
+URL-encode each DOI's slashes as `%2F` in the `term`. Set `retmax` to at
+least the number of input DOIs. The response's `esearchresult.idlist` is
+the set of PMIDs that match.
 
-If the call fails for any reason — network blocked, host moved again,
-non-200 response, malformed JSON — refs that had no inline PMID stay
-PMID-less and fall through to the next ladder rung in step 4. The
-deliverables still produce.
+**3b. ESummary** — returns each PMID's metadata, including its DOI in
+`articleids`, so we can invert the mapping:
+
+    https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi
+        ?db=pubmed
+        &id=<pmid1,pmid2,...>
+        &retmode=json
+
+For each result in `result.<pmid>.articleids`, find the entry where
+`idtype == "doi"`. That gives `(doi → pmid)`. Build the map by inverting,
+then merge the PMIDs into `seen_refs`.
+
+If the unique-DOI count exceeds E-utilities' practical batch size (~200
+DOIs in one URL is generally fine; chunk if longer), split into the
+minimum number of ESearch calls (and a corresponding ESummary call per
+chunk). Treat the whole pair-set as one logical resolution step.
+
+**3c. Per-ref title+author fallback (one ESearch per no-DOI ref).** For
+each ref that — after step 3b — still has no PMID *and* no DOI but
+*does* have a first-author last name and a usable title fragment, issue
+one ESearch:
+
+    https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi
+        ?db=pubmed
+        &term=<title-fragment>[TITL]+AND+<first-author-lastname>[AU]
+        &retmode=json
+
+Construct the query as follows:
+
+ - `<title-fragment>`: the first 6–10 distinctive words of the title
+   (skip articles and prepositions: "the", "of", "and", "in", "for",
+   "to", "with", "on"). Separate words with `+`. Do not wrap in quotes
+   — PubMed treats space-separated `[TITL]` words as AND-combined,
+   which is forgiving of small variations.
+ - `<first-author-lastname>`: the surname of the first listed author.
+ - If the ref has a year, also append `+AND+<year>[DP]` to disambiguate
+   further. Example:
+   `term=Inhibition+of+autophagy[TITL]+AND+Levine[AU]+AND+2007[DP]`
+
+**Strict single-match rule.** Only adopt the returned PMID if
+`esearchresult.idlist` contains **exactly one** entry. If it contains
+zero or more than one, leave the PMID null — do not pick one
+arbitrarily, do not run a follow-up disambiguation call, do not guess.
+Step 3c never adds an ambiguous PMID to `seen_refs`; an ambiguous
+result is the same as no result.
+
+This step is bounded by the number of refs reaching it, which is
+typically small (most modern papers have DOIs). One call per ref. Do
+**not** batch with OR'd `(title[TITL] AND au[AU])` groups — the
+fuzzy-match step that would be required to invert the ESummary back to
+input refs is exactly the operation that risks misattributed PMIDs.
+
+**General rules across step 3.** Do **not** make additional ESearch
+calls beyond what's specified here, do **not** call ELink or EFetch,
+do **not** call any non-NCBI service for PMID lookup, and do **not**
+follow DOI redirects to discover publisher URLs.
+
+No NCBI API key is required — total call count (one ESearch + one
+ESummary + a small per-ref tail) stays well under the unauthenticated
+3 req/sec rate limit.
+
+If any call fails for any reason — network blocked, host moved again,
+non-200 response, malformed JSON, no `idlist`, no `articleids`,
+ambiguous match — refs that had no inline PMID stay PMID-less and fall
+through to the next ladder rung in step 4. The deliverables still
+produce.
 
 ### Absolute no-fabrication rule (read this twice)
 
-A PMID may enter `seen_refs` from **only two** sources:
+A PMID may enter `seen_refs` from **only three** sources:
 
  1. It was printed verbatim in the PDF you read (in a reference list
     entry, an in-text annotation, or a figure caption). You can quote
     the surrounding text.
- 2. It was returned by a successful HTTP 200 response from the idconv
-    call you made in step 3, mapped from a DOI you also extracted from
-    a PDF.
+ 2. It was returned by the ESearch+ESummary pair in step 3a/3b, mapped
+    from a DOI you also extracted from a PDF, where both calls returned
+    HTTP 200 and the DOI appeared in the ESummary response's
+    `articleids`.
+ 3. It was returned by a step-3c title+author ESearch where
+    `esearchresult.idlist` contained **exactly one** PMID — for a ref
+    whose title and first-author you also extracted from a PDF.
 
 **Any other PMID is fabricated and forbidden**, including PMIDs that
 "feel right" because the paper is well-known, PMIDs you remember from
-training data, PMIDs derived by guessing-from-author-and-year, and PMIDs
-inferred by analogy to similar papers. There is no high-confidence
-memory exception. If the network call fails or returns nothing for a
-DOI, that DOI's ref does **not** get a PubMed URL — it walks down to the
-DOI rung. Better to ship a CSV with mostly DOI URLs than a CSV with
-hallucinated PubMed IDs that look correct but point to the wrong paper.
+training data, PMIDs derived by guessing-from-author-and-year, PMIDs
+inferred by analogy to similar papers, and PMIDs picked from a step-3c
+result that returned more than one match. There is no high-confidence
+memory exception. If the network calls fail, return zero matches, or
+return ambiguous matches, the ref does **not** get a PubMed URL — it
+walks down to the DOI rung (if it has a DOI) or further. Better to ship
+a CSV with DOI URLs and blanks than a CSV with hallucinated PubMed IDs
+that look correct but point to the wrong paper.
 
 To make this auditable, every ref in `seen_refs` must carry a
-`pmid_source` field with one of three values:
+`pmid_source` field with one of these values:
 
  - `"inline:<pdf basename>"` — printed in that PDF.
- - `"idconv"` — returned by the successful idconv call.
+ - `"esearch:doi"` — returned by step 3a/3b (DOI-batch resolution).
+ - `"esearch:title-author"` — returned by step 3c (single-match
+   title+author search).
  - `null` — no PMID. The Source cell will not get a PubMed URL.
 
 When walking the ladder in step 4, only emit a PubMed URL if
 `pmid_source` is non-null. The post-write report breaks down PubMed URLs
-by `pmid_source` so the curator can immediately see whether the idconv
-call succeeded — if you ship 47 PubMed URLs with `pmid_source: idconv`
-but the network call failed, that is a bug; the report would show
-`idconv: 0` and the curator would catch it.
+by `pmid_source` so the curator can immediately see whether and how the
+network calls succeeded — if you ship 47 PubMed URLs with `esearch:*`
+but the calls failed, that is a bug; the report would show
+`esearch:doi: 0` and `esearch:title-author: 0` and the curator would
+catch it.
 
 **Platform note.** On Claude Code (local CLI) the call goes through
 after the curator's first WebFetch permission prompt — and this repo
-ships a `.claude/settings.json` rule for `pmc.ncbi.nlm.nih.gov` so even
-that prompt is skipped. On **claude.ai (browser)** the skill runs inside
-a sandbox with a hard network allowlist that does not include NCBI by
-default; the curator can lift this by adding `pmc.ncbi.nlm.nih.gov` to
-the **Domain allowlist** in claude.ai Settings → Capabilities. Without
-that, the call fails — and the absolute no-fabrication rule above
-applies: every DOI-bearing ref falls through to the `https://doi.org/...`
-rung. Do **not** substitute training-corpus PMIDs. The CSV simply
-contains more DOI links and fewer PubMed links than it would when the
-call succeeds, and that is the correct behaviour.
+ships a `.claude/settings.json` rule for `eutils.ncbi.nlm.nih.gov` so
+even that prompt is skipped. On **claude.ai (browser)** the skill runs
+inside a sandbox with a hard network allowlist that does not include
+NCBI by default; the curator can lift this by adding
+`eutils.ncbi.nlm.nih.gov` to the **Domain allowlist** in claude.ai
+Settings → Capabilities. (Earlier hosts — `www.ncbi.nlm.nih.gov` and
+`pmc.ncbi.nlm.nih.gov` — were tried for the older idconv endpoint;
+neither is the right host for this skill any more. Use
+`eutils.ncbi.nlm.nih.gov`.) Without the allowlist entry, the calls fail
+— and the absolute no-fabrication rule above applies: every DOI-bearing
+ref falls through to the `https://doi.org/...` rung. Do **not** substitute
+training-corpus PMIDs. The CSV simply contains more DOI links and fewer
+PubMed links than it would when the calls succeed, and that is the
+correct behaviour.
 
 **4. Walk the ladder for each reaction's Source slots (no network).** For
 every reaction:
@@ -323,15 +399,22 @@ Report to the curator, briefly:
    (PubMed / PMC / DOI / publisher).
  - **PubMed-source breakdown.** Of the PubMed URLs in the CSV, report how
    many came from each `pmid_source`:
-   `inline:<pdf>` (printed in a PDF) vs `idconv` (returned by the network
-   call). These two numbers must sum to the total PubMed URL count. If
-   `idconv` is 0, state explicitly that the network call failed or
-   returned nothing — and confirm in the report that no PMID was sourced
-   from anywhere else. This is a tripwire for accidental fabrication.
- - The idconv outcome itself: `succeeded (N DOIs resolved)`,
-   `succeeded but returned no PMIDs`, `failed (HTTP <code>)`,
-   `failed (network blocked / domain not in allowlist)`, or `not
-   attempted (no DOIs needed resolution)`.
+   `inline:<pdf>` (printed in a PDF), `esearch:doi` (DOI batch
+   resolution, step 3a/3b), and `esearch:title-author` (single-match
+   per-ref ESearch, step 3c). These three numbers must sum to the total
+   PubMed URL count. If both `esearch:*` numbers are 0, state explicitly
+   that the network calls failed or returned no usable matches — and
+   confirm that no PMID was sourced from anywhere else. This is the
+   tripwire for accidental fabrication.
+ - The E-utilities outcomes:
+   - DOI batch (3a/3b): `succeeded (N of M DOIs resolved)`,
+     `ESearch succeeded but ESummary failed (HTTP <code>)`,
+     `ESearch failed (HTTP <code>)`,
+     `failed (network blocked / domain not in allowlist)`, or
+     `not attempted (no DOIs needed resolution)`.
+   - Title+author fallback (3c): `attempted N refs, K resolved (single
+     match), L ambiguous (>1 match), M no match, P call failures`. If
+     not attempted (no refs needed it), say so.
  - Any pathway segments where the evidence was thin or where you resolved a
    conflict between PDFs by taking the most recent.
  - Any place you inferred a transport reaction with an unknown transporter.
