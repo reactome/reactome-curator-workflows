@@ -108,7 +108,7 @@ Extracts a reaction graph for a named pathway from one or more medical/biology r
 |---|---|
 | curation-review | Active internet connection; pathway report DOCX and Curator Guide PDF uploaded to conversation |
 | generate-doi-batch | DOIs.xlsx from Team Drive; Python 3 with pandas and openpyxl (`pip3 install pandas openpyxl`) |
-| extract-reactions | One or more review-article PDFs available locally (absolute paths); internet access for the single NCBI idconv DOI→PMID lookup (skill still runs offline; DOI/PMC/publisher fallback URLs are used in that case) |
+| extract-reactions | One or more review-article PDFs available locally (absolute paths); internet access to `pmc.ncbi.nlm.nih.gov` for the single NCBI idconv DOI→PMID lookup. On Claude Code the `.claude/settings.json` in this repo allowlists the host. On claude.ai (browser), add `pmc.ncbi.nlm.nih.gov` to **Settings → Capabilities → Domain allowlist**, otherwise the call fails and DOI URLs are used as fallback (PMIDs are *never* recovered from training data) |
 
 ## Contributing a Skill
 

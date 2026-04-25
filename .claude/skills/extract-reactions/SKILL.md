@@ -182,7 +182,12 @@ ref as `primary research`, `meta-analysis`, or `review/editorial/commentary`
 are extracted, collect the unique DOIs in `seen_refs` whose entries have
 no PMID. Make **one** GET request to NCBI's idconv:
 
-    https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids=<doi1,doi2,...>&idtype=doi&format=json
+    https://pmc.ncbi.nlm.nih.gov/utils/idconv/v1.0/?ids=<doi1,doi2,...>&idtype=doi&format=json
+
+(NCBI moved the idconv endpoint to the `pmc.ncbi.nlm.nih.gov` host. The
+old `www.ncbi.nlm.nih.gov/pmc/utils/idconv/...` path may still resolve
+via redirect on some networks but is no longer the primary host — use
+`pmc.ncbi.nlm.nih.gov` directly.)
 
 If the unique-DOI count exceeds idconv's batch limit (~200), split into
 the minimum number of batches and treat them as one logical call. Merge
@@ -190,20 +195,57 @@ returned PMIDs into `seen_refs`. Do **not** issue ESearch lookups, do
 **not** make a second idconv call for PMC IDs, and do **not** follow DOI
 redirects to discover publisher URLs.
 
-If the skill is offline at this step, refs that had no inline PMID simply
-fall through to the next ladder rung in step 4. The deliverables still
-produce.
+If the call fails for any reason — network blocked, host moved again,
+non-200 response, malformed JSON — refs that had no inline PMID stay
+PMID-less and fall through to the next ladder rung in step 4. The
+deliverables still produce.
 
-**Platform note.** On Claude Code (local CLI) the call goes through after
-the curator's first WebFetch permission prompt — and this repo ships a
-`.claude/settings.json` rule (`WebFetch(domain:www.ncbi.nlm.nih.gov)`) so
-even that prompt is skipped. On **claude.ai (browser)** the skill runs
-inside a sandbox with a hard network allowlist that does **not** include
-NCBI; the call will fail. That is expected and not a bug — every ref that
-has an inline DOI will still get a `https://doi.org/<doi>` link in its
-Source cell via the ladder fallback. The CSV simply contains more DOI
-links and fewer PubMed links than it would on Claude Code. Run on Claude
-Code if the PubMed-rich version matters.
+### Absolute no-fabrication rule (read this twice)
+
+A PMID may enter `seen_refs` from **only two** sources:
+
+ 1. It was printed verbatim in the PDF you read (in a reference list
+    entry, an in-text annotation, or a figure caption). You can quote
+    the surrounding text.
+ 2. It was returned by a successful HTTP 200 response from the idconv
+    call you made in step 3, mapped from a DOI you also extracted from
+    a PDF.
+
+**Any other PMID is fabricated and forbidden**, including PMIDs that
+"feel right" because the paper is well-known, PMIDs you remember from
+training data, PMIDs derived by guessing-from-author-and-year, and PMIDs
+inferred by analogy to similar papers. There is no high-confidence
+memory exception. If the network call fails or returns nothing for a
+DOI, that DOI's ref does **not** get a PubMed URL — it walks down to the
+DOI rung. Better to ship a CSV with mostly DOI URLs than a CSV with
+hallucinated PubMed IDs that look correct but point to the wrong paper.
+
+To make this auditable, every ref in `seen_refs` must carry a
+`pmid_source` field with one of three values:
+
+ - `"inline:<pdf basename>"` — printed in that PDF.
+ - `"idconv"` — returned by the successful idconv call.
+ - `null` — no PMID. The Source cell will not get a PubMed URL.
+
+When walking the ladder in step 4, only emit a PubMed URL if
+`pmid_source` is non-null. The post-write report breaks down PubMed URLs
+by `pmid_source` so the curator can immediately see whether the idconv
+call succeeded — if you ship 47 PubMed URLs with `pmid_source: idconv`
+but the network call failed, that is a bug; the report would show
+`idconv: 0` and the curator would catch it.
+
+**Platform note.** On Claude Code (local CLI) the call goes through
+after the curator's first WebFetch permission prompt — and this repo
+ships a `.claude/settings.json` rule for `pmc.ncbi.nlm.nih.gov` so even
+that prompt is skipped. On **claude.ai (browser)** the skill runs inside
+a sandbox with a hard network allowlist that does not include NCBI by
+default; the curator can lift this by adding `pmc.ncbi.nlm.nih.gov` to
+the **Domain allowlist** in claude.ai Settings → Capabilities. Without
+that, the call fails — and the absolute no-fabrication rule above
+applies: every DOI-bearing ref falls through to the `https://doi.org/...`
+rung. Do **not** substitute training-corpus PMIDs. The CSV simply
+contains more DOI links and fewer PubMed links than it would when the
+call succeeds, and that is the correct behaviour.
 
 **4. Walk the ladder for each reaction's Source slots (no network).** For
 every reaction:
@@ -278,8 +320,18 @@ Report to the curator, briefly:
    entities or inferred bridging reactions).
  - Reference counts: total unique refs in the HTML; Source cells filled
    vs. left blank; and a breakdown of filled Source cells by ladder rung
-   (PubMed / PMC / DOI / publisher) so the curator can see how much of
-   the linkage relied on the idconv call.
+   (PubMed / PMC / DOI / publisher).
+ - **PubMed-source breakdown.** Of the PubMed URLs in the CSV, report how
+   many came from each `pmid_source`:
+   `inline:<pdf>` (printed in a PDF) vs `idconv` (returned by the network
+   call). These two numbers must sum to the total PubMed URL count. If
+   `idconv` is 0, state explicitly that the network call failed or
+   returned nothing — and confirm in the report that no PMID was sourced
+   from anywhere else. This is a tripwire for accidental fabrication.
+ - The idconv outcome itself: `succeeded (N DOIs resolved)`,
+   `succeeded but returned no PMIDs`, `failed (HTTP <code>)`,
+   `failed (network blocked / domain not in allowlist)`, or `not
+   attempted (no DOIs needed resolution)`.
  - Any pathway segments where the evidence was thin or where you resolved a
    conflict between PDFs by taking the most recent.
  - Any place you inferred a transport reaction with an unknown transporter.
