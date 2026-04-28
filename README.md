@@ -78,12 +78,12 @@ git pull
 
 ## Available Skills
 
-**`/curation-review`**
+**`/internal-module-review`**
 
 Formal structured internal review of a Reactome pathway report against Curator Guide V94 standards. Produces a prioritized review DOCX with seven sections. Upload the pathway report DOCX and Curator Guide PDF to the conversation before invoking. Optional modifiers: `disease`, `drug`, `large`.
 
 ```
-/curation-review "HHV8 Infection" R-HSA-9521541 "Lisa Matthews" 2026-04-15
+/internal-module-review "HHV8 Infection" R-HSA-9521541 "Lisa Matthews" 2026-04-15
 ```
 
 **`/generate-doi-batch`**
@@ -106,7 +106,7 @@ Extracts a reaction graph for a named pathway from one or more medical/biology r
 
 | Skill | Requirements |
 |---|---|
-| curation-review | Active internet connection; pathway report DOCX and Curator Guide PDF uploaded to conversation |
+| internal-module-review | Active internet connection; pathway report DOCX and Curator Guide PDF uploaded to conversation |
 | generate-doi-batch | DOIs.xlsx from Team Drive; Python 3 with pandas and openpyxl (`pip3 install pandas openpyxl`) |
 | extract-reactions | One or more review-article PDFs available locally (absolute paths); internet access to `eutils.ncbi.nlm.nih.gov` for NCBI E-utilities PMID resolution: a batched ESearch + ESummary pair for DOI-bearing refs and a per-ref title+author ESearch fallback (strict single-match only) for refs with no DOI. On Claude Code the `.claude/settings.json` in this repo allowlists the host. On claude.ai (browser), add `eutils.ncbi.nlm.nih.gov` to **Settings → Capabilities → Domain allowlist**, otherwise the calls fail and refs fall through the ladder to DOI URLs or blanks (PMIDs are *never* recovered from training data) |
 
@@ -135,7 +135,7 @@ Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_2.docx  ← full setup guide
 .gitignore
 .claude/
 └── skills/
-   ├── curation-review/
+   ├── internal-module-review/
    │   ├── SKILL.md
    │   ├── Reactome_InternalReview_PROMPT_v1_4.docx
    │   ├── Reactome_InternalReview_TEMPLATE.docx

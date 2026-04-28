@@ -19,8 +19,8 @@ This repo is curator-driven; if you develop a workflow worth sharing, open a PR.
  README.md                                    <- setup instructions for new users
  .claude/
  └── skills/
-     ├── curation-review/
-     │   ├── SKILL.md                         <- /curation-review
+     ├── internal-module-review/
+     │   ├── SKILL.md                         <- /internal-module-review
      │   ├── Reactome_InternalReview_PROMPT_v1_4.docx   <- source prompt spec
      │   ├── Reactome_InternalReview_TEMPLATE.docx      <- companion output template
      │   └── Curator_Guide_V94.pdf            <- authoritative curation standard
@@ -67,7 +67,7 @@ Every curated entity has a stable DB_ID and a human-readable ST_ID
 **Curator Guide:** V94 (current). Governs naming conventions, complex/set
 representation, evidence codes, cross-reference standards (UniProt, ChEBI,
 NCBI Gene, Ensembl, GO), disease pathway structure, and orthology inference rules.
-A copy is in .claude/skills/curation-review/Curator_Guide_V94.pdf.
+A copy is in .claude/skills/internal-module-review/Curator_Guide_V94.pdf.
 
 ---
 
@@ -75,7 +75,7 @@ A copy is in .claude/skills/curation-review/Curator_Guide_V94.pdf.
 
 Reactome releases approximately 3-4 times per year. Each release involves:
 - Curation of new pathways and updates to existing ones
-- Internal peer review of new content (using /curation-review)
+- Internal peer review of new content (using /internal-module-review)
 - DOI assignment via CrossRef batch XML submission, schema 5.3.1
  (using /generate-doi-batch)
 - Species inference pipeline
@@ -90,7 +90,7 @@ The generate-doi-batch skill reads it from a local path specified at runtime.
 
 ## Available Skills
 
- /curation-review
+ /internal-module-review
  Formal structured internal review of a Reactome pathway report against
  Curator Guide V94 standards. Produces a prioritized review DOCX with
  seven sections. Requires the pathway report DOCX and Curator Guide PDF

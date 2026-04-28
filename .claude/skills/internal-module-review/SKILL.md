@@ -1,4 +1,4 @@
-# Curation Review Skill
+# Internal Module Review Skill
 
 ## Purpose
 
@@ -29,7 +29,7 @@ If either file is missing, stop and ask the user to upload it before proceeding.
 
 ## Invocation
 
- /curation-review $ARGUMENTS
+ /internal-module-review $ARGUMENTS
 
 $ARGUMENTS should specify:
  - Pathway name (required)
@@ -43,8 +43,8 @@ $ARGUMENTS should specify:
                    specify sub-pathway names or §-references to focus on
 
 Examples:
- /curation-review "HHV8 Infection" R-HSA-9521541 "Marc Gillespie" 2026-04-15
- /curation-review "TP53 Regulation of DNA Repair" R-HSA-6796648 "Lisa Matthews" 2026-04-15 disease
+ /internal-module-review "HHV8 Infection" R-HSA-9521541 "Marc Gillespie" 2026-04-15
+ /internal-module-review "TP53 Regulation of DNA Repair" R-HSA-6796648 "Lisa Matthews" 2026-04-15 disease
 
 ## What This Skill Does
 
