@@ -1,12 +1,15 @@
 // Reactome PMID Tagger — service worker.
 //
 // Tracks per-tab PMID context: a tab is "tagged" with a PMID once it visits
-// pubmed.ncbi.nlm.nih.gov/<PMID>/. The tag persists across navigations within
-// that tab (PubMed → publisher → PDF) and propagates to child tabs opened
-// from the tagged tab. On any PDF download whose referrer matches a tagged
-// tab's current URL, the filename is prefixed with PMID-<id>_.
+// either pubmed.ncbi.nlm.nih.gov/<PMID>/ or a PMC article page (PMID is read
+// from PMC page DOM by content.js and reported via runtime message). The tag
+// persists across navigations within that tab (PubMed/PMC → publisher → PDF)
+// and propagates to child tabs opened from the tagged tab. On any PDF download
+// whose referrer matches a tagged tab's current URL, the filename is prefixed
+// with PMID-<id>_.
 
 const PUBMED_RE = /^https?:\/\/pubmed\.ncbi\.nlm\.nih\.gov\/(\d+)\/?/;
+const PMC_PMID_URL_RE = /^https?:\/\/pmc\.ncbi\.nlm\.nih\.gov\/articles\/pmid\/(\d+)/;
 
 // In-memory state, mirrored to chrome.storage.session for service-worker resilience.
 const tabPmid = {};   // tabId -> "12345678"
@@ -24,12 +27,22 @@ function persist() {
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (!changeInfo.url) return;
   tabUrls[tabId] = changeInfo.url;
-  const m = changeInfo.url.match(PUBMED_RE);
+  const m = changeInfo.url.match(PUBMED_RE) || changeInfo.url.match(PMC_PMID_URL_RE);
   if (m) {
     tabPmid[tabId] = m[1];
-    console.log(`[pmid-tagger] tab ${tabId} tagged with PMID ${m[1]}`);
+    console.log(`[pmid-tagger] tab ${tabId} tagged with PMID ${m[1]} from URL`);
   }
   persist();
+});
+
+chrome.runtime.onMessage.addListener((msg, sender) => {
+  if (!msg || msg.type !== 'pmc-pmid' || !msg.pmid || !sender.tab) return;
+  const tabId = sender.tab.id;
+  if (tabPmid[tabId] !== msg.pmid) {
+    tabPmid[tabId] = msg.pmid;
+    console.log(`[pmid-tagger] tab ${tabId} tagged with PMID ${msg.pmid} from PMC page`);
+    persist();
+  }
 });
 
 chrome.tabs.onCreated.addListener((tab) => {
