@@ -19,7 +19,7 @@ This repo is curator-driven; if you develop a workflow worth sharing, open a PR.
 reactome-curator-workflows/
 ├── CLAUDE.md                                              ← you are here
 ├── README.md                                              ← setup instructions for new users
-├── Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_2.docx  ← full onboarding guide
+├── Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_3.docx  ← full onboarding guide
 ├── .gitignore
 ├── chrome-extensions/
 │   └── pmid-tagger/                                      ← Chrome extension: prefix PDF downloads with PMID-<id>_
@@ -34,7 +34,13 @@ reactome-curator-workflows/
         │   ├── Reactome_InternalReview_PROMPT_v1_4.docx   ← source prompt spec
         │   ├── Reactome_InternalReview_TEMPLATE.docx      ← companion output template
         │   ├── Claude_ReactomeDataModelGlossary_V95_Final.docx.pdf  ← data model reference
-        │   └── Curator_Guide_V94.pdf                      ← authoritative curation standard
+        │   ├── Curator_Guide_V94.pdf                      ← authoritative curation standard
+        │   ├── EWAS_name_rules.docx                       ← EWAS (protein/peptide) naming rules
+        │   ├── Rules_for_automatic_reaction_typing.docx   ← event/reaction naming rules
+        │   ├── ptm_lookup.xlsx                            ← PSI-MOD ID → PTM prefix table (source)
+        │   ├── ptm_prefixes.md                            ← PTM prefix table in plain text (auto-loaded)
+        │   ├── Small_molecule_renaming.xlsx               ← canonical small molecule name lookup
+        │   └── bau060.pdf                                 ← naming conventions reference paper
         ├── annotate-pathway-from-reviews-or-topic_name/
         │   ├── SKILL.md                                   ← /annotate-pathway-from-reviews-or-topic_name
         │   ├── README.md                                  ← full workflow, citation block format, species/chimeric rules
@@ -123,6 +129,11 @@ Reference materials in skill directory:
 - `Reactome_InternalReview_PROMPT_v1_4.docx` — structured review prompt spec
 - `Reactome_InternalReview_TEMPLATE.docx` — output template
 - `Claude_ReactomeDataModelGlossary_V95_Final.docx.pdf` — data model glossary
+- `EWAS_name_rules.docx` — EWAS (protein/peptide) naming rules (Section 7)
+- `Rules_for_automatic_reaction_typing.docx` — reaction/event naming rules (Section 7)
+- `ptm_prefixes.md` — PTM prefix lookup in plain text, auto-loaded (Section 7)
+- `Small_molecule_renaming.xlsx` — canonical small molecule names (Section 7)
+- `bau060.pdf` — naming conventions reference paper (Section 7)
 
 ---
 

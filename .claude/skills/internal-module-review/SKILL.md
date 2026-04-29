@@ -13,6 +13,13 @@ The full prompt specification is maintained in:
 The companion output template is:
  @Reactome_InternalReview_TEMPLATE.docx
 
+Reference materials for entity and event name checking (Section 7):
+ @EWAS_name_rules.docx
+ @Rules_for_automatic_reaction_typing.docx
+ @ptm_prefixes.md
+ @Small_molecule_renaming.xlsx
+ @bau060.pdf
+
 ## Required Inputs
 
 Before invoking this skill, upload both of the following to the conversation:
@@ -172,11 +179,175 @@ GO BP POLICY (apply these rules when evaluating assignments):
 
 ### SECTION 6 — PRIORITIZED ISSUE SUMMARY
 
-Present ALL issues from Sections 1-5 (including all Section 1.3 entity chain
-mismatches) in a single consolidated table:
+Present ALL issues from Sections 1-7 (including all Section 1.3 entity chain
+mismatches and all Section 7 naming violations) in a single consolidated table:
  Issue | Section(s) | Type | Priority | Action Required
 
 Sort HIGH → MEDIUM → LOW within each type.
+
+---
+
+### SECTION 7 — ENTITY AND EVENT NAME CONVENTIONS
+
+Apply the rules in @EWAS_name_rules.docx, @Rules_for_automatic_reaction_typing.docx,
+@ptm_prefixes.md, and @bau060.pdf (Jupe et al. 2014, controlled vocabulary paper) to
+check every entity and event name in the pathway report.
+Use @Small_molecule_renaming.xlsx as a lookup reference for small molecule names.
+
+#### 7.1 EWAS (protein/peptide) entity names
+
+Check every protein/peptide entity name against the following rules:
+
+(a) **Gene symbol core.** The name must use the HGNC gene symbol derived from
+   UniProt via the Reactome referenceEntity. Human proteins: ALL-CAPS. Non-human:
+   initial capitalisation only (e.g., Jak2 for mouse, JAK2 for human).
+
+(b) **Peptide coordinate suffix.** Coordinates are added as `(start-end)` only
+   when the EWAS start or end position differs from the UniProt Chain feature.
+   When coordinates are needed, both start and end must be given. Unknown
+   positions are written as `?` (e.g., `ACAN(17-?)`).
+
+(c) **PTM prefixes.** Each modification must use the prefix from @ptm_prefixes.md
+   (column: Prefix), looked up by PSI-MOD ID. Non-phosphorylation PTMs are listed
+   before phosphorylation prefixes. Multiple copies of the same non-phospho PTM
+   use `Nx` notation (e.g., `2xPalmC`).
+
+(d) **Phosphorylation prefixes.** Format: `p-[subtype_letter][coordinate]`.
+   Subtype letters: S (serine), T (threonine), Y (tyrosine); omit letter when
+   subtype is unknown. Phosphorylations are ordered by coordinate position.
+   When >4 of any phospho subtype are present, replace individual coordinates
+   with a count (e.g., `p-7Y-KIT`). Mixed subtypes are ordered by coordinate,
+   not grouped by subtype (e.g., `p-Y55,S112,S121,Y227-SPRY2`).
+
+(e) **Combined PTM + phosphorylation.** Non-phospho PTMs come first; phospho
+   prefixes come last (e.g., `2xPalmC-MyrG-p-S1177-NOS3(2-1203)`).
+
+(f) **Mutation notation.** Sequence substitutions follow the gene symbol:
+   `GENE residueXvariant` (e.g., `CTNNB1 T41A`). Premature terminations use `*`.
+   The words "mutant", "mutants", or "mutation" are not part of the name. A set
+   of variants is named `[PTM-]GENE residueN mutants` (e.g., `pS45-CTNNB1 T41 mutants`).
+
+(g) **Exemptions.** Do not flag entities that are exempt from systematic renaming:
+   names containing "mutant" or "active"; entities with a disease annotation;
+   entities whose referenceEntity has no gene name; non-ReferenceGeneProduct
+   referenceEntities (mRNA, miRNA, etc.); isoforms with variantIdentifier > 1;
+   entities with non-simple modifiedResidue (GroupModifiedResidue, crosslink).
+
+Present findings in a table:
+ Entity Name As Written | Rule Violated | Correct Form | Priority
+
+Flag as HIGH if the modification state misrepresents the biology or conflicts with
+Section 1.3 entity chain analysis. Flag as MEDIUM for incorrect prefix or coordinate
+format. Flag as LOW for cosmetic issues (ordering, capitalisation inconsistencies
+in non-human entities).
+
+#### 7.2 Reaction/event names
+
+Check every reaction and event name against the naming format rules in
+@Rules_for_automatic_reaction_typing.docx. Apply these formats:
+
+| Reaction class | Required format |
+|---|---|
+| Transformation (default, no catalyst) | `a TRANSFORMS TO b` |
+| Binding | `a BINDS b` |
+| Dissociation | `a DISSOCIATES TO b AND c` |
+| Polymerization | `a POLYMERIZES TO x` |
+| Depolymerization | `x DEPOLYMERIZES TO a` |
+| Catalysed (GOMF verb available) | `Protein x [GOMF-verb] entity a TO d` |
+| Transferase | `Protein x TRANSFERS y TO a (TO FORM a2)` |
+| Transport, no transporter | `a TRANSLOCATES FROM [compartment x] TO [compartment y]` |
+| Transport, named transporter | `Protein x TRANSPORTS a (FROM compartment x TO compartment y)` |
+| Antiporter | `Protein x EXCHANGES a FOR b (across the y membrane)` |
+| Cotransporter | `Protein x COTRANSPORTS a (b) WITH c (d)` |
+| Activation | `a is activated` |
+| Regulation | `a (positively or negatively) REGULATES x` |
+
+For catalysed reactions: verify that the verb is consistent with the catalyst's
+GO molecular function. The GOMF→verb mapping is documented in the Rules file.
+Common verbs include: hydrolyses, phosphorylates, ubiquitinates, acetylates,
+methylates, isomerizes, cleaves, biotinylates.
+
+Present findings in a table:
+ Event Name As Written | Reaction Class | Issue | Correct Format | Priority
+
+Flag as HIGH if the wrong reaction class verb is used (e.g., TRANSFORMS for a
+known binding event). Flag as MEDIUM for format deviations (missing compartment
+in TRANSLOCATES, wrong verb tense). Flag as LOW for capitalisation or minor
+phrasing issues.
+
+#### 7.3 Small molecule names
+
+Cross-reference small molecule entity names against @Small_molecule_renaming.xlsx
+(sheet: "small molecules", columns: name and location). Flag any name that
+differs from the canonical name in the reference list.
+
+Note: the reference list is a large but not exhaustive lookup. Only flag cases
+where a clear canonical form exists in the spreadsheet. For names not found in
+the list, apply general chemical naming consistency checks.
+
+Present findings in a table:
+ Name As Written | Canonical Name | Location | Priority
+
+#### 7.4 Complex names
+
+Check every named complex against the CV rules in @bau060.pdf:
+
+(a) **Component separator.** Components of a complex are separated by colons
+   with no spaces (e.g., `GRB2:SOS1`, `IL3RA:IL3RB:JAK2`).
+
+(b) **Repeated entity in a heteromeric complex.** When one entity appears more
+   than once, precede its name with the count and `x` (e.g., `2xPPOX:FAD` for
+   a complex of two PPOX molecules and one FAD). Do not use the familiar
+   multimer term (dimer, tetramer) for heteromers — reserve those for homomers.
+
+(c) **Homomeric multimers.** Familiar terms (dimer, trimer, tetramer, pentamer,
+   hexamer) are acceptable for pure homomeric assemblies.
+
+(d) **Hierarchical subcomplexes.** When a pre-existing complex or set is a
+   component, enclose it in square brackets to show the hierarchical boundary
+   (e.g., `[ABC1:ABC2]:[ABC3:ABC4]`). Nesting is recursive:
+   `[[ABC1:ABC2]:[ABC3:ABC4]]:XYZ1`.
+
+(e) **Set component in a complex name.** When a complex contains a set, the
+   set is named using comma notation (see 7.5) and that comma-separated string
+   is used within the colon-separated complex name, e.g.,
+   `RhoRac GEFs:GDP` where `RhoRac GEFs` is the set.
+
+Present findings in a table:
+ Complex Name As Written | Rule Violated | Correct Form | Priority
+
+Flag as HIGH if the wrong separator is used in a way that makes the composition
+ambiguous (e.g., comma instead of colon). Flag as MEDIUM for missing square
+brackets around subcomplexes or incorrect multimer notation. Flag as LOW for
+capitalisation or spacing issues.
+
+#### 7.5 Set names
+
+Check every named set against the CV rules in @bau060.pdf:
+
+(a) **Member separator.** Members of a Defined Set are separated by commas with
+   no spaces (e.g., `IL3,IL3RA,CSF2RB`).
+
+(b) **Candidate members.** In a Candidate Set, experimentally unverified candidate
+   members are enclosed in round brackets within the comma-separated list
+   (e.g., `HRH2,HRH3,(HRH6,HRH8)` where HRH6 and HRH8 are candidates).
+
+(c) **Diagram label conventions.** When a set name is used as a diagram label,
+   the following short forms are acceptable but the full CV name remains canonical:
+   - Common gene-symbol stem + plural suffix (e.g., `VAVs` for VAV1, VAV2, VAV3)
+   - Range notation (e.g., `CCR1-5` for CCR1–CCR5; `CCR1,3-5` for CCR1, CCR3–CCR5)
+   - Functional description (e.g., `CCR2 ligands`, `VAV2-activated RhoGEFs`)
+   - Diagram labels for sets must always be plural to distinguish them from
+     singular entities (e.g., `alcohol dehydrogenase complexes`, not
+     `alcohol dehydrogenase complex`).
+
+Present findings in a table:
+ Set Name As Written | Rule Violated | Correct Form | Priority
+
+Flag as HIGH if comma and colon separators are confused (set treated as complex
+or vice versa), or if candidate members are not distinguished from confirmed members.
+Flag as MEDIUM for plural/singular errors in diagram labels. Flag as LOW for
+ordering or cosmetic issues.
 
 ---
 

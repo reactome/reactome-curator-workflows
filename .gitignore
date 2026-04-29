@@ -9,6 +9,8 @@ __pycache__/
 *.xlsx
 *.xlsx~
 *.xls
+# Exception: skill reference spreadsheets are committed as part of the skill
+!.claude/skills/**/*.xlsx
 
 # Output files (generated locally by skills, not committed)
 output/
