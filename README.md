@@ -17,7 +17,7 @@ See `CLAUDE.md` for full project context.
 
 Full setup and usage instructions are in:
 
-**[Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_2.docx](./Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_2.docx)**
+**[Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_3.docx](./Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_3.docx)**
 
 This covers one-time prerequisites, cloning the repository, running each skill, and
 how to add new skills. Start here if you are setting up for the first time.
@@ -96,6 +96,25 @@ Formal structured internal review of a Reactome pathway report against Curator G
 V94 standards. Produces a prioritized review DOCX with seven sections. Upload the
 pathway report DOCX and Curator Guide PDF to the conversation before invoking.
 Optional modifiers: `disease`, `drug`, `large`.
+
+**Sections:**
+
+| Section | What it covers |
+|---|---|
+| 1 | Reaction connectivity, including Input→Output entity chain verification |
+| 2 | GO Biological Process assignments |
+| 3 | Literature references |
+| 4 | Grammar, clarity, and summation quality |
+| 5 | General curation quality |
+| 6 | Prioritized issue summary (consolidated table, all sections) |
+| 7 | Entity and event name conventions |
+
+Section 7 checks every entity and event name against the Reactome controlled vocabulary
+(Jupe et al. 2014) and associated naming rules. Five subsections cover EWAS/peptide names
+(gene symbol, coordinates, PTM prefixes), reaction/event names (all 11 CV classes), small
+molecule names, complex names (colon separator, square bracket hierarchy notation), and
+set names (comma separator, candidate member notation). Naming convention reference files
+are automatically loaded — no additional uploads required.
 
 ```
 /internal-module-review "HHV8 Infection" R-HSA-9521541 "Lisa Matthews" 2026-04-15
@@ -298,7 +317,7 @@ making it easier to match PDFs to references during curation.
 5. Open a PR with a brief description of what the skill does and when to use it
 
 For detailed instructions on writing and committing a new skill, see the full guide
-(`Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_2.docx`).
+(`Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_3.docx`).
 
 Suggestions for improving `annotate-pathway-from-reviews-or-topic_name` — including
 changes to the system prompt or the RLE annotation reference file — are welcome via
@@ -314,7 +333,7 @@ guide version.
 reactome-curator-workflows/
 ├── CLAUDE.md                                              ← project context for Claude Code
 ├── README.md                                              ← this file
-├── Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_2.docx  ← full setup guide
+├── Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_3.docx  ← full setup guide
 ├── .gitignore
 ├── chrome-extensions/
 │   └── pmid-tagger/                                      ← Chrome extension: PMID-prefix PDF downloads
@@ -329,7 +348,13 @@ reactome-curator-workflows/
         │   ├── Reactome_InternalReview_PROMPT_v1_4.docx
         │   ├── Reactome_InternalReview_TEMPLATE.docx
         │   ├── Claude_ReactomeDataModelGlossary_V95_Final.docx.pdf
-        │   └── Curator_Guide_V94.pdf
+        │   ├── Curator_Guide_V94.pdf
+        │   ├── EWAS_name_rules.docx                       ← EWAS naming rules (Section 7)
+        │   ├── Rules_for_automatic_reaction_typing.docx   ← reaction/event naming rules (Section 7)
+        │   ├── bau060.pdf                                 ← Jupe et al. 2014 CV paper (Section 7)
+        │   ├── ptm_lookup.xlsx                            ← PSI-MOD → PTM prefix table (source)
+        │   ├── ptm_prefixes.md                            ← PTM prefix table, plain text (auto-loaded)
+        │   └── Small_molecule_renaming.xlsx               ← canonical small molecule names (Section 7)
         ├── annotate-pathway-from-reviews-or-topic_name/
         │   ├── SKILL.md
         │   ├── README.md
