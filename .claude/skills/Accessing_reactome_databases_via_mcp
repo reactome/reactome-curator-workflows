@@ -43,3 +43,24 @@ The above should be in a file called .mcp.json. You can add it directly by follo
 3). Yes, make sure you have installed neo4j-mcp already and add it into your PATH.
 
 4). Check mcp list to make sure the mcp is installed correctly, and then ask anything about our database.
+
+Some important points:
+
+The schemas are different for gk_central and the public Reactome mirror. How will Claude know to use the appropriate (complete) schema for gk_central queries?
+
+Here's the issue: when I call reactome_cypher_schema, it queries whichever server that tool is bound to. In this session I happened to call reactome:reactome_cypher_schema (the public mirror) rather than gk-central:reactome_cypher_schema, so the schema I had in context was the public one. I then had to do exploratory queries against gk-central to discover things like:
+
+The stableIdentifier relationship (not present in the public mirror)
+The released boolean property on StableIdentifier nodes
+The reverse direction of the created relationship
+
+If I had relied solely on the public schema, I would have written incorrect Cypher from the start.
+What I should do going forward: whenever a question is clearly directed at gk-central, I should call gk-central:reactome_cypher_schema first, before writing any queries. The two databases differ in meaningful ways:
+
+gk-central has curation-specific nodes/properties (StableIdentifier.released, doRelease on events, etc.)
+Relationship directions can differ
+Properties present in one may be absent or null in the other
+
+So the safe habit is: match the schema call to the target database. I'll make sure to do that explicitly rather than defaulting to the public mirror's schema. Thanks for flagging it — it's an easy mistake to make silently.
+
+
