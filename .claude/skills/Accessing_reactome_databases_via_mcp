@@ -1,0 +1,45 @@
+These are notes for setting up the mcp locally and then accessing snapshots of the live DB or gk_central
+
+Most recent db (V96)
+Get your claude to try using this mcp: https://github.com/reactome/reactome-mcp
+You will likely want to run the database with this command: docker run -p 7474:7474 -p 7687:7687 -e NEO4J_dbms_memory_heap_maxSize=8g public.ecr.aws/reactome/graphdb:Release96
+What I added into it is a direct connection to the database like you were doing. If you supply the path to the database it will become available in the mcp.
+[Add notes here about what was done next on local machine ...I did this on the fly with Joel and don't recall all of the details]
+
+
+
+Accessing gk_central snapshot
+ 
+
+To access the (future) curation graph database via Neo4j MCP installed locally at your own computer (see above), you may use ssh tunneling by following the following steps:
+
+1). Set up ssh tunneling: 
+
+ssh -i ~/.ssh/your_key.pem -L 7687:localhost:7687 user@curator.reactome.org 
+
+Note: replace “user” with your own account name, your_key.pem with your own identity file. The first number is the port at your own computer, this may change to whatever you like. The second is the port at curator.reactome.org. Don’t change it. Make sure this is running always. You may try different ways to set it up. Please consult with AI.
+
+2). If you are using cluade code, add the following configuration into the project folder (e.g. reactome-curator-workflows):
+
+{
+"mcpServers": {
+"neo4j-mcp": {
+"type": "stdio",
+"command": "neo4j-mcp",
+"args": [],
+"env": {
+"NEO4J_URI": "bolt://localhost:7688",
+"NEO4J_USERNAME": "neo4j",
+"NEO4J_PASSWORD": “{I will send you the password}",
+"NEO4J_DATABASE": "graph.db",
+"NEO4J_READ_ONLY": "true"
+}
+}
+}
+}
+
+The above should be in a file called .mcp.json. You can add it directly by following the instruction from Claude Code.
+
+3). Yes, make sure you have installed neo4j-mcp already and add it into your PATH.
+
+4). Check mcp list to make sure the mcp is installed correctly, and then ask anything about our database.
