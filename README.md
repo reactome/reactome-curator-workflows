@@ -285,18 +285,9 @@ are dropped. Pre-curation draft, not a curated entry.
 
 ## Chrome Extensions
 
-### `pmid-tagger`  (`chrome-extensions/pmid-tagger/`)
+### `AICurator`
 
-Automatically prefixes PDF downloads with `PMID-<id>_` when initiated from a PubMed
-or PMC article page. Keeps downloaded papers consistently named with their PMID,
-making it easier to match PDFs to references during curation.
-
-**To install:**
-
-1. Open Chrome → `chrome://extensions/`
-2. Enable **Developer mode** (top-right toggle)
-3. Click **Load unpacked** → select the `chrome-extensions/pmid-tagger/` folder
-4. Active immediately — no configuration required
+See https://github.com/rwst/aicurator
 
 ---
 
