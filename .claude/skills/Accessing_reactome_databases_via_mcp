@@ -1,10 +1,10 @@
 These are notes for setting up the mcp locally and then accessing snapshots of the live DB or gk_central
 
-Most recent db (V96)
-Get your claude to try using this mcp: https://github.com/reactome/reactome-mcp
+1. First make sure docker is set up on your computer. 
+2. Get your claude to try using this mcp: https://github.com/reactome/reactome-mcp
 You will likely want to run the database with this command: docker run -p 7474:7474 -p 7687:7687 -e NEO4J_dbms_memory_heap_maxSize=8g public.ecr.aws/reactome/graphdb:Release96
 What I added into it is a direct connection to the database like you were doing. If you supply the path to the database it will become available in the mcp.
-[Add notes here about what was done next on local machine ...I did this on the fly with Joel and don't recall all of the details]
+[Add notes from Joel here about what needs to be done next on curators local machine ...we did this on the fly at the pre-SAB, and I don't recall all of the details]
 
 
 
