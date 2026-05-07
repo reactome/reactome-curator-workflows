@@ -1,11 +1,42 @@
 These are notes for setting up the mcp locally and then accessing snapshots of the live DB or gk_central
 
-1. First make sure docker is set up on your computer. 
-2. Get your claude to try using this mcp: https://github.com/reactome/reactome-mcp
-You will likely want to run the database with this command: docker run -p 7474:7474 -p 7687:7687 -e NEO4J_dbms_memory_heap_maxSize=8g public.ecr.aws/reactome/graphdb:Release96
-What I added into it is a direct connection to the database like you were doing. If you supply the path to the database it will become available in the mcp.
-[Add notes from Joel here about what needs to be done next on curators local machine ...we did this on the fly at the pre-SAB, and I don't recall all of the details]
-
+1. Install Docker, if needed, from https://docs.docker.com/engine/install/
+2. Install NodeJS, if needed, from https://nodejs.org/en/download
+3. Install the Reactome mcp repository (install git, if needed, from here: https://git-scm.com/install/):
+	a) Open a terminal and move to the desired directory to which you want to clone the mcp repo
+	b) Run "git clone https://github.com/reactome/reactome-mcp"
+	c) Run "cd reactome-mcp"
+	d) Run "npm install"
+	e) Run "pwd -P" and take note of the path returned
+4. Install the docker container for the Reactome release graph database (NOTE: Must be run every release to keep the graph db up to date)
+	a) Open a terminal
+	b) Run "aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws"
+	c) Run "docker run -p 7474:7474 -p 7687:7687 -e NEO4J_dbms_memory_heap_maxSize=8g public.ecr.aws/reactome/graphdb:latest"
+	d) Wait until "Started" is output in the terminal (should take about 30s)
+	e) Open a browser and navigate to "http://localhost:7474"
+	f) Click the database icon at the top-left
+	g) Select the node "DBInfo" and verify the returned node has the latest release number
+5. Configure Claude to use the mcp repo
+	a) Open Claude
+	b) Go to "File" -> "Settings"
+	c) Click "Developer" -> "Edit config"
+	d) Open "claude_desktop_config.json" in a text editor
+	e) Add the following (change the "/absolute/path/to/reactome-mcp" with what you received from step 3e) and save/close the file
+		{
+  			"mcpServers": {
+    				"reactome": {
+      					"command": "node",
+      					"args": ["/absolute/path/to/reactome-mcp/dist/index.js"],
+      					"env": {
+      						"NEO4J_URI" : "bolt://localhost:7687"
+      					}
+    				}
+  			}
+		}
+	f) Restart Claude
+	g) Go to "File" -> "Settings" and click "Developer"
+	h) Verify the mcp "reactome" is listed and without errors
+	i) Query anything you wish requiring access to the Reactome database or Content Service API
 
 
 Accessing gk_central snapshot
@@ -19,23 +50,23 @@ ssh -i ~/.ssh/your_key.pem -L 7687:localhost:7687 user@curator.reactome.org
 
 Note: replace “user” with your own account name, your_key.pem with your own identity file. The first number is the port at your own computer, this may change to whatever you like. The second is the port at curator.reactome.org. Don’t change it. Make sure this is running always. You may try different ways to set it up. Please consult with AI.
 
-2). If you are using cluade code, add the following configuration into the project folder (e.g. reactome-curator-workflows):
+2). If you are using claude code, add the following configuration into the project folder (e.g. reactome-curator-workflows):
 
 {
-"mcpServers": {
-"neo4j-mcp": {
-"type": "stdio",
-"command": "neo4j-mcp",
-"args": [],
-"env": {
-"NEO4J_URI": "bolt://localhost:7688",
-"NEO4J_USERNAME": "neo4j",
-"NEO4J_PASSWORD": “{I will send you the password}",
-"NEO4J_DATABASE": "graph.db",
-"NEO4J_READ_ONLY": "true"
-}
-}
-}
+	"mcpServers": {
+		"neo4j-mcp": {
+			"type": "stdio",
+			"command": "neo4j-mcp",
+			"args": [],
+			"env": {
+				"NEO4J_URI": "bolt://localhost:7688",
+				"NEO4J_USERNAME": "neo4j",
+				"NEO4J_PASSWORD": “{I will send you the password}",
+				"NEO4J_DATABASE": "graph.db",
+				"NEO4J_READ_ONLY": "true"
+			}
+		}
+	}
 }
 
 The above should be in a file called .mcp.json. You can add it directly by following the instruction from Claude Code.
