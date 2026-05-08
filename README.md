@@ -30,16 +30,10 @@ how to add new skills. Start here if you are setting up for the first time.
 
 Install Git: https://git-scm.com/downloads
 
-Install Node.js (LTS): https://nodejs.org
-
 Install Claude Code:
 
 ```bash
-mkdir -p ~/.npm-global
-npm config set prefix '~/.npm-global'
-echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.zshrc
-source ~/.zshrc
-npm install -g @anthropic-ai/claude-code
+curl -fsSL https://claude.ai/install.sh | bash
 ```
 
 Set your Anthropic API key (add to `~/.zshrc`):
@@ -52,13 +46,6 @@ Install Python dependencies (use `pip3` on macOS):
 
 ```bash
 pip3 install pandas openpyxl
-```
-
-If you see a PATH warning after installing, add this to `~/.zshrc`
-(replace `3.9` with the version number shown in your warning):
-
-```bash
-export PATH="/Users/[you]/Library/Python/3.9/bin:$PATH"
 ```
 
 ### 2. Clone the repository
