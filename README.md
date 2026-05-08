@@ -287,8 +287,7 @@ are dropped. Pre-curation draft, not a curated entry.
 
 ### `AICurator`
 
-See https://github.com/rwst/aicurator
-
+See https://chromewebstore.google.com/detail/aicurator/jkdcmghlpgfilhdlngmopljpocpbnhdc
 ---
 
 ## Using Skills in the claude.ai Desktop App
@@ -326,11 +325,6 @@ reactome-curator-workflows/
 ├── README.md                                              ← this file
 ├── Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_3.docx  ← full setup guide
 ├── .gitignore
-├── chrome-extensions/
-│   └── pmid-tagger/                                      ← Chrome extension: PMID-prefix PDF downloads
-│       ├── manifest.json
-│       ├── background.js
-│       └── content.js
 └── .claude/
     ├── settings.json                                      ← Claude Code host allowlist
     └── skills/
