@@ -274,7 +274,23 @@ are dropped. Pre-curation draft, not a curated entry.
 
 ### `AICurator`
 
-See https://chromewebstore.google.com/detail/aicurator/jkdcmghlpgfilhdlngmopljpocpbnhdc
+Install from https://chromewebstore.google.com/detail/aicurator/jkdcmghlpgfilhdlngmopljpocpbnhdc
+
+Go to a fresh Google Sheet then open the extension:
+
+1. **Main** — pick or create a project (a folder under
+   `<Downloads>/aicurator/`) bound to a Google Sheet, configure the AI
+   provider, manage settings.
+2. **Extract** — feed review-article PDFs and a pathway name to an LLM,
+   resolve PMIDs against PubMed, write a 12-column reaction table to the
+   sheet.
+3. **Summate** — for each row, send the cited PMID-prefixed PDFs and the
+   row context to an LLM, draft a Reactome-style summation paragraph,
+   write it to column B.
+4. **Canonize** — replace protein/gene mentions in columns A–F with their
+   canonical UniProt-confirmed (human-only, reviewed-first) gene symbols.
+
+
 ---
 
 ## Using Skills in the claude.ai Desktop App
