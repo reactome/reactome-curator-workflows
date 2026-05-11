@@ -325,11 +325,13 @@ class DocBuilder:
             }
         })
 
-        # Formula for paragraph index of cell (i, j) in a freshly-inserted
-        # empty table (all cells have exactly one empty paragraph = 1 char):
-        #   table_idx + 1 + i*(2 + n_cols*2) + 1 + j*2
+        # The API places the table at table_idx+1 (after the paragraph char at table_idx).
+        # Skeleton per row = row_start(1) + n_cols*(cell_marker(1) + para_content(1)) = 1+n_cols*2.
+        # Table skeleton = table_open(1) + n_rows*(1+n_cols*2) + table_close(1) = 2+n_rows*(1+n_cols*2).
+        # Cell (i,j) paragraph index = (table_idx+1) + 1(table_open) + i*(1+n_cols*2) + 1(row_open)
+        #   + j*2(cells before) + 1(cell_marker) = table_idx + 4 + i*(1+n_cols*2) + j*2
         def cell_para(i, j):
-            return table_idx + 1 + i * (2 + n_cols * 2) + 1 + j * 2
+            return table_idx + 4 + i * (1 + n_cols * 2) + j * 2
 
         # Fill cells in reverse order (last→first) so earlier indices stay valid
         for i in reversed(range(n_rows)):
@@ -361,7 +363,7 @@ class DocBuilder:
                         "updateTableCellStyle": {
                             "tableRange": {
                                 "tableCellLocation": {
-                                    "tableStartLocation": {"index": table_idx},
+                                    "tableStartLocation": {"index": table_idx + 1},
                                     "rowIndex": 0, "columnIndex": j,
                                 },
                                 "rowSpan": 1, "columnSpan": 1,
@@ -373,9 +375,14 @@ class DocBuilder:
                         }
                     })
 
-        # Advance cursor past the table
-        # Table size = 1 (open) + n_rows*(2 + n_cols*2) + 1 (close) + 1 (trailing \n)
-        self._cursor = table_idx + 1 + n_rows * (2 + n_cols * 2) + 1 + 1
+        # Advance cursor to the new trailing paragraph created after the table.
+        # The API places the table at table_idx+1; skeleton = 2 + n_rows*(1+n_cols*2).
+        # The new trailing paragraph starts right after the skeleton.
+        # Plus all text inserted into cells — each insertText shifts the table end.
+        total_cell_chars = sum(
+            len(text) for row in rows for cell in row for text, kw in cell
+        )
+        self._cursor = table_idx + 3 + n_rows * (1 + n_cols * 2) + total_cell_chars
         self.blank()
 
 
