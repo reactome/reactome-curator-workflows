@@ -15,6 +15,11 @@ __pycache__/
 # Output files (generated locally by skills, not committed)
 output/
 
+# Google OAuth credentials — stored at ~/.config/reactome/, never in the repo
+credentials.json
+token.json
+service_account.json
+
 # macOS
 .DS_Store
 

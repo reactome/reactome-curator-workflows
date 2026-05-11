@@ -36,14 +36,20 @@ The script is at: @update_drive_readme.py
 3. OAuth credentials (default mode, USE_SERVICE_ACCOUNT = False):
    - Obtain a `credentials.json` client secrets file from the Google Cloud Console
      for the project that has Drive and Docs API enabled.
-   - Place `credentials.json` beside `update_drive_readme.py`.
+   - Place it at `~/.config/reactome/credentials.json` (outside the repo —
+     credentials are never committed).
    - On first run a browser window opens for the OAuth consent flow.
-   - The token is cached in `token.json` beside the script for subsequent runs.
+   - The token is cached at `~/.config/reactome/token.json` for subsequent runs.
+     The `~/.config/reactome/` directory is created automatically if it does not exist.
+
+   Override the default credentials path via env var:
+
+       GOOGLE_APPLICATION_CREDENTIALS=/path/to/credentials.json python3 update_drive_readme.py
 
    Service account alternative:
    - Set USE_SERVICE_ACCOUNT = True in the script.
-   - Place `service_account.json` beside the script (or set
-     GOOGLE_APPLICATION_CREDENTIALS to its path).
+   - Place `service_account.json` at `~/.config/reactome/service_account.json`
+     (or set GOOGLE_APPLICATION_CREDENTIALS to its path).
    - The service account must be a Content Manager on the Team Drive.
 
 4. The caller must have edit access to the target Google Doc.
@@ -87,8 +93,8 @@ The regenerated doc contains these sections in order:
 - `--dry-run` is safe — it does not modify the doc.
 - Every live run **completely clears** the doc before rewriting. Do not run on
   a doc that contains hand-edited content you want to keep.
-- `token.json` contains OAuth refresh credentials. Do not commit it to git.
-  It is listed in `.gitignore` by convention; confirm before committing.
+- Credentials are stored at `~/.config/reactome/` — outside the repo — so they
+  are never accidentally committed or shared with other repo users.
 
 ## Updating FOLDER_META / CONTACTS / KNOWN_ISSUES
 
@@ -103,8 +109,10 @@ are resolved. Then re-run to push the update to the doc.
     → pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
 
 ### credentials.json not found / OAuth failure
-    FileNotFoundError: [Errno 2] No such file or directory: '.../credentials.json'
-    → Download OAuth client secrets from Google Cloud Console and place beside the script.
+    FileNotFoundError: [Errno 2] No such file or directory: '...credentials.json'
+    → Download OAuth client secrets from Google Cloud Console and place at
+      ~/.config/reactome/credentials.json, or set GOOGLE_APPLICATION_CREDENTIALS
+      to the full path of your credentials file.
 
 ### Insufficient Drive permissions
     HttpError 403 when calling drive().files().list()

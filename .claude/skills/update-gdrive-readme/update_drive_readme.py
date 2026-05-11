@@ -27,13 +27,19 @@ Requirements
 Credentials
 -----------
 OAuth user credentials (recommended):
-  Set USE_SERVICE_ACCOUNT = False. On first run a browser opens for the OAuth
-  consent flow; the token is cached in token.json beside this script.
+  Set USE_SERVICE_ACCOUNT = False. Place credentials.json (OAuth client secrets
+  from Google Cloud Console) at ~/.config/reactome/credentials.json. On first
+  run a browser opens for the OAuth consent flow; the token is cached at
+  ~/.config/reactome/token.json for subsequent runs. Neither file is inside
+  the repo, so credentials are never accidentally committed.
+
+  Override the credentials path via the GOOGLE_APPLICATION_CREDENTIALS env var:
+    GOOGLE_APPLICATION_CREDENTIALS=/path/to/credentials.json python update_drive_readme.py
 
 Service account:
-  Set USE_SERVICE_ACCOUNT = True and place service_account.json beside this
-  script (or set GOOGLE_APPLICATION_CREDENTIALS). The service account must be
-  a Content Manager on the Team Drive.
+  Set USE_SERVICE_ACCOUNT = True and place service_account.json at
+  ~/.config/reactome/service_account.json (or set GOOGLE_APPLICATION_CREDENTIALS).
+  The service account must be a Content Manager on the Team Drive.
 """
 
 import argparse
@@ -90,7 +96,7 @@ KNOWN_ISSUES = [
 
 CREDENTIALS_PATH = os.environ.get(
     "GOOGLE_APPLICATION_CREDENTIALS",
-    str(Path(__file__).parent / "service_account.json"),
+    str(Path.home() / ".config" / "reactome" / "credentials.json"),
 )
 USE_SERVICE_ACCOUNT = False  # True = service account, False = OAuth user credentials
 
@@ -128,7 +134,7 @@ def build_services():
         creds = service_account.Credentials.from_service_account_file(
             CREDENTIALS_PATH, scopes=SCOPES)
     else:
-        token_path = Path(__file__).parent / "token.json"
+        token_path = Path.home() / ".config" / "reactome" / "token.json"
         creds = None
         if token_path.exists():
             creds = Credentials.from_authorized_user_file(str(token_path), SCOPES)
@@ -138,6 +144,7 @@ def build_services():
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
                 creds = flow.run_local_server(port=0)
+            token_path.parent.mkdir(parents=True, exist_ok=True)
             token_path.write_text(creds.to_json())
 
     return (build("drive", "v3", credentials=creds),

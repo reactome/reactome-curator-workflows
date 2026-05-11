@@ -296,6 +296,10 @@ a contacts table, and a live folder inventory tree. Requires Python 3 and the
 Google API client libraries; uses OAuth user credentials by default (service account
 optional). Supports `--dry-run` (preview only) and `--depth N` (inventory depth).
 
+Credentials are stored at `~/.config/reactome/` on each user's local machine —
+outside the repo — so they are never committed or shared across users.
+Override the path via `GOOGLE_APPLICATION_CREDENTIALS` env var.
+
 Reference materials in skill directory:
 - `SKILL.md` — invocation instructions, prerequisites, error guide
 - `update_drive_readme.py` — Team Drive README regenerator script
