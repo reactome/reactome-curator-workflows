@@ -254,6 +254,26 @@ are dropped. Pre-curation draft, not a curated entry.
 
 ---
 
+### `/update-gdrive-readme`
+
+Regenerates the Reactome Team Drive README as a richly formatted Google Doc. On every
+run: clears the existing doc, walks the live Team Drive folder inventory via the Drive
+API, and rewrites the doc with styled headings, linked folder tables, a contacts table,
+and a live folder inventory tree.
+
+Requires Python 3 and the Google API client libraries. Uses OAuth user credentials by
+default — credentials are stored at `~/.config/reactome/` on each user's local machine
+and are never committed to the repo. Supports `--dry-run` (preview, no write) and
+`--depth N` (inventory depth, default 2).
+
+```
+/update-gdrive-readme
+/update-gdrive-readme --dry-run
+/update-gdrive-readme --depth 3
+```
+
+---
+
 ## Prerequisites by Skill
 
 | Skill | Requirements |
@@ -262,6 +282,7 @@ are dropped. Pre-curation draft, not a curated entry.
 | `/annotate-pathway-from-reviews-or-topic_name` | claude.ai Pro/Team/Enterprise (Projects) or Claude API; PubMed and PMC MCP servers recommended; internet access for Mode B |
 | `/generate-doi-batch` | DOIs.xlsx from Team Drive; Python 3 with `pandas` and `openpyxl` |
 | `/extract-reactions` | One or more review-article PDFs (absolute paths); internet access to `eutils.ncbi.nlm.nih.gov` |
+| `/update-gdrive-readme` | Python 3; `pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client`; OAuth credentials at `~/.config/reactome/credentials.json` |
 
 > **Note on `/extract-reactions` and NCBI access:** In Claude Code, `.claude/settings.json`
 > allowlists `eutils.ncbi.nlm.nih.gov` automatically. In claude.ai (browser), add it manually
@@ -349,9 +370,12 @@ reactome-curator-workflows/
         │   └── Reactome_RLE_Annotation_Reference_V94.md
         ├── extract-reactions/
         │   └── SKILL.md
-        └── generate-doi-batch/
+        ├── generate-doi-batch/
+        │   ├── SKILL.md
+        │   └── generate_crossref_xml.py
+        └── update-gdrive-readme/
             ├── SKILL.md
-            └── generate_crossref_xml.py
+            └── update_drive_readme.py
 ```
 
 ---
