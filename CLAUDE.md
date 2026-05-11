@@ -48,9 +48,12 @@ reactome-curator-workflows/
         ├── extract-reactions/
         │   ├── SKILL.md                                   ← /extract-reactions
         │   └── (extract-reactions.zip — archived copy in parent skills/ dir)
-        └── generate-doi-batch/
-            ├── SKILL.md                                   ← /generate-doi-batch
-            └── generate_crossref_xml.py                  ← DOI batch XML generator script
+        ├── generate-doi-batch/
+        │   ├── SKILL.md                                   ← /generate-doi-batch
+        │   └── generate_crossref_xml.py                  ← DOI batch XML generator script
+        └── update-gdrive-readme/
+            ├── SKILL.md                                   ← /update-gdrive-readme
+            └── update_drive_readme.py                    ← Team Drive README regenerator script
 ```
 
 ---
@@ -282,6 +285,20 @@ All fields requiring these steps are marked **PENDING CURATOR VERIFICATION** in 
 Runs `generate_crossref_xml.py` to produce a CrossRef DOI batch XML file
 for a release version. Requires DOIs.xlsx locally and Python 3 + pandas.
 Handles input validation, error interpretation, and post-run checklist.
+
+---
+
+### `/update-gdrive-readme`
+Regenerates the Reactome Team Drive README as a richly formatted Google Doc.
+On every run: clears the existing doc, walks the live Team Drive folder inventory
+via the Drive API, and rewrites the doc with styled headings, linked folder tables,
+a contacts table, and a live folder inventory tree. Requires Python 3 and the
+Google API client libraries; uses OAuth user credentials by default (service account
+optional). Supports `--dry-run` (preview only) and `--depth N` (inventory depth).
+
+Reference materials in skill directory:
+- `SKILL.md` — invocation instructions, prerequisites, error guide
+- `update_drive_readme.py` — Team Drive README regenerator script
 
 ---
 
