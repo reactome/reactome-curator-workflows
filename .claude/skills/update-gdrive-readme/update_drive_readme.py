@@ -62,8 +62,8 @@ SKIP_FOLDER_TITLES = {"Google Documentation Migration"}
 
 # Top-level folder metadata (purpose, audience, Drive folder ID).
 FOLDER_META = {
-    "Admin - Internal":             ("NIH grant materials, renewal docs, job postings, subscriptions", "PI / admin leads",               "1EnesPT4enJifPjsOwV7nDPa0NNW53FCF"),
-    "Admin":                        ("Legacy general admin (pre-2022)",                                "PI / admin leads",               "1TpnqN-kIXvJhHnbx1U4g-nhkApsW0q1V"),
+    "Admin - Internal":             ("Budget and other PII material",                                                                              "PI / admin leads",               "1EnesPT4enJifPjsOwV7nDPa0NNW53FCF"),
+    "Admin":                        ("Grants, internal management, including teleconferences, group procedures, and compliance",                "PI / admin leads",               "1TpnqN-kIXvJhHnbx1U4g-nhkApsW0q1V"),
     "Curation":                     ("Active curation projects, standards, training, QA materials",   "All team members",               "13mstCTkLINdyJNAjORxzGw8Kh6C0wwYj"),
     "Development":                  ("Software and tooling work",                                     "All team members",               "1U1Dmk1G7IJLcbZElvaoLdcpkpjE3J0-b"),
     "Documentation":                ("Internal documentation",                                        "All team members",               "1JhxhxjzDRjblmP-td1VFLxwaQRU7J6hm"),
@@ -76,11 +76,11 @@ FOLDER_META = {
 }
 
 CONTACTS = [
-    ("Editor-in-Chief",       "Marc Gillespie",    "SJU",      "gillespm@stjohns.edu"),
     ("PI (OICR)",             "Lincoln Stein",     "OICR",     "lstein@oicr.on.ca"),
     ("PI (EMBL-EBI)",         "Henning Hermjakob", "EMBL-EBI", "HenningHermjakob@gmail.com"),
+    ("PI (OHSU)",             "Guanming Wu",       "OHSU",     "guanmingwu@gmail.com"),
+    ("PI (SJU/NYU)",          "Marc Gillespie",    "SJU",      "gillespm@stjohns.edu"),
     ("Curation lead (NYU)",   "Lisa Matthews",     "NYU",      "lmatthews.nyumc@gmail.com"),
-    ("Software lead (OHSU)",  "Guanming Wu",       "OHSU",     "guanmingwu@gmail.com"),
     ("Software lead (OICR)",  "Adam Wright",       "OICR",     "adam.j.wright82@gmail.com"),
     ("Outreach coordinator",  "Nancy Li",          "OICR",     "nancy.li@reactome.org"),
 ]
@@ -301,7 +301,7 @@ class DocBuilder:
         self._para_style(s, "NORMAL_TEXT")
 
     def rule(self):
-        s, e = self._insert("\u2500" * 68 + "\n")
+        s, e = self._insert("\u2500" * 40 + "\n")
         self._text_style(s, e - 1, size=7, fg=GREY)
         self._para_style(s, "NORMAL_TEXT", space_above=6, space_below=6)
 
@@ -442,11 +442,8 @@ def build_document(doc: DocBuilder, nodes: list):
 
     detail = [
         ("Admin - Internal",
-         "Restricted to PI and administrative leads.",
-         [("Renewal 2027–2032",        "NIH R01 renewal materials"),
-          ("Change of PI: NYU to SJU", "administrative transition documents"),
-          ("Job postings",             "open and past position materials"),
-          ("Subscriptions",            "software/service subscription tracking")]),
+         "Budget and other PII material. Restricted to PI and administrative leads.",
+         []),
 
         ("Curation",
          "Main working area for all curators (~30 sub-folders).",
@@ -484,9 +481,6 @@ def build_document(doc: DocBuilder, nodes: list):
           ("Pipeline sub-projects",    "Pipeline refactoring, Release Pipeline Improvements, Orthology prediction overhaul, AWS migration changes"),
           ("Supporting",               "BFRHyperlinks, Stable_IDs, X-refs, Release repository cleanup")]),
 
-        ("Admin - Internal > Renewal 2027–2032",
-         "NIH renewal grant materials. Access restricted to PI and named co-investigators.",
-         []),
     ]
 
     for folder_name, description, bullets in detail:
