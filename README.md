@@ -276,9 +276,7 @@ and are never committed to the repo. Supports `--dry-run` (preview, no write) an
 
 ### `/reactome-qa-tracker`
 
-End-to-end QA workflow for release preparation. Runs `compare_dirs.sh` against two
-QA output directories (old version vs. new slice), filters out developer-only and
-backlog sections using a curator-vetted skip list, and produces a polished multi-sheet
+A workflow for the preparation of the release QA tracker dashboard. Uses Joel's compare directories sbash script. Runs `compare_dirs.sh` against two QA output directories (old version vs. new slice), filters out developer-only and backlog sections using a curator-vetted skip list, and produces a polished multi-sheet
 `.xlsx` curator tracker with Status dropdowns (`Not Done` / `Fixed` / `Skipped`),
 color-coded fill, and a Comments column on every data row.
 
