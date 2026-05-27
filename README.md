@@ -274,6 +274,35 @@ and are never committed to the repo. Supports `--dry-run` (preview, no write) an
 
 ---
 
+### `/reactome-qa-tracker`
+
+End-to-end QA workflow for release preparation. Runs `compare_dirs.sh` against two
+QA output directories (old version vs. new slice), filters out developer-only and
+backlog sections using a curator-vetted skip list, and produces a polished multi-sheet
+`.xlsx` curator tracker with Status dropdowns (`Not Done` / `Fixed` / `Skipped`),
+color-coded fill, and a Comments column on every data row.
+
+Can also start from an existing comparison file — supply a Google Sheets URL or an
+uploaded `.xlsx` / `.csv` instead of running the script.
+
+**Workflow:**
+
+1. Provide `OLD_DIR` and `NEW_DIR` (e.g. `/data/qa/v96` and `/data/qa/v97_slice1`) —
+   version labels are extracted from the directory names automatically.
+2. `compare_dirs.sh` runs once per QA tool subdirectory (`commandlinerunner/`,
+   `diagram-qa/`, `graph-qa/`, `release-qa/`); only new lines are captured.
+3. Skip rules remove developer-only files (large compartment/species backlogs,
+   GT graph-integrity files, DT diagram auto-fix files) and row-level noise
+   (`markerReference`/cell entries, UniProt/Interactions Importer rows).
+4. Output: `<NewVersion>_QA_Curator_Tracker.xlsx` — one sheet per tool group
+   plus an Overview with a status legend and sheet directory.
+
+```
+/reactome-qa-tracker
+```
+
+---
+
 ## Prerequisites by Skill
 
 | Skill | Requirements |
@@ -283,6 +312,7 @@ and are never committed to the repo. Supports `--dry-run` (preview, no write) an
 | `/generate-doi-batch` | DOIs.xlsx from Team Drive; Python 3 with `pandas` and `openpyxl` |
 | `/extract-reactions` | One or more review-article PDFs (absolute paths); internet access to `eutils.ncbi.nlm.nih.gov` |
 | `/update-gdrive-readme` | Python 3; `pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client`; OAuth credentials at `~/.config/reactome/credentials.json` |
+| `/reactome-qa-tracker` | `compare_dirs.sh` (in this repo); Python 3 with `openpyxl`; two QA output directories (or an existing comparison file) |
 
 > **Note on `/extract-reactions` and NCBI access:** In Claude Code, `.claude/settings.json`
 > allowlists `eutils.ncbi.nlm.nih.gov` automatically. In claude.ai (browser), add it manually
@@ -373,9 +403,11 @@ reactome-curator-workflows/
         ├── generate-doi-batch/
         │   ├── SKILL.md
         │   └── generate_crossref_xml.py
-        └── update-gdrive-readme/
-            ├── SKILL.md
-            └── update_drive_readme.py
+        ├── update-gdrive-readme/
+        │   ├── SKILL.md
+        │   └── update_drive_readme.py
+        └── reactome-qa-tracker/
+            └── SKILL.md
 ```
 
 ---
