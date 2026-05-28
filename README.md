@@ -276,23 +276,33 @@ and are never committed to the repo. Supports `--dry-run` (preview, no write) an
 
 ### `/reactome-qa-tracker`
 
-A workflow for the preparation of the release QA tracker dashboard. Uses Joel's compare directories sbash script. Runs `compare_dirs.sh` against two QA output directories (old version vs. new slice), filters out developer-only and backlog sections using a curator-vetted skip list, and produces a polished multi-sheet
-`.xlsx` curator tracker with Status dropdowns (`Not Done` / `Fixed` / `Skipped`),
-color-coded fill, and a Comments column on every data row.
+Runs `compare_dirs.sh` against two QA output directories (old version vs. new
+slice), filters out developer-only and backlog sections using a curator-vetted
+skip list, presents a per-category intermediate review for approval, and produces
+a polished multi-sheet `.xlsx` curator tracker with Status dropdowns
+(`Not Done` / `Fixed` / `Skipped`), color-coded fill, and a Comments column on
+every data row.
 
-Can also start from an existing comparison file — supply a Google Sheets URL or an
-uploaded `.xlsx` / `.csv` instead of running the script.
+Can also start from an existing comparison file — supply a Google Sheets URL or
+an uploaded `.xlsx` / `.csv` instead of running the script.
 
 **Workflow:**
 
-1. Provide `OLD_DIR` and `NEW_DIR` (e.g. `/data/qa/v96` and `/data/qa/v97_slice1`) —
-   version labels are extracted from the directory names automatically.
-2. `compare_dirs.sh` runs once per QA tool subdirectory (`commandlinerunner/`,
-   `diagram-qa/`, `graph-qa/`, `release-qa/`); only new lines are captured.
-3. Skip rules remove developer-only files (large compartment/species backlogs,
-   GT graph-integrity files, DT diagram auto-fix files) and row-level noise
-   (`markerReference`/cell entries, UniProt/Interactions Importer rows).
-4. Output: `<NewVersion>_QA_Curator_Tracker.xlsx` — one sheet per tool group
+1. Provide `OLD_DIR` and `NEW_DIR` — version labels are taken from the directory
+   basenames. Handles directory alias mapping (`command-line-runner` →
+   `commandlinerunner`, `diagram-converter` → `diagram-qa`).
+2. `compare_dirs.sh` (included in the skill directory) runs once per QA tool
+   subdirectory; output is captured to `/tmp/<tool>_comparison.txt`.
+3. **Intermediate review** — the skill pauses and presents a summary of included
+   vs. skipped files per tool category and waits for curator confirmation before
+   building the workbook.
+4. Skip rules remove developer-only files and backlogs. Curator-actionable files
+   retained by default: `Mandatory_Attributes`, `DT701-ReactionParticipantsMismatch`,
+   `GT037-LiteratureReferenceRelationshipDuplication`,
+   `GT090-CatalystActivityCompartmentDoesNotMatchReactionCompartment`,
+   `Entities_With_CoV_Species_Without_Corresponding_Disease`,
+   `ReactionlikeEvent_Regulations_Not_Reviewed`, `Review_Status`.
+5. Output: `<NewVersion>_QA_Curator_Tracker.xlsx` — one sheet per tool group
    plus an Overview with a status legend and sheet directory.
 
 ```
@@ -310,7 +320,7 @@ uploaded `.xlsx` / `.csv` instead of running the script.
 | `/generate-doi-batch` | DOIs.xlsx from Team Drive; Python 3 with `pandas` and `openpyxl` |
 | `/extract-reactions` | One or more review-article PDFs (absolute paths); internet access to `eutils.ncbi.nlm.nih.gov` |
 | `/update-gdrive-readme` | Python 3; `pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client`; OAuth credentials at `~/.config/reactome/credentials.json` |
-| `/reactome-qa-tracker` | `compare_dirs.sh` (in this repo); Python 3 with `openpyxl`; two QA output directories (or an existing comparison file) |
+| `/reactome-qa-tracker` | `compare_dirs.sh` (in skill directory); Python 3 with `openpyxl`; two QA output directories (or an existing comparison file) |
 
 > **Note on `/extract-reactions` and NCBI access:** In Claude Code, `.claude/settings.json`
 > allowlists `eutils.ncbi.nlm.nih.gov` automatically. In claude.ai (browser), add it manually
@@ -405,7 +415,8 @@ reactome-curator-workflows/
         │   ├── SKILL.md
         │   └── update_drive_readme.py
         └── reactome-qa-tracker/
-            └── SKILL.md
+            ├── SKILL.md
+            └── compare_dirs.sh
 ```
 
 ---
