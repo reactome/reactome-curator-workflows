@@ -55,7 +55,8 @@ reactome-curator-workflows/
         │   ├── SKILL.md                                   ← /update-gdrive-readme
         │   └── update_drive_readme.py                    ← Team Drive README regenerator script
         └── reactome-qa-tracker/
-            └── SKILL.md                                   ← /reactome-qa-tracker
+            ├── SKILL.md                                   ← /reactome-qa-tracker
+            └── compare_dirs.sh                            ← QA directory comparison script
 ```
 
 ---
@@ -333,33 +334,33 @@ through to DOI URLs or blanks. Pre-curation draft, not a curated entry.
 
 ### `/reactome-qa-tracker`
 End-to-end QA workflow: runs `compare_dirs.sh` against two QA output directories
-(old version vs. new slice), filters out developer-only sections, and produces a
-polished multi-sheet curator tracker workbook (.xlsx). Can also be used starting
-from existing comparison files (Google Sheets URL or uploaded .xlsx/.csv).
+(old version vs. new slice), filters out developer-only sections, presents a
+per-category intermediate review for curator approval, and produces a polished
+multi-sheet curator tracker workbook (.xlsx). Can also be used starting from
+existing comparison files (Google Sheets URL or uploaded .xlsx/.csv).
 
 **Workflow phases:**
 
-1. **Ask** for OLD_DIR and NEW_DIR (e.g. `/data/qa/v96` and `/data/qa/v97_slice1`).
-   Extracts version labels from directory basenames (e.g. "V96 vs V97 Slice 1").
-2. **Run** `compare_dirs.sh` once per QA tool subdirectory
-   (`commandlinerunner/`, `diagram-qa/`, `graph-qa/`, `release-qa/`) or once on
-   a flat directory, capturing new-line output for each file.
-3. **Filter** using skip rules from the QA notes:
-   - commandlinerunner: skip `Reaction_Compartment`, `PathwayEvents_Species_Mismatch`,
-     `Complex_Compartment_Inconsistency`, `Reaction_Participants_Species_Mismatch`,
-     `Extra_Compartments_In_Entity_Set_Or_Members`
-   - diagram-qa: skip `DT113-ReactionShapeMismatch` (volume; handled by diagram team),
-     `DT114-ReplacedNodeAttachmentLabel` (auto-fix; not curator-actionable)
-   - graph-qa: skip GT018, GT022, GT027, GT033, GT036, GT048, GT049, GT053, GT101
-   - release-qa: skip `One_Hop_Circular_Reference` (all markerReference/cell rows),
-     `Human_Reactions_Without_Disease_And_Have_NonHuman_PhysicalEntities` (developer backlog)
-   - Row-level: drop any row involving `markerReference`/cell or UniProt/Interactions Importer
-4. **Produce** `<NewVersion>_QA_Curator_Tracker.xlsx` — one sheet per tool group,
+1. **Ask** for OLD_DIR and NEW_DIR. Handles directory alias mapping
+   (`command-line-runner` → commandlinerunner, `diagram-converter` → diagram-qa).
+2. **Run** `compare_dirs.sh` (included in skill directory) once per QA tool
+   subdirectory, capturing output to `/tmp/<tool>_comparison.txt`.
+3. **Intermediate review** — present a summary of included vs. skipped files per
+   tool category and **wait for curator confirmation** before building the workbook.
+4. **Filter** using skip rules (see SKILL.md for full list). Curator-actionable
+   files kept: `Mandatory_Attributes`, `DT701-ReactionParticipantsMismatch`,
+   `GT037-LiteratureReferenceRelationshipDuplication`,
+   `GT090-CatalystActivityCompartmentDoesNotMatchReactionCompartment`,
+   `Entities_With_CoV_Species_Without_Corresponding_Disease`,
+   `ReactionlikeEvent_Regulations_Not_Reviewed`, `Review_Status`, plus any
+   additional files with new curator-actionable content.
+5. **Produce** `<NewVersion>_QA_Curator_Tracker.xlsx` — one sheet per tool group,
    plus an Overview. Every data row gets a **Status** dropdown
    (`Not Done` / `Fixed` / `Skipped`) with color-coded fill and a **Comments** column.
 
-**Dependencies:** `compare_dirs.sh` (in this repo), `openpyxl`, Google Drive fetch
-tool (for Sheets URLs), `present_files` tool (for delivery in claude.ai Projects).
+**Dependencies:** `compare_dirs.sh` (in `.claude/skills/reactome-qa-tracker/`),
+`openpyxl`, Google Drive fetch tool (for Sheets URLs),
+`present_files` tool (for delivery in claude.ai Projects).
 
 ---
 
