@@ -274,6 +274,29 @@ and are never committed to the repo. Supports `--dry-run` (preview, no write) an
 
 ---
 
+### `/reactome-neo4j-ols-setup`
+
+One-time setup guide and quarterly update SOP for running a local Reactome Neo4j
+database connected to Claude Desktop via MCP, plus the EBI OLS MCP server for live
+ontology lookups. Covers Docker setup, `neo4j-mcp` binary installation, Claude Desktop
+config, and the update script for each quarterly Reactome release.
+
+**What you get once configured:**
+
+- Query the Reactome graph in plain English — Claude translates to Cypher automatically
+- Live ontology lookups (GO, HP, ChEBI, EFO, 300+ ontologies) without hallucinated accessions
+
+**Requirements:** Claude Desktop (Pro plan), Docker Desktop, Node.js, `neo4j-mcp` binary,
+`uv` Python package manager.
+
+See the skill for the full step-by-step install, Claude Desktop config file, troubleshooting
+table, and example queries.
+
+This skill is a one-time setup guide, not a command you invoke during curation — follow it
+once, then use Claude Desktop directly for all Neo4j and OLS queries thereafter.
+
+---
+
 ### `/reactome-qa-tracker`
 
 Runs `compare_dirs.sh` against two QA output directories (old version vs. new
@@ -321,6 +344,7 @@ an uploaded `.xlsx` / `.csv` instead of running the script.
 | `/extract-reactions` | One or more review-article PDFs (absolute paths); internet access to `eutils.ncbi.nlm.nih.gov` |
 | `/update-gdrive-readme` | Python 3; `pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client`; OAuth credentials at `~/.config/reactome/credentials.json` |
 | `/reactome-qa-tracker` | `compare_dirs.sh` (in skill directory); Python 3 with `openpyxl`; two QA output directories (or an existing comparison file) |
+| `/reactome-neo4j-ols-setup` | Claude Desktop (Pro plan); Docker Desktop; Node.js; `neo4j-mcp` binary (github.com/neo4j/mcp/releases); `uv` Python package manager |
 
 > **Note on `/extract-reactions` and NCBI access:** In Claude Code, `.claude/settings.json`
 > allowlists `eutils.ncbi.nlm.nih.gov` automatically. In claude.ai (browser), add it manually
@@ -414,9 +438,12 @@ reactome-curator-workflows/
         ├── update-gdrive-readme/
         │   ├── SKILL.md
         │   └── update_drive_readme.py
-        └── reactome-qa-tracker/
-            ├── SKILL.md
-            └── compare_dirs.sh
+        ├── reactome-qa-tracker/
+        │   ├── SKILL.md
+        │   └── compare_dirs.sh
+        └── reactome-neo4j-ols-setup/
+            ├── SKILL.md                                   ← /reactome-neo4j-ols-setup
+            └── update_reactome.sh                         ← quarterly DB update script
 ```
 
 ---

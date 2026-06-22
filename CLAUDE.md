@@ -54,9 +54,12 @@ reactome-curator-workflows/
         ├── update-gdrive-readme/
         │   ├── SKILL.md                                   ← /update-gdrive-readme
         │   └── update_drive_readme.py                    ← Team Drive README regenerator script
-        └── reactome-qa-tracker/
-            ├── SKILL.md                                   ← /reactome-qa-tracker
-            └── compare_dirs.sh                            ← QA directory comparison script
+        ├── reactome-qa-tracker/
+        │   ├── SKILL.md                                   ← /reactome-qa-tracker
+        │   └── compare_dirs.sh                            ← QA directory comparison script
+        └── reactome-neo4j-ols-setup/
+            ├── SKILL.md                                   ← /reactome-neo4j-ols-setup
+            └── update_reactome.sh                         ← quarterly DB update script
 ```
 
 ---
@@ -361,6 +364,28 @@ existing comparison files (Google Sheets URL or uploaded .xlsx/.csv).
 **Dependencies:** `compare_dirs.sh` (in `.claude/skills/reactome-qa-tracker/`),
 `openpyxl`, Google Drive fetch tool (for Sheets URLs),
 `present_files` tool (for delivery in claude.ai Projects).
+
+---
+
+### `/reactome-neo4j-ols-setup`
+One-time setup guide and quarterly update SOP for running a local Reactome Neo4j database
+connected to Claude Desktop via the `neo4j-mcp` MCP server, plus the EBI OLS MCP server
+for live ontology lookups. Covers Docker setup, binary installation, Claude Desktop config,
+troubleshooting, and the quarterly update script.
+
+**What it enables:**
+- Plain-English queries against the Reactome graph database (translated to Cypher automatically)
+- Live ontology term lookups (GO, HP, ChEBI, EFO, 300+ ontologies) without hallucinated accessions
+
+**Requirements:** Claude Desktop (Pro plan), Docker Desktop, Node.js, `neo4j-mcp` binary
+(github.com/neo4j/mcp/releases), `uv` Python package manager.
+
+This is a setup guide, not a curation command — follow it once, then use Claude Desktop
+directly for Neo4j and OLS queries.
+
+Reference materials in skill directory:
+- `SKILL.md` — full step-by-step setup, config file, troubleshooting table, example queries
+- `update_reactome.sh` — quarterly database update script
 
 ---
 
