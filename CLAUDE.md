@@ -19,7 +19,7 @@ This repo is curator-driven; if you develop a workflow worth sharing, open a PR.
 reactome-curator-workflows/
 ├── CLAUDE.md                                              ← you are here
 ├── README.md                                              ← setup instructions for new users
-├── Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_3.docx  ← full onboarding guide
+├── Reactome_CuratorWorkflows_ClaudeCode_Guide.docx       ← full onboarding guide
 ├── .gitignore
 ├── chrome-extensions/
 │   └── pmid-tagger/                                      ← Chrome extension: prefix PDF downloads with PMID-<id>_

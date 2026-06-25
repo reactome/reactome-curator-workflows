@@ -17,7 +17,7 @@ See `CLAUDE.md` for full project context.
 
 Full setup and usage instructions are in:
 
-**[Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_3.docx](./Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_3.docx)**
+**[Reactome_CuratorWorkflows_ClaudeCode_Guide.docx](./Reactome_CuratorWorkflows_ClaudeCode_Guide.docx)**
 
 This covers one-time prerequisites, cloning the repository, running each skill, and
 how to add new skills. Start here if you are setting up for the first time.
@@ -393,7 +393,7 @@ Go to a fresh Google Sheet then open the extension:
 5. Open a PR with a brief description of what the skill does and when to use it
 
 For detailed instructions on writing and committing a new skill, see the full guide
-(`Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_3.docx`).
+(`Reactome_CuratorWorkflows_ClaudeCode_Guide.docx`).
 
 Suggestions for improving `annotate-pathway-from-reviews-or-topic_name` — including
 changes to the system prompt or the RLE annotation reference file — are welcome via
@@ -409,7 +409,7 @@ guide version.
 reactome-curator-workflows/
 ├── CLAUDE.md                                              ← project context for Claude Code
 ├── README.md                                              ← this file
-├── Reactome_CuratorWorkflows_ClaudeCode_Guide_v1_3.docx  ← full setup guide
+├── Reactome_CuratorWorkflows_ClaudeCode_Guide.docx       ← full setup guide
 ├── .gitignore
 └── .claude/
     ├── settings.json                                      ← Claude Code host allowlist
