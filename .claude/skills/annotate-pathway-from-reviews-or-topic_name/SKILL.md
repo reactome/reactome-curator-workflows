@@ -78,20 +78,36 @@ The curator describes a biological process, pathway, or molecular mechanism they
 
 This assistant will then:
 
-**Step B1 — Literature search:** Use web_search to identify the highest-quality primary and review literature covering the topic. Prioritise:
+**Step B1 — Literature search:** Use web_search to identify the highest-quality primary and review literature covering the topic. web_search is the right tool *here* — discovery is a relevance/prominence ranking problem (citation impact, journal, recency) that a general search engine does well and a raw PubMed query does not. Prioritise:
 - Recent comprehensive reviews (to map the landscape and identify key primary papers)
 - Landmark primary papers providing direct experimental evidence for the core mechanistic steps
 - Human experimental evidence preferentially; note where only non-human evidence exists
 
 Search strategy: run multiple queries combining the topic keywords with terms such as "mechanism", "pathway", "biochemistry", "crystal structure", "in vitro reconstitution", "co-immunoprecipitation" to surface papers with direct experimental evidence.
 
-**Step B2 — Candidate reference list:** Present the curator with a ranked candidate reference list before proceeding. Format:
+**Recall pass (optional but recommended):** complement web_search with one PubMed
+ESearch restricted to recent reviews, so no authoritative review is missed —
+`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=<topic keywords>+AND+Review[PT]+AND+<recent-year-range>[DP]&retmode=json&retmax=20`
+then ESummary the returned ids for titles. Use this for completeness only; keep
+web_search's ranking for prioritisation.
+
+**Step B1b — Resolve every candidate PMID authoritatively (BEFORE B2).** Do NOT lift
+a PMID from a web_search snippet. Any PMID that will appear in the B2 list must first
+be resolved and confirmed through NCBI E-utilities exactly as in the Stage-3 protocol
+(batched ESummary for PMIDs; ESearch `[AID]` for DOIs; single-match
+`[TITL]+[AU]+[DP]` ESearch otherwise) and carry a `pmid_source` tag. A candidate whose
+PMID will not resolve is shown **without** a PMID (citation + DOI only) — never with an
+unverified one. This applies the "any PMID shown to the curator is E-utilities-verified"
+rule at the candidate-list stage, not just at final citation.
+
+**Step B2 — Candidate reference list:** Present the curator with a ranked candidate reference list before proceeding. Every listed PMID is one resolved in B1b (with its `pmid_source`); unresolved candidates appear without a PMID. Format:
 
 ```
 Proposed references for: [topic name]
 -------------------------------------------------------
 [N] [First author et al., Year] — [Journal]
-    PMID: https://pubmed.ncbi.nlm.nih.gov/[PMID]/
+    PMID: https://pubmed.ncbi.nlm.nih.gov/[PMID]/   (source: esummary:pmid / esearch:doi / esearch:title-author)
+          — or, if unresolved: "no verified PMID; DOI: [doi]"
     Type: Primary paper / Review
     Rationale: [one sentence — what mechanistic steps this
                 paper covers and why it is prioritised]
@@ -308,32 +324,56 @@ For inferred human reactions paired with a non-human or chimeric reaction: execu
 Work through subpathways in the order presented in Stage 2. Present all citation blocks for each subpathway before moving to the next. After all subpathways are complete, stop and request curator review of the full output.
 
 
-## MANDATORY REFERENCE VERIFICATION PROTOCOL (10 STEPS)
+## MANDATORY REFERENCE VERIFICATION PROTOCOL (10 STEPS, via NCBI E-utilities)
 NON-NEGOTIABLE. Executed in Stage 3 only.
 
+**Resolve and verify every PMID against the authoritative NCBI E-utilities API
+(`eutils.ncbi.nlm.nih.gov`) — NOT `web_search`.** E-utilities returns the canonical
+PubMed record as JSON, so five-field matching is exact rather than inferred from a
+search page, and it **batches**: dozens of references verify in ~2 calls instead of
+one search each. This repo allowlists `eutils.ncbi.nlm.nih.gov` in
+`.claude/settings.json`, so the calls run without a permission prompt. (This mirrors
+the resolution method used by the `extract-reactions` skill.)
+
 ### Core failure mode to prevent
-This assistant may accurately describe a paper's authors, journal, year, and content while generating a PMID that is entirely fabricated. This is a silent error — the paper description looks correct but the numeric ID links to a different or nonexistent record.
+This assistant may accurately describe a paper's authors, journal, year, and content while generating a PMID that is entirely fabricated. This is a silent error — the paper description looks correct but the numeric ID links to a different or nonexistent record. Authoritative E-utilities resolution + provenance tagging (below) is how we prevent it.
 
-### Required steps — execute BEFORE presenting any citation output:
+### A. Resolve PMIDs — authoritative and batched (execute BEFORE any citation output)
+Collect every candidate reference for the whole output first (supplied PMIDs, DOIs from review reference lists, or title+author), then resolve in as few calls as possible:
 
-1. **Search each PMID individually:** web_search("PMID [number] [first author surname] [key topic]"). Confirm the search returns a PubMed record matching the paper.
-2. **Match all five identifying fields:** (a) first author surname (b) journal name (c) year (d) key title words (e) specific experimental claim cited. If ANY field fails to match, the PMID is wrong. Correct it.
-3. **Flag unverified PMIDs:** Present as: [PMID UNVERIFIED — curator must confirm before use]. Never present an unverified PMID as correct.
-4. **Validate citation-to-reaction relevance:** Confirm the cited paper contains DIRECT evidence for the specific reaction — not merely a related topic. If the paper is a review, it fails this step; trace to the primary paper it cites.
-5. **All PMIDs as hyperlinks:** https://pubmed.ncbi.nlm.nih.gov/[PMID]/ . A broken or mismatched link constitutes an annotation error.
-6. **Fetch primary paper full text:** web_fetch on the PMC URL. If not open access, use web_search with specific experimental terms to find the relevant passage. If the paper was supplied as an uploaded PDF, read from the upload.
-7. **Locate and quote the specific experimental evidence sentence** from the PRIMARY paper (not the review). The sentence must include: (a) experimental method (co-IP, pulldown, in vitro reconstitution, enzymatic assay, cleavage assay, etc.) (b) specific proteins shown to interact or act (c) cell type or system used (d) figure number, if the evidence is presented in a figure.
-8. **Flag evidence quality mismatches:**
-   - Overexpression co-IP only -> flag: OVEREXP ONLY
-   - Murine cells only -> flag: MURINE — non-human reaction + inferred human required
-   - Mixed species in vitro -> flag: CHIMERIC — chimeric reaction + inferred human required
-   - Indirect (KO/rescue) -> flag: INDIRECT — consider BBE
-   - Inconsistent with proposed reaction -> flag mismatch explicitly
-9. **Trace review reference number to primary paper (if input was a review):** Read the reference list entry for the superscript number cited by the review. Confirm the PMID matches all five fields from Step 2. If the curator supplied a PMID directly, confirm it maps to the specific reaction for which it is cited.
-10. **Flag evidence relevance mismatches:** If the primary paper does not directly support the specific mechanistic claim being annotated, flag: "EVIDENCE MISMATCH: PMID [N] cited for this reaction but [reason paper may not support specific claim]. Curator should identify the correct primary paper."
+1. **PMIDs you already have (curator-supplied or printed in a PDF) → one batched ESummary:**
+   `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=<pmid1,pmid2,...>&retmode=json`
+   For each `result.<pmid>`, read `title`, first author (`sortfirstauthor` / `authors[].name`), `fulljournalname` (or `source`), `pubdate`, and the DOI under `articleids`. This record is what you verify against — do **not** web_search a PMID.
+2. **DOIs (common in review reference lists) → one batched ESearch `[AID]`, then ESummary:**
+   `esearch.fcgi?db=pubmed&term=<doi1>[AID]+OR+<doi2>[AID]+OR+...&retmode=json&retmax=<N>` (URL-encode `/` as `%2F`; set `retmax` ≥ number of DOIs). ESummary the returned `idlist` to map DOI→PMID and pull metadata. Chunk if >~200 DOIs.
+3. **No PMID and no DOI, but title + first author → single-match ESearch:**
+   `esearch.fcgi?db=pubmed&term=<title-fragment>[TITL]+AND+<lastname>[AU]+AND+<year>[DP]&retmode=json` — use the first 6–10 distinctive title words (skip "the/of/and/in/for/to/with/on"), separated by `+`, **not** quoted; append `[DP]` year if known. **Adopt the PMID ONLY if `esearchresult.idlist` contains exactly one entry.** Zero or >1 → leave the PMID null; never pick one, never run a disambiguation follow-up, never guess.
+
+No NCBI API key is needed — one ESummary + one ESearch + a small per-ref tail stays under the ~3 req/sec unauthenticated limit. **Do not** call ELink/EFetch for resolution, and **do not** fall back to `web_search` to obtain a PMID. If a call fails / returns nothing / is ambiguous, that reference stays PMID-less and is flagged (step 3-provenance below).
+
+### B. Verify each resolved PMID
+4. **Five-field match against the ESummary record:** (a) first-author surname (b) journal (c) year (d) key title words (e) the specific experimental claim cited. If ANY fails, the PMID is wrong — re-resolve via A2/A3; do not keep it.
+5. **Relevance:** the record must be a paper with DIRECT evidence for THIS reaction, not merely a related topic. A **review fails this** — trace to the primary paper it cites and resolve that primary paper's DOI/title via A2/A3.
+6. **Present every PMID as a hyperlink** `https://pubmed.ncbi.nlm.nih.gov/[PMID]/`. A mismatched link is an annotation error.
+
+### C. Extract the evidence sentence (full text)
+7. **Fetch the primary paper's full text:** web_fetch the PMC article (the PMCID is in the ESummary `articleids`; EuropePMC full-text works for OA papers too). If paywalled, read the supplied PDF, or locate the passage with a targeted web_search of the specific experimental terms. (E-utilities resolves IDs; it does not return article bodies — full-text fetch is the one place web tools are still used.)
+8. **Quote the specific experimental evidence sentence** from the PRIMARY paper (not the review): (a) method (co-IP, pulldown, in vitro reconstitution, enzymatic/cleavage assay, etc.) (b) specific proteins (c) cell type or system (d) figure number if the evidence is in a figure.
+9. **Flag evidence-quality mismatches:** OVEREXP ONLY (overexpression co-IP only) · MURINE (→ non-human + inferred human) · CHIMERIC (→ chimeric + inferred human) · INDIRECT (KO/rescue → consider BBE) · inconsistent-with-reaction → flag explicitly.
+10. **Flag evidence-relevance mismatches:** "EVIDENCE MISMATCH: PMID [N] cited for this reaction but [reason]. Curator should identify the correct primary paper."
+
+### Provenance — every PMID carries a `pmid_source` tag
+Record, for each PMID, exactly how it was obtained. Allowed values:
+- `inline:<pdf basename>` — printed verbatim in a supplied PDF.
+- `esummary:pmid` — a supplied/inline PMID confirmed via batched ESummary (A1).
+- `esearch:doi` — resolved from an extracted DOI via ESearch `[AID]` + ESummary (A2).
+- `esearch:title-author` — single-match title+author ESearch (A3).
+- `null` — unresolved → **no PubMed URL**; present as `[PMID UNVERIFIED — curator must confirm before use]`.
+
+**A PMID with any other origin is fabricated and forbidden** — no PMIDs from memory/training, no guessing-from-author-and-year, no analogy to similar papers, no "high-confidence" exception, and no adopting a step-3 result that returned >1 match. If resolution fails, ship the **DOI URL (or a blank)** rather than an unverified PMID — a correct DOI beats a plausible-but-wrong PMID.
 
 ### When verification reveals a wrong PMID:
-"PMID CORRECTED: Previously cited as [wrong PMID], verified correct PMID is [correct PMID] — [Author Year Journal]." Do not silently swap the number.
+"PMID CORRECTED: Previously cited as [wrong PMID], verified correct PMID is [correct PMID] — [Author Year Journal] (resolved via [esearch:doi | esearch:title-author])." Do not silently swap the number.
 
 
 ## CITATION FORMAT — MANDATORY
@@ -343,6 +383,7 @@ The citation block for every reaction must contain the verified primary PMID, th
 ```
 Reaction name:    [from Phase 1 hierarchy]
 Primary PMID:     https://pubmed.ncbi.nlm.nih.gov/[PMID]/
+PMID source:      esummary:pmid / esearch:doi / esearch:title-author / inline:<pdf>
 Primary PMC URL:  https://pmc.ncbi.nlm.nih.gov/articles/PMCXXXXXXX/
                   (or "Not open access — passage located via web_search")
 Authors/Year:     [First author et al., Year, Journal]
@@ -420,7 +461,7 @@ Do not insert approval stops between subpathways or between Phase 1 and Phase 2.
 | Topic search *(Mode B only)* | web_search to identify candidate primary and review literature; present ranked reference list with rationale. **STOP — wait for curator to confirm or modify reference list** |
 | Stage 1 | Read and triage references — fetch/read all confirmed papers (primary or review); if review: fetch primary papers cited for each claim; classify evidence; extract gene symbols, compartments, PTMs; determine species for each event |
 | Stage 2 | Hierarchy proposal — propose pathway tree with reaction names and types; non-human and chimeric reactions paired with inferred human reactions throughout; GO BP situation labels in plain text (no accessions); no database consultation. **Proceed immediately to Stage 3 — no approval gate** |
-| Stage 3 | Evidence verification (10 steps per reaction) — trace review citations to primary papers where needed; PMID verification; PMC full-text fetch; verbatim primary evidence sentences with figure numbers; standard citation format and inferred-human format; work through all subpathways without stopping. **STOP at end of all subpathways — curator reviews full output** |
+| Stage 3 | Evidence verification (10 steps per reaction) — trace review citations to primary papers where needed; **PMID resolution + verification via batched NCBI E-utilities (ESearch/ESummary), not web_search**; each PMID `pmid_source`-tagged; PMC/EuropePMC full-text fetch for the evidence sentence; verbatim primary evidence sentences with figure numbers; standard citation format and inferred-human format; work through all subpathways without stopping. **STOP at end of all subpathways — curator reviews full output** |
 
 
 ## OUT OF SCOPE FOR THIS VARIANT
@@ -435,4 +476,3 @@ The following are handled separately by the curator using their database tooling
 - Consistency checklist
 
 All fields requiring these steps are marked PENDING CURATOR VERIFICATION in this assistant's output.
-
