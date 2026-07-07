@@ -25,7 +25,7 @@ You need:
 
 - A Mac running **macOS Ventura (13) or later**. To check: Apple menu → About This Mac.  
 - An **Anthropic API key** issued from the Reactome organizational account.  
-  - Contact Marc Gillespie ([gillespm@stjohns.edu](mailto:gillespm@stjohns.edu)) to receive your key.  
+  - Contact the repo maintainer (Marc Gillespie) to receive your key.  
   - Log in at **platform.anthropic.com** → **API Keys** → **Create Key**.  
   - Copy it immediately — it looks like `sk-ant-api03-...` and will not be shown again.  
   - See the *Reactome API Key Setup Guide* for full instructions on obtaining and securing your key.
@@ -132,7 +132,7 @@ You should see your key printed. If you see a blank line, repeat the two command
 
 **Authentication note:** Claude Code offers two login methods — a Claude.ai subscription (OAuth, no per-token charges) and the Anthropic Console (API key, pay-as-you-go). For Reactome work, always use the API key method so usage bills to the shared organizational credit pool. When `ANTHROPIC_API_KEY` is set in your environment, it takes priority automatically. Run `/status` inside Claude Code at any time to confirm which credentials are active.
 
-**Security:** Your key is stored only on your local Mac in `~/.zshrc`. Never commit it to GitHub or share it in Slack or email.
+**Security:** Your key is stored only on your local Mac in `~/.zshrc`. Never commit it to GitHub or share it in chat or email.
 
 **Quick verification** — confirm the key is active and billing to the Reactome account:
 
@@ -312,7 +312,7 @@ New or updated skills are available immediately after pulling — no restart of 
 
 ## Contact
 
-- Repo maintainer: Marc Gillespie (NYU / SJU) — [gillespm@stjohns.edu](mailto:gillespm@stjohns.edu)  
-- Curation standards questions: Reactome curator Slack channel  
+- Repo maintainer: Marc Gillespie (SJU)  
+- Curation standards questions: consult Curator Guide V94  
 - Repo or skill questions: open a GitHub issue at [https://github.com/reactome/reactome-curator-workflows/issues](https://github.com/reactome/reactome-curator-workflows/issues)
 

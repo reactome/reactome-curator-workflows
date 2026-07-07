@@ -42,22 +42,22 @@ If any prerequisite is missing, stop and help the user resolve it before proceed
 
 ## Running the Script
 
-Basic usage — run from the directory containing generate_crossref_xml.py:
+Basic usage — run from the directory containing generate_crossref_xml.py.
+**Ask the curator for their depositor email first** — `--email` is required and
+has no default; it is the CrossRef depositor address for this submission, so use
+the address of the person running the deposit:
 
- python3 generate_crossref_xml.py V94
+ python3 generate_crossref_xml.py V94 --email you@institution.org
 
 This generates: V94.xml (or the version number extracted from the worksheet name)
 
 With options:
 
  # Specify DOIs.xlsx location explicitly
- python3 generate_crossref_xml.py V94 --excel /path/to/DOIs.xlsx
+ python3 generate_crossref_xml.py V94 --email you@institution.org --excel /path/to/DOIs.xlsx
 
  # Specify output file path
- python3 generate_crossref_xml.py V94 --output /path/to/output/V94_batch.xml
-
- # Override depositor email (default is gillespm@gmail.com)
- python3 generate_crossref_xml.py V94 --email depositor@reactome.org
+ python3 generate_crossref_xml.py V94 --email you@institution.org --output /path/to/output/V94_batch.xml
 
 On success, the script prints:
  - Output file path
@@ -128,9 +128,9 @@ The output XML conforms to CrossRef schema 5.3.1. Key construction details:
 - The script does not validate against the CrossRef XSD before writing output.
  If CrossRef rejects the batch, check the error message for schema violations
  and compare against https://data.crossref.org/schemas/crossref5.3.1.xsd
-- The default depositor email (gillespm@gmail.com) is the address registered
- with CrossRef for the Reactome depositor account. Override with --email only
- if this changes.
+- `--email` is required and sets the CrossRef depositor address for the batch.
+ There is no default — pass the address of the person running the deposit
+ (typically one registered with CrossRef for the Reactome depositor account).
 - The script is idempotent — running it twice for the same version overwrites
  the output file. The batch_id is version-derived (not timestamp-derived),
  so resubmissions will have the same batch_id. CrossRef treats resubmissions

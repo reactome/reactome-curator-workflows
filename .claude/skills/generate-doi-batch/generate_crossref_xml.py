@@ -3,10 +3,13 @@
 Generate CrossRef batch XML files for Reactome DOI deposits.
 
 Usage:
-    python generate_crossref_xml.py V94
-    python generate_crossref_xml.py V94 --output my_output.xml
-    python generate_crossref_xml.py V94 --email other@example.com
-    python generate_crossref_xml.py V94 --excel /path/to/DOIs.xlsx
+    python generate_crossref_xml.py V94 --email you@institution.org
+    python generate_crossref_xml.py V94 --email you@institution.org --output my_output.xml
+    python generate_crossref_xml.py V94 --email you@institution.org --excel /path/to/DOIs.xlsx
+
+--email is REQUIRED: it is the CrossRef depositor address for this submission,
+and there is no default. The person running the deposit should pass their own
+email so the submission and any CrossRef correspondence go to them.
 """
 
 import argparse
@@ -18,7 +21,6 @@ import pandas as pd
 
 
 DEPOSITOR_NAME = "Reactome"
-DEFAULT_EMAIL = "gillespm@gmail.com"
 SCHEMA_VERSION = "5.3.1"
 DATABASE_DOI = "10.3180/19341792"
 DATABASE_URL = "http://www.reactome.org"
@@ -31,9 +33,14 @@ def parse_args():
                         help="Path to DOIs.xlsx (default: DOIs.xlsx in same directory as script)")
     parser.add_argument("--output", default=None,
                         help="Output XML file path (default: <version_number>.xml)")
-    parser.add_argument("--email", default=DEFAULT_EMAIL,
-                        help=f"Depositor email address (default: {DEFAULT_EMAIL})")
-    return parser.parse_args()
+    parser.add_argument("--email", required=True,
+                        help="Depositor email address for this CrossRef submission "
+                             "(required; no default — use the address of the person "
+                             "running the deposit)")
+    args = parser.parse_args()
+    if "@" not in args.email or "." not in args.email.split("@")[-1]:
+        parser.error(f"--email does not look like a valid address: {args.email!r}")
+    return args
 
 
 def load_data(excel_path, worksheet):

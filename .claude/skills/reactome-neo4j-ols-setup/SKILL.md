@@ -96,8 +96,8 @@ Expected final output: `Done: 73 files, 3.176GiB processed.`
 ```bash
 docker run -d \
   --name reactome-neo4j \
-  -p 7474:7474 \
-  -p 7687:7687 \
+  -p 127.0.0.1:7474:7474 \
+  -p 127.0.0.1:7687:7687 \
   -e NEO4J_AUTH=none \
   -e NEO4J_dbms_default__database=graph.db \
   -e NEO4J_PLUGINS='["apoc"]' \
@@ -106,6 +106,12 @@ docker run -d \
   -v ~/reactome-neo4j/data:/data \
   neo4j:4.4
 ```
+
+> **Security note.** This container runs with authentication disabled
+> (`NEO4J_AUTH=none`) and APOC unrestricted, so the ports are published to
+> `127.0.0.1` only — the database is reachable from your machine but **not** from
+> the local network. Do not change these to `-p 7474:7474` / `-p 7687:7687`
+> (which bind to all interfaces) unless you also enable Neo4j authentication.
 
 Verify by opening http://localhost:7474 and running:
 
@@ -309,8 +315,8 @@ docker run --rm \
 ```bash
 docker run -d \
   --name reactome-neo4j \
-  -p 7474:7474 \
-  -p 7687:7687 \
+  -p 127.0.0.1:7474:7474 \
+  -p 127.0.0.1:7687:7687 \
   -e NEO4J_AUTH=none \
   -e NEO4J_dbms_default__database=graph.db \
   -e NEO4J_PLUGINS='["apoc"]' \

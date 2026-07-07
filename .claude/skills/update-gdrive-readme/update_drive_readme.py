@@ -75,14 +75,16 @@ FOLDER_META = {
     "Release":                      ("Release pipeline, SOPs, QA, calendars, post-mortems",           "All team members",               "16PB91JuVZvCU-JHJrIrPYxK9xy_4VpTR"),
 }
 
+# Email addresses are intentionally omitted — this file is in a public repo, so
+# it lists role/name/institution only. Look contacts up in the Team Drive directory.
 CONTACTS = [
-    ("PI (OICR)",             "Lincoln Stein",     "OICR",     "lstein@oicr.on.ca"),
-    ("PI (EMBL-EBI)",         "Henning Hermjakob", "EMBL-EBI", "HenningHermjakob@gmail.com"),
-    ("PI (OHSU)",             "Guanming Wu",       "OHSU",     "guanmingwu@gmail.com"),
-    ("PI (SJU/NYU)",          "Marc Gillespie",    "SJU",      "gillespm@stjohns.edu"),
-    ("Curation lead (NYU)",   "Lisa Matthews",     "NYU",      "lmatthews.nyumc@gmail.com"),
-    ("Software lead (OICR)",  "Adam Wright",       "OICR",     "adam.j.wright82@gmail.com"),
-    ("Outreach coordinator",  "Nancy Li",          "OICR",     "nancy.li@reactome.org"),
+    ("PI (OICR)",             "Lincoln Stein",     "OICR"),
+    ("PI (EMBL-EBI)",         "Henning Hermjakob", "EMBL-EBI"),
+    ("PI (OHSU)",             "Guanming Wu",       "OHSU"),
+    ("PI (SJU)",              "Marc Gillespie",    "SJU"),
+    ("Curation lead (NYU)",   "Lisa Matthews",     "NYU"),
+    ("Software lead (OICR)",  "Adam Wright",       "OICR"),
+    ("Outreach coordinator",  "Nancy Li",          "OICR"),
 ]
 
 KNOWN_ISSUES = [
@@ -146,6 +148,11 @@ def build_services():
                 creds = flow.run_local_server(port=0)
             token_path.parent.mkdir(parents=True, exist_ok=True)
             token_path.write_text(creds.to_json())
+            # Restrict the cached OAuth token to the owner (contains a refresh token).
+            try:
+                os.chmod(token_path, 0o600)
+            except OSError:
+                pass
 
     return (build("drive", "v3", credentials=creds),
             build("docs",  "v1", credentials=creds))
@@ -400,7 +407,7 @@ def build_document(doc: DocBuilder, nodes: list):
               ("Team Drive root", {"link": TEAM_DRIVE_URL, "fg": BLUE})])
     doc.para([("Last updated: ", {"bold": True}), (today, {})])
     doc.para([("Maintained by: ", {"bold": True}),
-              ("Editor-in-Chief — gillespm@stjohns.edu", {})])
+              ("Editor-in-Chief", {})])
     doc.blank()
     doc.para([
         ("This document is the authoritative map of the Reactome Team Drive. "
@@ -520,14 +527,12 @@ def build_document(doc: DocBuilder, nodes: list):
         [("Role",        {"bold": True})],
         [("Name",        {"bold": True})],
         [("Institution", {"bold": True})],
-        [("Email",       {"bold": True})],
     ]]
-    for role, name, inst, email in CONTACTS:
+    for role, name, inst in CONTACTS:
         ctbl.append([
             [(role,  {})],
             [(name,  {"bold": True})],
             [(inst,  {})],
-            [(email, {"link": f"mailto:{email}", "fg": BLUE} if email != "—" else {})],
         ])
     doc.table(ctbl)
 

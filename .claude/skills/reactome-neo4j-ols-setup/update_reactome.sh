@@ -35,8 +35,8 @@ echo ""
 echo "[4/4] Starting Neo4j container..."
 docker run -d \
   --name reactome-neo4j \
-  -p 7474:7474 \
-  -p 7687:7687 \
+  -p 127.0.0.1:7474:7474 \
+  -p 127.0.0.1:7687:7687 \
   -e NEO4J_AUTH=none \
   -e NEO4J_dbms_default__database=graph.db \
   -e NEO4J_PLUGINS='["apoc"]' \

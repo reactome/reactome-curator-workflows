@@ -161,11 +161,11 @@ and `reactome.org` (for `/build-reactome-illustration`).
 
 ## Team
 
-Marc Gillespie (NYU / SJU, repo maintainer) · Lisa Matthews (NYU) · Joel Weiser
+Marc Gillespie (SJU, repo maintainer) · Lisa Matthews (NYU) · Joel Weiser
 (OICR) · Guanming Wu (OHSU) · Adam Wright (OICR).
 
-Curation-standards questions: Curator Guide V94 or the Reactome curator Slack.
-Repo/skill questions: open an issue or contact Marc.
+Curation-standards questions: consult Curator Guide V94.
+Repo/skill questions: open a GitHub issue.
 
 ---
 

@@ -536,6 +536,6 @@ reactome-curator-workflows/
 
 ## Contact
 
-Repo maintainer: Marc Gillespie (NYU / SJU) — gillespm@stjohns.edu
-For curation standards questions: Reactome curator Slack channel
+Repo maintainer: Marc Gillespie (SJU)
+For curation standards questions: consult Curator Guide V94
 For repo/skill questions: open a GitHub issue

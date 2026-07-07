@@ -49,9 +49,15 @@ entity that has no library icon — surface the gap instead.
 import argparse
 import json
 import os
+import re
 import sys
 import urllib.parse
 import urllib.request
+
+# A valid icon id is exactly "R-ICO-" followed by digits. Enforcing this (rather
+# than a bare startswith) stops a crafted id like "R-ICO-../../x" from escaping
+# the download directory when composing the output path.
+ICO_ID_RE = re.compile(r"^R-ICO-\d+$")
 
 CONTENT_SERVICE = "https://reactome.org/ContentService"
 ICON_BASE = "https://reactome.org/icon"           # /<R-ICO-id>.svg  and  .png
@@ -246,7 +252,7 @@ def cmd_search(args):
 
 def cmd_fetch(args):
     ico_id = args.ico_id.strip()
-    if not ico_id.startswith("R-ICO-"):
+    if not ICO_ID_RE.match(ico_id):
         print(json.dumps({"error": f"not a valid icon id: {ico_id!r} (expected R-ICO-######)"}),
               file=sys.stderr)
         return 2
