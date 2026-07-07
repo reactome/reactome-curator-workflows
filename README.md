@@ -334,6 +334,52 @@ an uploaded `.xlsx` / `.csv` instead of running the script.
 
 ---
 
+### `/build-reactome-illustration`
+
+Builds a new biological pathway illustration in Reactome's **EHLD** (Enhanced
+High-Level Diagram) style from either a written description (**Mode A**) or an
+example image / sketch (**Mode B**). Every biological image part — proteins,
+complexes, small molecules, cells, organelles, receptors, ion channels,
+tissues — is an actual icon fetched **live from the Reactome Icon Library** via
+ContentService. The skill never hand-draws or invents an entity; anything the
+library does not cover is surfaced as a **gap**, not filled.
+
+**Per-request project directory.** The skill asks for (and creates) one
+directory per illustration request. Drop your sample / reference images there;
+all outputs are written back to the same directory, so each figure's inputs and
+outputs stay together. Suggested layout: `illustrations/<slug>/`.
+
+**Workflow:**
+
+1. Interpret the spec (Mode A description and/or Mode B image).
+2. Search the Icon Library per entity and present an **Icon Map** table for
+   approval — including a **Gaps** list and a layout sketch. **STOP** for
+   curator approval (this is where icon-mismatch risk lives).
+3. After approval: fetch approved icons, compose one **1366×768 SVG** with
+   subpathway `REGION-`/`OVERLAY-` active regions and Arial-Bold `#0F82BC`
+   pathway labels, per the official EHLD specification.
+
+**Outputs** (all in the request's project directory):
+
+- `<ST_ID-or-slug>.svg` — the composed EHLD illustration
+- `<slug>_icon_manifest.csv` — per-icon provenance + CC-BY 4.0 attribution
+- `<slug>_gaps.md` — entities with no library icon (candidate Icon Library
+  contributions)
+- `icons/` — the downloaded source SVGs
+
+The Reactome Icon Library is **CC-BY 4.0**; the manifest captures per-icon
+designer, curator, and ORCID for the required credit line. The SVG is a
+structured, attributed draft for hand-tuning in Adobe Illustrator (export with
+Font = SVG, Object IDs = Layer Names to preserve the region ids); real
+subpathway ST_IDs and validation against the live hierarchy are required before
+Pathway Browser ingestion.
+
+```
+/build-reactome-illustration
+```
+
+---
+
 ## Prerequisites by Skill
 
 | Skill | Requirements |
@@ -345,11 +391,17 @@ an uploaded `.xlsx` / `.csv` instead of running the script.
 | `/update-gdrive-readme` | Python 3; `pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client`; OAuth credentials at `~/.config/reactome/credentials.json` |
 | `/reactome-qa-tracker` | `compare_dirs.sh` (in skill directory); Python 3 with `openpyxl`; two QA output directories (or an existing comparison file) |
 | `/reactome-neo4j-ols-setup` | Claude Desktop (Pro plan); Docker Desktop; Node.js; `neo4j-mcp` binary (github.com/neo4j/mcp/releases); `uv` Python package manager |
+| `/build-reactome-illustration` | Python 3 (stdlib only); network access to `reactome.org` (icon search + download); a project directory for the request (and, for Mode B, a sample image) |
 
 > **Note on `/extract-reactions` and NCBI access:** In Claude Code, `.claude/settings.json`
 > allowlists `eutils.ncbi.nlm.nih.gov` automatically. In claude.ai (browser), add it manually
 > via **Settings → Capabilities → Domain allowlist**. Without it, PMID resolution falls through
 > to DOI URLs or blanks — PMIDs are never recovered from training data.
+
+> **Note on `/build-reactome-illustration` and Reactome access:** In Claude Code,
+> `.claude/settings.json` allowlists `reactome.org` automatically. In claude.ai (browser),
+> add it manually via **Settings → Capabilities → Domain allowlist**. Without it, icon search
+> and download will fail — icons are never fabricated from training data.
 
 ---
 
@@ -441,10 +493,17 @@ reactome-curator-workflows/
         ├── reactome-qa-tracker/
         │   ├── SKILL.md
         │   └── compare_dirs.sh
-        └── reactome-neo4j-ols-setup/
-            ├── SKILL.md                                   ← /reactome-neo4j-ols-setup
-            └── update_reactome.sh                         ← quarterly DB update script
+        ├── reactome-neo4j-ols-setup/
+        │   ├── SKILL.md                                   ← /reactome-neo4j-ols-setup
+        │   └── update_reactome.sh                         ← quarterly DB update script
+        └── build-reactome-illustration/
+            ├── SKILL.md                                   ← /build-reactome-illustration
+            └── reactome_icons.py                          ← Icon Library search/fetch helper
 ```
+
+> Generated illustration outputs live under `illustrations/<slug>/` (one directory
+> per request, holding sample images, the composed SVG, manifest, gaps file, and
+> downloaded icons). That directory is git-ignored — outputs are never committed.
 
 ---
 
