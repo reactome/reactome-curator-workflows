@@ -1,5 +1,5 @@
 ---
-name: build-reactome-illustration
+name: curation-build-illustration
 description: Build a new biological pathway illustration in Reactome's Enhanced High-Level Diagram (EHLD) style from a curator's written description or an example image/sketch. Every biological image part comes SOLELY from the Reactome Icon Library (searched and downloaded live via ContentService); the assistant composes a labelled 1366x768 SVG with pathway and subpathway labels following the official EHLD specification. Use when a curator wants a publication- or browser-ready pathway figure assembled from sanctioned Reactome icons rather than drawn from scratch.
 ---
 
@@ -30,7 +30,7 @@ against the live pathway hierarchy.
 
 ## Invocation
 
-    /build-reactome-illustration
+    /curation-build-illustration
 
 No arguments. The skill prompts for the inputs below.
 

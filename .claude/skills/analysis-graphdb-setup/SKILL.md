@@ -1,5 +1,5 @@
 ---
-name: reactome-neo4j-ols-setup
+name: analysis-graphdb-setup
 description: Step-by-step setup guide for a local Reactome Neo4j database connected to Claude Desktop via MCP, plus the EBI OLS MCP server for ontology lookups. Covers initial install, Docker configuration, quarterly database updates, and troubleshooting.
 ---
 

@@ -28,14 +28,14 @@ reactome-curator-workflows/
 └── .claude/
     ├── settings.json              ← Claude Code host/network allowlist
     └── skills/
-        ├── internal-module-review/                     ← /internal-module-review
+        ├── review-internal/                     ← /review-internal
         ├── annotate-pathway-from-reviews-or-topic_name/← /annotate-pathway-from-reviews-or-topic_name
         ├── extract-reactions/                          ← /extract-reactions
-        ├── generate-doi-batch/                         ← /generate-doi-batch
-        ├── update-gdrive-readme/                       ← /update-gdrive-readme
-        ├── reactome-qa-tracker/                        ← /reactome-qa-tracker
-        ├── reactome-neo4j-ols-setup/                   ← /reactome-neo4j-ols-setup
-        └── build-reactome-illustration/                ← /build-reactome-illustration
+        ├── release-doi-batch/                         ← /release-doi-batch
+        ├── admin-drive-readme/                       ← /admin-drive-readme
+        ├── release-qa-tracker/                        ← /release-qa-tracker
+        ├── analysis-graphdb-setup/                   ← /analysis-graphdb-setup
+        └── curation-build-illustration/                ← /curation-build-illustration
 ```
 
 Each skill directory holds its own `SKILL.md` plus any scripts, templates, and
@@ -69,7 +69,7 @@ references (PubMed IDs), and species (human by default; inferred for others).
 Reactions group into Pathways and higher-level Pathways. Every curated entity has a
 stable DB_ID and a human-readable ST_ID (e.g. `R-HSA-XXXXXXX`).
 
-Authoritative standards (copies bundled in `internal-module-review/`):
+Authoritative standards (copies bundled in `review-internal/`):
 - **Curator Guide V94** — naming, complex/set representation, evidence codes,
   cross-reference standards (UniProt, ChEBI, NCBI Gene, Ensembl, GO), disease
   pathway structure, orthology inference. → `Curator_Guide_V94.pdf`
@@ -81,10 +81,10 @@ Authoritative standards (copies bundled in `internal-module-review/`):
 ## Release Cycle
 
 Reactome releases ~3–4 times per year: curation of new/updated pathways → internal
-peer review (`/internal-module-review`) → DOI assignment via CrossRef batch XML,
-schema 5.3.1 (`/generate-doi-batch`) → species inference → export and QC → public
+peer review (`/review-internal`) → DOI assignment via CrossRef batch XML,
+schema 5.3.1 (`/release-doi-batch`) → species inference → export and QC → public
 release. **DOIs.xlsx** (in the Team Drive, not this repo) tracks DOIs per release
-with curator/reviewer assignments; `/generate-doi-batch` reads it from a local path.
+with curator/reviewer assignments; `/release-doi-batch` reads it from a local path.
 
 ---
 
@@ -93,7 +93,7 @@ with curator/reviewer assignments; `/generate-doi-batch` reads it from a local p
 One-line orientation per skill; see each skill's `SKILL.md` for full instructions,
 inputs, and options.
 
-- **`/internal-module-review`** — Formal structured review of a pathway report
+- **`/review-internal`** — Formal structured review of a pathway report
   against Curator Guide V94; outputs a prioritized seven-section review DOCX.
   Requires the report DOCX + Curator Guide PDF in the conversation. Modifiers:
   `disease`, `drug`, `large` (50+ reactions).
@@ -112,23 +112,23 @@ inputs, and options.
   resolution via NCBI E-utilities (`eutils.ncbi.nlm.nih.gov`); never from training
   data. Pre-curation draft.
 
-- **`/generate-doi-batch`** — Runs `generate_crossref_xml.py` to produce a CrossRef
+- **`/release-doi-batch`** — Runs `generate_crossref_xml.py` to produce a CrossRef
   DOI batch XML for a release. Requires DOIs.xlsx locally and Python 3 + pandas.
 
-- **`/update-gdrive-readme`** — Regenerates the Team Drive README as a formatted
+- **`/admin-drive-readme`** — Regenerates the Team Drive README as a formatted
   Google Doc from the live folder inventory. Python 3 + Google API client libraries;
   OAuth credentials at `~/.config/reactome/`. Supports `--dry-run`, `--depth N`.
 
-- **`/reactome-qa-tracker`** — Turns QA comparison output (via `compare_dirs.sh`, or
+- **`/release-qa-tracker`** — Turns QA comparison output (via `compare_dirs.sh`, or
   an existing Sheets/xlsx/csv) into a multi-sheet curator tracker workbook with
   per-row Status dropdowns and Comments, after a curator-approval review gate.
   Needs Python 3 + `openpyxl`.
 
-- **`/reactome-neo4j-ols-setup`** — One-time setup guide + quarterly update SOP for a
+- **`/analysis-graphdb-setup`** — One-time setup guide + quarterly update SOP for a
   local Reactome Neo4j database connected to Claude Desktop via `neo4j-mcp`, plus the
   EBI OLS MCP server for ontology lookups. A setup guide, not a curation command.
 
-- **`/build-reactome-illustration`** — Builds an EHLD-style pathway illustration
+- **`/curation-build-illustration`** — Builds an EHLD-style pathway illustration
   (1366×768 SVG) from a description (Mode A) or example image (Mode B). All art comes
   from the Reactome Icon Library — never hand-drawn or invented; icons resolved
   deterministically by accession (bundled `icon_mappings/` + the helper's `map`)
@@ -151,7 +151,7 @@ matched to their references. Install: `chrome://extensions/` → enable Develope
 
 `.claude/settings.json` holds the host/network allowlist Claude Code reads on launch
 from the repo root. It allowlists `eutils.ncbi.nlm.nih.gov` (for `/extract-reactions`)
-and `reactome.org` (for `/build-reactome-illustration`).
+and `reactome.org` (for `/curation-build-illustration`).
 
 > **claude.ai (browser) users:** the allowlist file does not apply — add those hosts
 > manually via **Settings → Capabilities → Domain allowlist**, or PMID resolution and

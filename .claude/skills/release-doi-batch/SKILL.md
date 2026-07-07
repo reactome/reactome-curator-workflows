@@ -11,12 +11,12 @@ The script is at: @generate_crossref_xml.py
 
 ## Invocation
 
- /generate-doi-batch $ARGUMENTS
+ /release-doi-batch $ARGUMENTS
 
 $ARGUMENTS should be the worksheet name (release version), e.g.:
 
- /generate-doi-batch V94
- /generate-doi-batch V95
+ /release-doi-batch V94
+ /release-doi-batch V95
 
 ## Working directory — set this up first (keeps the repo clean)
 

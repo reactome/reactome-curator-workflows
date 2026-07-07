@@ -77,7 +77,7 @@ git pull
 
 ## Available Skills
 
-### `/internal-module-review`
+### `/review-internal`
 
 Formal structured internal review of a Reactome pathway report against Curator Guide
 V94 standards. Produces a prioritized review DOCX with seven sections. Upload the
@@ -104,7 +104,7 @@ set names (comma separator, candidate member notation). Naming convention refere
 are automatically loaded — no additional uploads required.
 
 ```
-/internal-module-review "HHV8 Infection" R-HSA-9521541 "Lisa Matthews" 2026-04-15
+/review-internal "HHV8 Infection" R-HSA-9521541 "Lisa Matthews" 2026-04-15
 ```
 
 ---
@@ -224,13 +224,13 @@ and version history, see
 
 ---
 
-### `/generate-doi-batch`
+### `/release-doi-batch`
 
 Generates a CrossRef DOI batch XML file for a release using DOIs.xlsx. Requires
 DOIs.xlsx locally (from Team Drive) and Python 3 + pandas.
 
 ```
-/generate-doi-batch V94
+/release-doi-batch V94
 ```
 
 ---
@@ -254,7 +254,7 @@ are dropped. Pre-curation draft, not a curated entry.
 
 ---
 
-### `/update-gdrive-readme`
+### `/admin-drive-readme`
 
 Regenerates the Reactome Team Drive README as a richly formatted Google Doc. On every
 run: clears the existing doc, walks the live Team Drive folder inventory via the Drive
@@ -267,14 +267,14 @@ and are never committed to the repo. Supports `--dry-run` (preview, no write) an
 `--depth N` (inventory depth, default 2).
 
 ```
-/update-gdrive-readme
-/update-gdrive-readme --dry-run
-/update-gdrive-readme --depth 3
+/admin-drive-readme
+/admin-drive-readme --dry-run
+/admin-drive-readme --depth 3
 ```
 
 ---
 
-### `/reactome-neo4j-ols-setup`
+### `/analysis-graphdb-setup`
 
 One-time setup guide and quarterly update SOP for running a local Reactome Neo4j
 database connected to Claude Desktop via MCP, plus the EBI OLS MCP server for live
@@ -297,7 +297,7 @@ once, then use Claude Desktop directly for all Neo4j and OLS queries thereafter.
 
 ---
 
-### `/reactome-qa-tracker`
+### `/release-qa-tracker`
 
 Runs `compare_dirs.sh` against two QA output directories (old version vs. new
 slice), filters out developer-only and backlog sections using a curator-vetted
@@ -329,12 +329,12 @@ an uploaded `.xlsx` / `.csv` instead of running the script.
    plus an Overview with a status legend and sheet directory.
 
 ```
-/reactome-qa-tracker
+/release-qa-tracker
 ```
 
 ---
 
-### `/build-reactome-illustration`
+### `/curation-build-illustration`
 
 Builds a new biological pathway illustration in Reactome's **EHLD** (Enhanced
 High-Level Diagram) style from either a written description (**Mode A**) or an
@@ -398,7 +398,7 @@ region ids); real subpathway ST_IDs and validation against the live hierarchy ar
 required before Pathway Browser ingestion.
 
 ```
-/build-reactome-illustration
+/curation-build-illustration
 ```
 
 ---
@@ -407,21 +407,21 @@ required before Pathway Browser ingestion.
 
 | Skill | Requirements |
 |---|---|
-| `/internal-module-review` | Internet access; pathway report DOCX and Curator Guide PDF uploaded to conversation |
+| `/review-internal` | Internet access; pathway report DOCX and Curator Guide PDF uploaded to conversation |
 | `/annotate-pathway-from-reviews-or-topic_name` | claude.ai Pro/Team/Enterprise (Projects) or Claude API; PubMed and PMC MCP servers recommended; internet access for Mode B |
-| `/generate-doi-batch` | DOIs.xlsx from Team Drive; Python 3 with `pandas` and `openpyxl` |
+| `/release-doi-batch` | DOIs.xlsx from Team Drive; Python 3 with `pandas` and `openpyxl` |
 | `/extract-reactions` | One or more review-article PDFs (absolute paths); internet access to `eutils.ncbi.nlm.nih.gov` |
-| `/update-gdrive-readme` | Python 3; `pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client`; OAuth credentials at `~/.config/reactome/credentials.json` |
-| `/reactome-qa-tracker` | `compare_dirs.sh` (in skill directory); Python 3 with `openpyxl`; two QA output directories (or an existing comparison file) |
-| `/reactome-neo4j-ols-setup` | Claude Desktop (Pro plan); Docker Desktop; Node.js; `neo4j-mcp` binary (github.com/neo4j/mcp/releases); `uv` Python package manager |
-| `/build-reactome-illustration` | Python 3 (stdlib only); network access to `reactome.org` for name `search` + icon download (accession `map` lookup works offline from bundled tables); a project directory for the request (and, for Mode B, a sample image) |
+| `/admin-drive-readme` | Python 3; `pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client`; OAuth credentials at `~/.config/reactome/credentials.json` |
+| `/release-qa-tracker` | `compare_dirs.sh` (in skill directory); Python 3 with `openpyxl`; two QA output directories (or an existing comparison file) |
+| `/analysis-graphdb-setup` | Claude Desktop (Pro plan); Docker Desktop; Node.js; `neo4j-mcp` binary (github.com/neo4j/mcp/releases); `uv` Python package manager |
+| `/curation-build-illustration` | Python 3 (stdlib only); network access to `reactome.org` for name `search` + icon download (accession `map` lookup works offline from bundled tables); a project directory for the request (and, for Mode B, a sample image) |
 
 > **Note on `/extract-reactions` and NCBI access:** In Claude Code, `.claude/settings.json`
 > allowlists `eutils.ncbi.nlm.nih.gov` automatically. In claude.ai (browser), add it manually
 > via **Settings → Capabilities → Domain allowlist**. Without it, PMID resolution falls through
 > to DOI URLs or blanks — PMIDs are never recovered from training data.
 
-> **Note on `/build-reactome-illustration` and Reactome access:** In Claude Code,
+> **Note on `/curation-build-illustration` and Reactome access:** In Claude Code,
 > `.claude/settings.json` allowlists `reactome.org` automatically. In claude.ai (browser),
 > add it manually via **Settings → Capabilities → Domain allowlist**. Without it, icon search
 > and download will fail — icons are never fabricated from training data.
@@ -489,7 +489,7 @@ reactome-curator-workflows/
 └── .claude/
     ├── settings.json                                      ← Claude Code host allowlist
     └── skills/
-        ├── internal-module-review/
+        ├── review-internal/
         │   ├── SKILL.md
         │   ├── Reactome_InternalReview_PROMPT_v1_4.docx
         │   ├── Reactome_InternalReview_TEMPLATE.docx
@@ -507,20 +507,20 @@ reactome-curator-workflows/
         │   └── Reactome_RLE_Annotation_Reference_V94.md
         ├── extract-reactions/
         │   └── SKILL.md
-        ├── generate-doi-batch/
+        ├── release-doi-batch/
         │   ├── SKILL.md
         │   └── generate_crossref_xml.py
-        ├── update-gdrive-readme/
+        ├── admin-drive-readme/
         │   ├── SKILL.md
         │   └── update_drive_readme.py
-        ├── reactome-qa-tracker/
+        ├── release-qa-tracker/
         │   ├── SKILL.md
         │   └── compare_dirs.sh
-        ├── reactome-neo4j-ols-setup/
-        │   ├── SKILL.md                                   ← /reactome-neo4j-ols-setup
+        ├── analysis-graphdb-setup/
+        │   ├── SKILL.md                                   ← /analysis-graphdb-setup
         │   └── update_reactome.sh                         ← quarterly DB update script
-        └── build-reactome-illustration/
-            ├── SKILL.md                                   ← /build-reactome-illustration
+        └── curation-build-illustration/
+            ├── SKILL.md                                   ← /curation-build-illustration
             ├── EHLD_Specs_and_Guidelines.pdf              ← official Reactome EHLD spec (authoritative)
             ├── Icon_Library_Guidelines.pdf                ← official Reactome Icon Library spec (authoritative)
             ├── EHLD_layout_reference.md                   ← layout/compartment/membrane conventions (from the production EHLD corpus)

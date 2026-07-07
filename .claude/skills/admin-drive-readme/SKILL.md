@@ -1,5 +1,5 @@
 ---
-name: update-gdrive-readme
+name: admin-drive-readme
 description: Regenerate the Reactome Team Drive README Google Doc. Clears the existing doc, walks the live Team Drive folder inventory, and rewrites the doc with formatted headings, tables, hyperlinks, and a live folder inventory. Use after Team Drive structure changes or for periodic refresh.
 ---
 
@@ -20,7 +20,7 @@ The script is at: @update_drive_readme.py
 
 ## Invocation
 
-    /update-gdrive-readme [--dry-run] [--depth N]
+    /admin-drive-readme [--dry-run] [--depth N]
 
     --dry-run   Print the first 10 API requests to stdout; do not write to the doc.
     --depth N   Folder levels to inventory (default: 2).

@@ -2,7 +2,7 @@
 """
 reactome_icons.py — deterministic access to the Reactome Icon Library.
 
-The ONLY sanctioned source of image parts for /build-reactome-illustration.
+The ONLY sanctioned source of image parts for /curation-build-illustration.
 Uses the public Reactome ContentService (search) and the static icon endpoint
 (SVG/PNG download). No API key, no third-party dependencies — Python 3 stdlib
 (urllib) only.
@@ -61,7 +61,7 @@ ICO_ID_RE = re.compile(r"^R-ICO-\d+$")
 
 CONTENT_SERVICE = "https://reactome.org/ContentService"
 ICON_BASE = "https://reactome.org/icon"           # /<R-ICO-id>.svg  and  .png
-UA = "reactome-curator-workflows/build-reactome-illustration"
+UA = "reactome-curator-workflows/curation-build-illustration"
 TIMEOUT = 30
 
 # Bundled accession -> icon mapping tables (icon_mappings/<DB>2Icon.txt), each a
@@ -285,7 +285,7 @@ def cmd_info(args):
 
 
 def main():
-    p = argparse.ArgumentParser(description="Reactome Icon Library access for /build-reactome-illustration")
+    p = argparse.ArgumentParser(description="Reactome Icon Library access for /curation-build-illustration")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     m = sub.add_parser("map", help="deterministic accession -> icon lookup (bundled tables)")
