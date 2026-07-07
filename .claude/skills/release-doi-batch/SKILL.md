@@ -11,12 +11,28 @@ The script is at: @generate_crossref_xml.py
 
 ## Invocation
 
- /generate-doi-batch $ARGUMENTS
+ /release-doi-batch $ARGUMENTS
 
 $ARGUMENTS should be the worksheet name (release version), e.g.:
 
- /generate-doi-batch V94
- /generate-doi-batch V95
+ /release-doi-batch V94
+ /release-doi-batch V95
+
+## Working directory — set this up first (keeps the repo clean)
+
+To keep this repository clean, **never write the generated XML into it.** Before
+running the script, agree on one working directory for this run and write the
+output batch XML there (via the script's `--output` flag). Ask the curator:
+
+- **Where** it should live — default is a gitignored `output/` folder in the repo
+  (`./output/<name>/`; git already ignores `output/`), or give an absolute path
+  outside the repo (e.g. `~/reactome-work/<name>/`).
+- **What** to name it — suggested default: `<version>-doi-batch` (e.g.
+  `V94-doi-batch`).
+
+Create it with `mkdir -p`, pass `--output <dir>/<version>.xml` when running the
+script (see Running the Script), and report the full path back. Do not write the
+XML to the repo root or next to the script.
 
 ## Prerequisites
 
@@ -42,22 +58,25 @@ If any prerequisite is missing, stop and help the user resolve it before proceed
 
 ## Running the Script
 
-Basic usage — run from the directory containing generate_crossref_xml.py:
+Basic usage — run from the directory containing generate_crossref_xml.py, and
+**write the output into the working directory** you set up above (never the repo).
+**Ask the curator for their depositor email first** — `--email` is required and
+has no default; it is the CrossRef depositor address for this submission, so use
+the address of the person running the deposit:
 
- python3 generate_crossref_xml.py V94
+ python3 generate_crossref_xml.py V94 --email you@institution.org --output ./output/V94-doi-batch/V94.xml
 
-This generates: V94.xml (or the version number extracted from the worksheet name)
+This writes V94.xml (version number extracted from the worksheet name) into your
+working directory. Without `--output` the script would write to the current
+directory — always pass `--output` so nothing lands in the repo.
 
 With options:
 
  # Specify DOIs.xlsx location explicitly
- python3 generate_crossref_xml.py V94 --excel /path/to/DOIs.xlsx
+ python3 generate_crossref_xml.py V94 --email you@institution.org --excel /path/to/DOIs.xlsx
 
  # Specify output file path
- python3 generate_crossref_xml.py V94 --output /path/to/output/V94_batch.xml
-
- # Override depositor email (default is gillespm@gmail.com)
- python3 generate_crossref_xml.py V94 --email depositor@reactome.org
+ python3 generate_crossref_xml.py V94 --email you@institution.org --output /path/to/output/V94_batch.xml
 
 On success, the script prints:
  - Output file path
@@ -128,9 +147,9 @@ The output XML conforms to CrossRef schema 5.3.1. Key construction details:
 - The script does not validate against the CrossRef XSD before writing output.
  If CrossRef rejects the batch, check the error message for schema violations
  and compare against https://data.crossref.org/schemas/crossref5.3.1.xsd
-- The default depositor email (gillespm@gmail.com) is the address registered
- with CrossRef for the Reactome depositor account. Override with --email only
- if this changes.
+- `--email` is required and sets the CrossRef depositor address for the batch.
+ There is no default — pass the address of the person running the deposit
+ (typically one registered with CrossRef for the Reactome depositor account).
 - The script is idempotent — running it twice for the same version overwrites
  the output file. The batch_id is version-derived (not timestamp-derived),
  so resubmissions will have the same batch_id. CrossRef treats resubmissions

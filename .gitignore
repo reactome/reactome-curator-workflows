@@ -15,10 +15,23 @@ __pycache__/
 # Output files (generated locally by skills, not committed)
 output/
 
+# Illustration outputs (per-request dirs from /curation-build-illustration:
+# sample images, composed SVGs, manifests, gaps, and downloaded icons)
+illustrations/
+
 # Google OAuth credentials — stored at ~/.config/reactome/, never in the repo
 credentials.json
 token.json
 service_account.json
+
+# Secrets / local config that must never be committed
+# .mcp.json can carry MCP server credentials (e.g. NEO4J_PASSWORD for gk_central) —
+# MCP config belongs in the per-user Claude config, never in the repo.
+.mcp.json
+.env
+.env.*
+# Claude Code per-user local settings (paths, permission grants) — machine-specific
+.claude/settings.local.json
 
 # macOS
 .DS_Store

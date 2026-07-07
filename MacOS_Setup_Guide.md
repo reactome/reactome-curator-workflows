@@ -15,7 +15,7 @@ This guide walks you through setting up Claude Code and the Reactome curator wor
 | **Node.js** | A software platform required by Claude Code |
 | **Claude Code** | The AI assistant that runs in your Terminal |
 | **reactome-curator-workflows** | The Reactome skill library — curation tools powered by Claude Code |
-| **Python 3 \+ packages** | Required by two skills: `/generate-doi-batch` and `/reactome-qa-tracker` |
+| **Python 3 \+ packages** | Required by two skills: `/release-doi-batch` and `/release-qa-tracker` |
 
 ---
 
@@ -25,7 +25,7 @@ You need:
 
 - A Mac running **macOS Ventura (13) or later**. To check: Apple menu → About This Mac.  
 - An **Anthropic API key** issued from the Reactome organizational account.  
-  - Contact Marc Gillespie ([gillespm@stjohns.edu](mailto:gillespm@stjohns.edu)) to receive your key.  
+  - Contact the repo maintainer (Marc Gillespie) to receive your key.  
   - Log in at **platform.anthropic.com** → **API Keys** → **Create Key**.  
   - Copy it immediately — it looks like `sk-ant-api03-...` and will not be shown again.  
   - See the *Reactome API Key Setup Guide* for full instructions on obtaining and securing your key.
@@ -132,7 +132,7 @@ You should see your key printed. If you see a blank line, repeat the two command
 
 **Authentication note:** Claude Code offers two login methods — a Claude.ai subscription (OAuth, no per-token charges) and the Anthropic Console (API key, pay-as-you-go). For Reactome work, always use the API key method so usage bills to the shared organizational credit pool. When `ANTHROPIC_API_KEY` is set in your environment, it takes priority automatically. Run `/status` inside Claude Code at any time to confirm which credentials are active.
 
-**Security:** Your key is stored only on your local Mac in `~/.zshrc`. Never commit it to GitHub or share it in Slack or email.
+**Security:** Your key is stored only on your local Mac in `~/.zshrc`. Never commit it to GitHub or share it in chat or email.
 
 **Quick verification** — confirm the key is active and billing to the Reactome account:
 
@@ -176,7 +176,7 @@ You should see files including `CLAUDE.md`, `README.md`, and a `.claude/` direct
 
 ## Step 8 — Install Python Dependencies
 
-Two skills (`/generate-doi-batch` and `/reactome-qa-tracker`) require Python 3 and two packages. Python 3 is already on modern Macs. Install the packages:
+Two skills (`/release-doi-batch` and `/release-qa-tracker`) require Python 3 and two packages. Python 3 is already on modern Macs. Install the packages:
 
 pip3 install pandas openpyxl
 
@@ -218,7 +218,7 @@ Claude should describe Reactome, the team, and the available skills.
 
 Type a skill name at the Claude Code prompt to invoke it. For example:
 
-/internal-module-review
+/review-internal
 
 Claude Code will guide you through the required inputs. See the *Reactome Curator Workflows — Claude Code Usage Guide* (in this repository) for full documentation on each skill.
 
@@ -294,25 +294,25 @@ New or updated skills are available immediately after pulling — no restart of 
 
     └── skills/
 
-        ├── internal-module-review/    ← /internal-module-review
+        ├── review-internal/    ← /review-internal
 
         ├── annotate-pathway-from-reviews-or-topic\_name/  ← /annotate-pathway-from-reviews-or-topic\_name
 
         ├── extract-reactions/         ← /extract-reactions
 
-        ├── generate-doi-batch/        ← /generate-doi-batch
+        ├── release-doi-batch/        ← /release-doi-batch
 
-        ├── update-gdrive-readme/      ← /update-gdrive-readme
+        ├── admin-drive-readme/      ← /admin-drive-readme
 
-        ├── reactome-qa-tracker/       ← /reactome-qa-tracker
+        ├── release-qa-tracker/       ← /release-qa-tracker
 
-        └── reactome-neo4j-ols-setup/  ← /reactome-neo4j-ols-setup
+        └── analysis-graphdb-setup/  ← /analysis-graphdb-setup
 
 ---
 
 ## Contact
 
-- Repo maintainer: Marc Gillespie (NYU / SJU) — [gillespm@stjohns.edu](mailto:gillespm@stjohns.edu)  
-- Curation standards questions: Reactome curator Slack channel  
+- Repo maintainer: Marc Gillespie (SJU)  
+- Curation standards questions: consult Curator Guide V94  
 - Repo or skill questions: open a GitHub issue at [https://github.com/reactome/reactome-curator-workflows/issues](https://github.com/reactome/reactome-curator-workflows/issues)
 

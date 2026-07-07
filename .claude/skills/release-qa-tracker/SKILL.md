@@ -1,5 +1,5 @@
 ---
-name: reactome-qa-tracker
+name: release-qa-tracker
 description: >
   Use this skill whenever the user wants to convert a Reactome QA comparison
   spreadsheet (e.g. V97_Slice*_fixes, or any sheet containing commandlinerunner,
@@ -29,6 +29,24 @@ Can also be used starting from Step 3 if comparison files already exist
 
 ---
 
+## Working directory — set this up first (keeps the repo clean)
+
+To keep this repository clean, **never write generated files into it.** Before
+doing any work, agree on one working directory for this run and write the final
+curator tracker `.xlsx` there. Ask the curator:
+
+- **Where** it should live — default is a gitignored `output/` folder in the repo
+  (`./output/<name>/`; git already ignores `output/`), or give an absolute path
+  outside the repo (e.g. `~/reactome-work/<name>/`).
+- **What** to name it — suggested default: `<new-version>-qa-tracker` (e.g.
+  `V97-qa-tracker`).
+
+Create it with `mkdir -p` and write the workbook there; the intermediate
+`compare_dirs.sh` outputs may stay in `/tmp` (already outside the repo). Report
+the full path back. Do not write generated files to the repo root or `.claude/`.
+
+---
+
 ## Step 1 — Ask for directories
 
 Ask the user for:
@@ -38,7 +56,7 @@ Ask the user for:
 2. **NEW_DIR** — path to the current-version QA output directory  
    (e.g. `/data/qa/SliceQA97`)
 3. **compare_dirs.sh location** — default: skill directory
-   (`<repo-root>/.claude/skills/reactome-qa-tracker/compare_dirs.sh`)
+   (`<repo-root>/.claude/skills/release-qa-tracker/compare_dirs.sh`)
 
 Confirm both directories exist before proceeding:
 
@@ -607,7 +625,7 @@ the comparison script:
 ## compare_dirs.sh
 
 The comparison script is included in this skill directory at
-`.claude/skills/reactome-qa-tracker/compare_dirs.sh`. Full content:
+`.claude/skills/release-qa-tracker/compare_dirs.sh`. Full content:
 
 ```bash
 #!/bin/bash
