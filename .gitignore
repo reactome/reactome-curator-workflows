@@ -15,6 +15,10 @@ __pycache__/
 # Output files (generated locally by skills, not committed)
 output/
 
+# Illustration outputs (per-request dirs from /build-reactome-illustration:
+# sample images, composed SVGs, manifests, gaps, and downloaded icons)
+illustrations/
+
 # Google OAuth credentials — stored at ~/.config/reactome/, never in the repo
 credentials.json
 token.json

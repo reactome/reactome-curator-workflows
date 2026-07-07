@@ -57,9 +57,12 @@ reactome-curator-workflows/
         ├── reactome-qa-tracker/
         │   ├── SKILL.md                                   ← /reactome-qa-tracker
         │   └── compare_dirs.sh                            ← QA directory comparison script
-        └── reactome-neo4j-ols-setup/
-            ├── SKILL.md                                   ← /reactome-neo4j-ols-setup
-            └── update_reactome.sh                         ← quarterly DB update script
+        ├── reactome-neo4j-ols-setup/
+        │   ├── SKILL.md                                   ← /reactome-neo4j-ols-setup
+        │   └── update_reactome.sh                         ← quarterly DB update script
+        └── build-reactome-illustration/
+            ├── SKILL.md                                   ← /build-reactome-illustration
+            └── reactome_icons.py                          ← Icon Library search/download helper
 ```
 
 ---
@@ -386,6 +389,32 @@ directly for Neo4j and OLS queries.
 Reference materials in skill directory:
 - `SKILL.md` — full step-by-step setup, config file, troubleshooting table, example queries
 - `update_reactome.sh` — quarterly database update script
+
+---
+
+### `/build-reactome-illustration`
+Builds a new biological pathway illustration in Reactome's **EHLD** (Enhanced
+High-Level Diagram) style from either a written description (Mode A) or an
+example image / sketch (Mode B). Every biological image part is fetched live
+from the **Reactome Icon Library** — the icons are the sole source of art; the
+skill never hand-draws or invents an entity. Entities with no library icon are
+surfaced as gaps, not filled.
+
+Workflow: interpret the spec → search the Icon Library per entity → present an
+**Icon Map** for curator approval (STOP gate) → fetch approved icons → compose a
+single **1366×768 SVG** with subpathway `REGION-`/`OVERLAY-` active regions and
+Arial-Bold `#0F82BC` pathway labels, per the official EHLD specification.
+
+Outputs: the composed `.svg`, an icon manifest CSV (provenance + CC-BY 4.0
+attribution), a gaps file, and the downloaded source icons in `./icons/`.
+
+Requires Python 3 (stdlib only) and network access to `reactome.org`
+(allowlisted in `.claude/settings.json`; claude.ai users add it under
+Settings → Capabilities → Domain allowlist).
+
+Reference materials in skill directory:
+- `SKILL.md` — entry modes, approval gate, EHLD spec, embedding/labelling rules
+- `reactome_icons.py` — Icon Library search/fetch helper (ContentService + `/icon/*.svg`)
 
 ---
 
