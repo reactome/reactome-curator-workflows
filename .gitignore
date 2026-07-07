@@ -42,3 +42,11 @@ service_account.json
 *~
 .vscode/
 .idea/
+
+# Microsoft Office lock files (created while a .docx/.xlsx is open)
+~$*
+
+# Stray local drafts / working files not part of the tracked skill content
+SKILL-annotate-UPDATED.md
+TEAM-RUNNING-SKILLS.md
+internal-module-review.zip
