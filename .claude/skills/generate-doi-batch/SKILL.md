@@ -18,6 +18,22 @@ $ARGUMENTS should be the worksheet name (release version), e.g.:
  /generate-doi-batch V94
  /generate-doi-batch V95
 
+## Working directory — set this up first (keeps the repo clean)
+
+To keep this repository clean, **never write the generated XML into it.** Before
+running the script, agree on one working directory for this run and write the
+output batch XML there (via the script's `--output` flag). Ask the curator:
+
+- **Where** it should live — default is a gitignored `output/` folder in the repo
+  (`./output/<name>/`; git already ignores `output/`), or give an absolute path
+  outside the repo (e.g. `~/reactome-work/<name>/`).
+- **What** to name it — suggested default: `<version>-doi-batch` (e.g.
+  `V94-doi-batch`).
+
+Create it with `mkdir -p`, pass `--output <dir>/<version>.xml` when running the
+script (see Running the Script), and report the full path back. Do not write the
+XML to the repo root or next to the script.
+
 ## Prerequisites
 
 Confirm the following before running:
@@ -42,14 +58,17 @@ If any prerequisite is missing, stop and help the user resolve it before proceed
 
 ## Running the Script
 
-Basic usage — run from the directory containing generate_crossref_xml.py.
+Basic usage — run from the directory containing generate_crossref_xml.py, and
+**write the output into the working directory** you set up above (never the repo).
 **Ask the curator for their depositor email first** — `--email` is required and
 has no default; it is the CrossRef depositor address for this submission, so use
 the address of the person running the deposit:
 
- python3 generate_crossref_xml.py V94 --email you@institution.org
+ python3 generate_crossref_xml.py V94 --email you@institution.org --output ./output/V94-doi-batch/V94.xml
 
-This generates: V94.xml (or the version number extracted from the worksheet name)
+This writes V94.xml (version number extracted from the worksheet name) into your
+working directory. Without `--output` the script would write to the current
+directory — always pass `--output` so nothing lands in the repo.
 
 With options:
 

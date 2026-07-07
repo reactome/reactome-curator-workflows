@@ -19,6 +19,21 @@ This skill guides you through:
 
 ---
 
+## Working directory — confirm this first (keeps the repo clean)
+
+Unlike the file-producing skills, this one installs software, data, and config
+**entirely outside this repository** and must write nothing into it: the database
+dump and data live under a data directory (default `~/reactome-neo4j/`), and the
+MCP server config goes in the Claude Desktop config file (`~/Library/Application
+Support/Claude/`). Before downloading the ~500 MB dump, confirm with the user:
+
+- **Where** the Neo4j data directory should live — default `~/reactome-neo4j/`,
+  or another absolute path outside the repo.
+- **What** to name it, if not the default.
+
+Keep all paths outside the repo; never place the dump, data, or config inside
+this repository or `.claude/`.
+
 ## Prerequisites
 
 | Software | Version used | Notes |

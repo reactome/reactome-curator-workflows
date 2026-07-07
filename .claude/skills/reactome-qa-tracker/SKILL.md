@@ -29,6 +29,24 @@ Can also be used starting from Step 3 if comparison files already exist
 
 ---
 
+## Working directory — set this up first (keeps the repo clean)
+
+To keep this repository clean, **never write generated files into it.** Before
+doing any work, agree on one working directory for this run and write the final
+curator tracker `.xlsx` there. Ask the curator:
+
+- **Where** it should live — default is a gitignored `output/` folder in the repo
+  (`./output/<name>/`; git already ignores `output/`), or give an absolute path
+  outside the repo (e.g. `~/reactome-work/<name>/`).
+- **What** to name it — suggested default: `<new-version>-qa-tracker` (e.g.
+  `V97-qa-tracker`).
+
+Create it with `mkdir -p` and write the workbook there; the intermediate
+`compare_dirs.sh` outputs may stay in `/tmp` (already outside the repo). Report
+the full path back. Do not write generated files to the repo root or `.claude/`.
+
+---
+
 ## Step 1 — Ask for directories
 
 Ask the user for:

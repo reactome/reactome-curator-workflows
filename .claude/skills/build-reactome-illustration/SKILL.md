@@ -56,17 +56,20 @@ Modes can be combined (a sketch plus clarifying words).
 
 Do not proceed until you have:
 
-1. **A project directory for this illustration request.** Ask the curator for a
-   directory path (absolute, or relative to the current working directory) that
-   will hold everything for this one image generation request. **Create it if it
-   does not exist.** This directory is where the curator drops any sample /
-   reference images (the Mode B image/sketch), and it is where every output
-   artefact is written (the SVG, manifest, gaps file, and `icons/` — see
-   Outputs). Use one directory per request so each illustration's inputs and
-   outputs stay together and self-contained.
-   - Suggest a name if the curator has none, e.g. `./illustrations/<slug>/`
-     where `<slug>` is the pathway name lowercased with non-alphanumerics
-     collapsed to single hyphens.
+1. **A working directory for this illustration request (keeps the repo clean).**
+   To keep this repository clean, every input and output for this run lives in one
+   dedicated directory — **never scattered into the repo.** Ask the curator
+   **where** it should live and **what** to name it, then **create it if it does
+   not exist.** This directory is where the curator drops any sample / reference
+   images (the Mode B image/sketch), and it is where every output artefact is
+   written (the SVG, manifest, gaps file, and `icons/` — see Outputs). Use one
+   directory per request so each illustration's inputs and outputs stay together
+   and self-contained.
+   - **Where:** default is the gitignored `illustrations/<slug>/` (git already
+     ignores `illustrations/`, so outputs are never committed), or any absolute
+     path outside the repo (e.g. `~/reactome-work/<slug>/`).
+   - **What to name it:** suggest `<slug>` — the pathway name lowercased with
+     non-alphanumerics collapsed to single hyphens — if the curator has none.
    - In **Mode B**, confirm the sample image(s) are in this directory (or ask the
      curator to place them there) and read them from it.
 2. **The image specification** — the Mode A description and/or the Mode B

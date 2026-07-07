@@ -25,6 +25,22 @@ The script is at: @update_drive_readme.py
     --dry-run   Print the first 10 API requests to stdout; do not write to the doc.
     --depth N   Folder levels to inventory (default: 2).
 
+## Working directory — set this up first (keeps the repo clean)
+
+This skill's primary output is the **remote Google Doc**, not local files, and
+credentials live outside the repo (`~/.config/reactome/`). But if you save any
+local artifacts for this run — a `--dry-run` capture, a log, an exported copy —
+put them in a dedicated working directory, **never in this repository.** Ask the
+curator:
+
+- **Where** it should live — default is a gitignored `output/` folder in the repo
+  (`./output/<name>/`; git already ignores `output/`), or an absolute path
+  outside the repo (e.g. `~/reactome-work/<name>/`).
+- **What** to name it — suggested default: `gdrive-readme-run`.
+
+Create it with `mkdir -p` only if you actually save something locally, and report
+the path back. Do not write generated files to the repo root or `.claude/`.
+
 ## Prerequisites
 
 1. Python 3:

@@ -20,6 +20,21 @@ Reference materials for entity and event name checking (Section 7):
  @Small_molecule_renaming.xlsx
  @bau060.pdf
 
+## Working directory — set this up first (keeps the repo clean)
+
+To keep this repository clean, **never write generated files into it.** Before
+doing anything else, agree on one working directory for this run and put every
+output (the review DOCX and any intermediates) there. Ask the curator:
+
+- **Where** it should live — default is a gitignored `output/` folder in the repo
+  (`./output/<name>/`; git already ignores `output/`), or give an absolute path
+  outside the repo (e.g. `~/reactome-work/<name>/`).
+- **What** to name it — suggested default: `<pathway-slug>-review` (e.g.
+  `hhv8-infection-review`).
+
+Create it with `mkdir -p`, write all outputs there, and report the full path
+back. Do not write into the repo root, `.claude/`, or next to the skill files.
+
 ## Required Inputs
 
 Before invoking this skill, upload both of the following to the conversation:
