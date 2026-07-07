@@ -340,9 +340,27 @@ Builds a new biological pathway illustration in Reactome's **EHLD** (Enhanced
 High-Level Diagram) style from either a written description (**Mode A**) or an
 example image / sketch (**Mode B**). Every biological image part — proteins,
 complexes, small molecules, cells, organelles, receptors, ion channels,
-tissues — is an actual icon fetched **live from the Reactome Icon Library** via
-ContentService. The skill never hand-draws or invents an entity; anything the
-library does not cover is surfaced as a **gap**, not filled.
+tissues — is an actual icon from the **Reactome Icon Library**. The skill never
+hand-draws or invents an entity; anything the library does not cover is surfaced
+as a **gap**, not filled.
+
+Icons are resolved two ways, deterministic-first:
+
+- **`map` (preferred) — deterministic accession → icon.** If you have an
+  accession (UniProt, ChEBI, GO, CL, UBERON, Complex Portal, …), the skill maps
+  it straight to the exact icon via bundled offline tables (~2,300 mappings). No
+  network, no fuzzy matching, no name-guessing — the most accurate,
+  hallucination-proof path, and curators usually have these ids already.
+- **`search` (fallback) — name-based** via live ContentService, when no
+  accession is available.
+
+The skill follows the **official Reactome specs**, which are bundled in the skill
+directory and treated as authoritative: `EHLD_Specs_and_Guidelines.pdf` (canvas,
+active regions, labels, mandatory `ANALINFO` boxes, text/colour rules, no
+full-canvas background, export settings) and `Icon_Library_Guidelines.pdf` (the
+seven icon categories). Layout, compartment placement, and membrane/transport
+conventions distilled from the 217-diagram production EHLD corpus are captured in
+`EHLD_layout_reference.md`.
 
 **Per-request project directory.** The skill asks for (and creates) one
 directory per illustration request. Drop your sample / reference images there;
@@ -351,18 +369,23 @@ outputs stay together. Suggested layout: `illustrations/<slug>/`.
 
 **Workflow:**
 
-1. Interpret the spec (Mode A description and/or Mode B image).
-2. Search the Icon Library per entity and present an **Icon Map** table for
-   approval — including a **Gaps** list and a layout sketch. **STOP** for
-   curator approval (this is where icon-mismatch risk lives).
-3. After approval: fetch approved icons, compose one **1366×768 SVG** with
-   subpathway `REGION-`/`OVERLAY-` active regions and Arial-Bold `#0F82BC`
-   pathway labels, per the official EHLD specification.
+1. Interpret the spec (Mode A description and/or Mode B image); identify
+   compartments, subpathways, entities (with their compartments), and flow.
+2. Resolve an icon per entity/compartment — `map` by accession first, `search`
+   by name otherwise — and present an **Icon Map** table for approval, including
+   an **Accession (DB)** column, a **Gaps** list, and a layout sketch. **STOP**
+   for curator approval (this is where icon-mismatch risk lives).
+3. After approval: fetch approved icons, compose one EHLD SVG (1366×768 authoring
+   artboard) — compartments as library icons, entities placed inside their
+   compartment, membrane proteins straddling the bilayer, subpathway
+   `REGION-`/`OVERLAY-` active regions, mandatory `ANALINFO` boxes, and Arial-Bold
+   `#0F82BC` pathway labels — per the official EHLD specification.
 
 **Outputs** (all in the request's project directory):
 
 - `<ST_ID-or-slug>.svg` — the composed EHLD illustration
-- `<slug>_icon_manifest.csv` — per-icon provenance + CC-BY 4.0 attribution
+- `<slug>_icon_manifest.csv` — per-icon provenance (accession/DB + CC-BY 4.0
+  attribution)
 - `<slug>_gaps.md` — entities with no library icon (candidate Icon Library
   contributions)
 - `icons/` — the downloaded source SVGs
@@ -370,9 +393,9 @@ outputs stay together. Suggested layout: `illustrations/<slug>/`.
 The Reactome Icon Library is **CC-BY 4.0**; the manifest captures per-icon
 designer, curator, and ORCID for the required credit line. The SVG is a
 structured, attributed draft for hand-tuning in Adobe Illustrator (export with
-Font = SVG, Object IDs = Layer Names to preserve the region ids); real
-subpathway ST_IDs and validation against the live hierarchy are required before
-Pathway Browser ingestion.
+Styling = Internal CSS, Font = SVG, Object IDs = Layer Names to preserve the
+region ids); real subpathway ST_IDs and validation against the live hierarchy are
+required before Pathway Browser ingestion.
 
 ```
 /build-reactome-illustration
@@ -391,7 +414,7 @@ Pathway Browser ingestion.
 | `/update-gdrive-readme` | Python 3; `pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client`; OAuth credentials at `~/.config/reactome/credentials.json` |
 | `/reactome-qa-tracker` | `compare_dirs.sh` (in skill directory); Python 3 with `openpyxl`; two QA output directories (or an existing comparison file) |
 | `/reactome-neo4j-ols-setup` | Claude Desktop (Pro plan); Docker Desktop; Node.js; `neo4j-mcp` binary (github.com/neo4j/mcp/releases); `uv` Python package manager |
-| `/build-reactome-illustration` | Python 3 (stdlib only); network access to `reactome.org` (icon search + download); a project directory for the request (and, for Mode B, a sample image) |
+| `/build-reactome-illustration` | Python 3 (stdlib only); network access to `reactome.org` for name `search` + icon download (accession `map` lookup works offline from bundled tables); a project directory for the request (and, for Mode B, a sample image) |
 
 > **Note on `/extract-reactions` and NCBI access:** In Claude Code, `.claude/settings.json`
 > allowlists `eutils.ncbi.nlm.nih.gov` automatically. In claude.ai (browser), add it manually
@@ -498,7 +521,11 @@ reactome-curator-workflows/
         │   └── update_reactome.sh                         ← quarterly DB update script
         └── build-reactome-illustration/
             ├── SKILL.md                                   ← /build-reactome-illustration
-            └── reactome_icons.py                          ← Icon Library search/fetch helper
+            ├── EHLD_Specs_and_Guidelines.pdf              ← official Reactome EHLD spec (authoritative)
+            ├── Icon_Library_Guidelines.pdf                ← official Reactome Icon Library spec (authoritative)
+            ├── EHLD_layout_reference.md                   ← layout/compartment/membrane conventions (from the production EHLD corpus)
+            ├── icon_mappings/                             ← accession→icon tables (<DB>2Icon.txt) powering deterministic `map` lookup
+            └── reactome_icons.py                          ← Icon Library helper: map (accession→icon), search, fetch
 ```
 
 > Generated illustration outputs live under `illustrations/<slug>/` (one directory

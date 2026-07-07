@@ -62,7 +62,11 @@ reactome-curator-workflows/
         │   └── update_reactome.sh                         ← quarterly DB update script
         └── build-reactome-illustration/
             ├── SKILL.md                                   ← /build-reactome-illustration
-            └── reactome_icons.py                          ← Icon Library search/download helper
+            ├── EHLD_Specs_and_Guidelines.pdf              ← official Reactome EHLD spec (authoritative)
+            ├── Icon_Library_Guidelines.pdf                ← official Reactome Icon Library spec (authoritative)
+            ├── EHLD_layout_reference.md                   ← empirical layout/compartment/membrane conventions from the production EHLD corpus
+            ├── icon_mappings/                             ← accession→icon tables (<DB>2Icon.txt: UniProt, ChEBI, GO, CL, UBERON, …); powers deterministic `map` lookup
+            └── reactome_icons.py                          ← Icon Library map (accession→icon) + search/download helper
 ```
 
 ---
@@ -395,15 +399,19 @@ Reference materials in skill directory:
 ### `/build-reactome-illustration`
 Builds a new biological pathway illustration in Reactome's **EHLD** (Enhanced
 High-Level Diagram) style from either a written description (Mode A) or an
-example image / sketch (Mode B). Every biological image part is fetched live
-from the **Reactome Icon Library** — the icons are the sole source of art; the
-skill never hand-draws or invents an entity. Entities with no library icon are
-surfaced as gaps, not filled.
+example image / sketch (Mode B). Every biological image part comes from the
+**Reactome Icon Library** — the icons are the sole source of art; the skill never
+hand-draws or invents an entity. Icons are resolved **deterministically by
+accession** (UniProt/ChEBI/GO/CL/UBERON/… via the bundled `icon_mappings/` tables
+and the helper's `map` command) whenever the curator has accessions, falling back
+to live name search otherwise. Entities with no library icon are surfaced as gaps,
+not filled.
 
-Workflow: interpret the spec → search the Icon Library per entity → present an
-**Icon Map** for curator approval (STOP gate) → fetch approved icons → compose a
-single **1366×768 SVG** with subpathway `REGION-`/`OVERLAY-` active regions and
-Arial-Bold `#0F82BC` pathway labels, per the official EHLD specification.
+Workflow: interpret the spec → resolve an icon per entity (accession `map` first,
+name `search` fallback) → present an **Icon Map** for curator approval (STOP gate)
+→ fetch approved icons → compose a single EHLD SVG (1366×768 authoring artboard)
+with subpathway `REGION-`/`OVERLAY-` active regions, mandatory `ANALINFO` boxes,
+and Arial-Bold `#0F82BC` pathway labels, per the official EHLD specification.
 
 Outputs: the composed `.svg`, an icon manifest CSV (provenance + CC-BY 4.0
 attribution), a gaps file, and the downloaded source icons in `./icons/`.
@@ -414,7 +422,27 @@ Settings → Capabilities → Domain allowlist).
 
 Reference materials in skill directory:
 - `SKILL.md` — entry modes, approval gate, EHLD spec, embedding/labelling rules
-- `reactome_icons.py` — Icon Library search/fetch helper (ContentService + `/icon/*.svg`)
+- `EHLD_Specs_and_Guidelines.pdf` — the **authoritative** official Reactome "EHLD
+  Specs & Guidelines" (canvas, active regions, labels, ANALINFO, text/colour
+  rules, background rule, export settings). SKILL.md transcribes these as the
+  top-level rules; the PDF governs on any conflict.
+- `Icon_Library_Guidelines.pdf` — the **authoritative** official Reactome "Icon
+  Library Guidelines" (the seven categories and how each icon type is drawn/
+  submitted). Used to pick categories, judge match quality, and describe gaps.
+- `icon_mappings/` — the accession→icon mapping tables (`<DB>2Icon.txt`, ~2,300
+  mappings across UniProt, ChEBI, GO, CL, UBERON, Ensembl, Complex Portal, and
+  more). These back the helper's `map` subcommand, which resolves an external
+  accession straight to its exact `R-ICO` icon offline and deterministically —
+  the preferred, hallucination-proof match step whenever a curator has accessions.
+- `reactome_icons.py` — Icon Library helper: `map` (accession→icon, from the
+  bundled tables), `search`/`info` (name-based, live ContentService), and `fetch`
+  (download SVG/PNG).
+- `EHLD_layout_reference.md` — empirical layout conventions distilled from the 217-file
+  production EHLD corpus (`reactome.org/download-data?id=118`): canvas geometry
+  (1366×768 content artboard within a 1396×798 bleed frame), the back-to-front
+  layer stack, compartments-as-icons (`R-ICO-013570` cell, `R-ICO-013121`
+  nucleus), lipid-bilayer membrane depiction, entity-in-compartment placement, and
+  membrane-straddling / transport rules
 
 ---
 

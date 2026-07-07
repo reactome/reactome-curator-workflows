@@ -9,13 +9,25 @@ Uses the public Reactome ContentService (search) and the static icon endpoint
 
 Subcommands
 -----------
+  map "<accession>" [--db DB]
+      DETERMINISTIC lookup: resolve an external accession (UniProt, ChEBI, GO,
+      CL, UBERON, Ensembl, Complex Portal, …) to the exact icon(s) it is mapped
+      to, using the bundled `icon_mappings/<DB>2Icon.txt` tables (no network,
+      no fuzzy matching). Prints a JSON array of {db, accession, stId, iconName,
+      svgUrl, pngUrl}. This is the PREFERRED match step whenever the curator has
+      an accession — it removes all name-guessing / hallucination risk. Handles
+      prefixed or bare ids (CHEBI:16020 or 16020, UNIPROT:Q99638 or Q99638) and
+      auto-detects the database from a known prefix; otherwise searches every
+      table. Returns [] (empty) when the accession maps to no icon — that is a
+      gap, never a reason to invent one.
+
   search "<term>" [--category CAT] [--max N] [--species SP]
-      Query the icon library. Prints a JSON array of candidate icons, each with
-      its stable id (R-ICO-######), name, categories, external references
-      (e.g. UniProt), the Reactome PhysicalEntities the icon is mapped to, a
-      short summation, attribution (designer + curator + ORCID), and the direct
-      SVG/PNG download URLs. This is the match step — never invent an icon that
-      does not appear here.
+      Query the icon library by NAME. Prints a JSON array of candidate icons,
+      each with its stable id (R-ICO-######), name, categories, external
+      references (e.g. UniProt), the Reactome PhysicalEntities the icon is mapped
+      to, a short summation, attribution (designer + curator + ORCID), and the
+      direct SVG/PNG download URLs. Use this when you have no accession; never
+      invent an icon that does not appear here.
 
   fetch <R-ICO-id> [--outdir DIR] [--png]
       Download the icon's SVG (and optionally PNG) into DIR (default: ./icons).
@@ -45,6 +57,23 @@ CONTENT_SERVICE = "https://reactome.org/ContentService"
 ICON_BASE = "https://reactome.org/icon"           # /<R-ICO-id>.svg  and  .png
 UA = "reactome-curator-workflows/build-reactome-illustration"
 TIMEOUT = 30
+
+# Bundled accession -> icon mapping tables (icon_mappings/<DB>2Icon.txt), each a
+# tab-separated  <accession>\t<R-ICO-id>\t<icon name>  file. Ships with the skill
+# so accession lookup is deterministic and offline.
+MAPPINGS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icon_mappings")
+
+# Map a known accession prefix to its table stem, so `map "CHEBI:16020"` and
+# `map "GO:0005884"` route to the right file without --db. Keys are matched
+# case-insensitively against the text before the first ':' in the accession.
+PREFIX_TO_DB = {
+    "CHEBI": "CHEBI", "GO": "GO", "CL": "CL", "UBERON": "UBERON",
+    "UNIPROT": "UNIPROT", "COMPLEXPORTAL": "COMPLEXPORTAL", "CPX": "COMPLEXPORTAL",
+    "ENSEMBL": "ENSEMBL", "ENSG": "ENSEMBL", "INTERPRO": "INTERPRO", "IPR": "INTERPRO",
+    "MESH": "MESH", "KEGG": "KEGG", "PUBCHEM": "PUBCHEM", "PFAM": "PFAM",
+    "RFAM": "RFAM", "SO": "SO", "DOID": "DOID", "NCIT": "NCIT", "NCBI": "NCBI",
+    "ENA": "ENA", "OMIT": "OMIT", "OPL": "OPL", "BTO": "BTO",
+}
 
 
 def _get(url):
@@ -92,6 +121,97 @@ def _entry_to_icon(e):
         "svgUrl": _svg_url(e.get("stId") or e.get("id")),
         "pngUrl": _png_url(e.get("stId") or e.get("id")),
     }
+
+
+def _norm_variants(accession):
+    """Candidate forms to match a table entry: the accession as given, its bare
+    form (prefix stripped), and its uppercased variants. Tables are inconsistent
+    — CHEBI/GO/CL keep the prefix, UBERON/SO/DOID strip it — so try both."""
+    acc = accession.strip()
+    forms = {acc, acc.upper()}
+    if ":" in acc:
+        bare = acc.split(":", 1)[1].strip()
+        forms.update({bare, bare.upper()})
+    return {f for f in forms if f}
+
+
+def _table_path(db):
+    return os.path.join(MAPPINGS_DIR, f"{db}2Icon.txt")
+
+
+def _search_table(db, accession):
+    """Return the icon rows in <db>2Icon.txt whose first column matches the
+    accession (in any normalised form). Robust to stray empty fields."""
+    path = _table_path(db)
+    if not os.path.isfile(path):
+        return []
+    wanted = _norm_variants(accession)
+    hits = []
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            line = line.rstrip("\n")
+            if not line.strip():
+                continue
+            fields = [f for f in line.split("\t")]
+            key = fields[0].strip()
+            # match symmetrically: normalise BOTH the input and the table key,
+            # so a bare input (16020) matches a prefixed key (CHEBI:16020) and
+            # vice versa.
+            if not (wanted & _norm_variants(key)):
+                continue
+            rico = next((f.strip() for f in fields if f.strip().startswith("R-ICO-")), None)
+            if not rico:
+                continue
+            # icon name = last non-empty field that is not the key or the R-ICO id
+            name = ""
+            for f in reversed(fields):
+                fs = f.strip()
+                if fs and fs != key and not fs.startswith("R-ICO-"):
+                    name = fs
+                    break
+            hits.append({
+                "db": db,
+                "accession": key,
+                "stId": rico,
+                "iconName": name,
+                "svgUrl": _svg_url(rico),
+                "pngUrl": _png_url(rico),
+            })
+    return hits
+
+
+def cmd_map(args):
+    acc = args.accession.strip()
+    if args.db:
+        dbs = [args.db.upper()]
+    else:
+        prefix = acc.split(":", 1)[0].upper() if ":" in acc else None
+        if prefix and prefix in PREFIX_TO_DB:
+            dbs = [PREFIX_TO_DB[prefix]]
+        else:
+            # unknown/absent prefix (e.g. a bare UniProt like Q99638): scan all tables
+            dbs = sorted({v for v in PREFIX_TO_DB.values()})
+
+    if not os.path.isdir(MAPPINGS_DIR):
+        print(json.dumps({"error": f"mapping tables not found at {MAPPINGS_DIR}; "
+                                    "fall back to `search`"}), file=sys.stderr)
+        return 2
+
+    hits = []
+    seen = set()
+    for db in dbs:
+        for h in _search_table(db, acc):
+            k = (h["db"], h["stId"])
+            if k not in seen:
+                seen.add(k)
+                hits.append(h)
+
+    print(json.dumps(hits, indent=2, ensure_ascii=False))
+    if not hits:
+        print(f"# no icon mapped to accession '{acc}'"
+              + (f" in {args.db}" if args.db else "") + " — this is a gap, do not invent one",
+              file=sys.stderr)
+    return 0
 
 
 def cmd_search(args):
@@ -161,6 +281,11 @@ def cmd_info(args):
 def main():
     p = argparse.ArgumentParser(description="Reactome Icon Library access for /build-reactome-illustration")
     sub = p.add_subparsers(dest="cmd", required=True)
+
+    m = sub.add_parser("map", help="deterministic accession -> icon lookup (bundled tables)")
+    m.add_argument("accession", help="external id, e.g. CHEBI:16020, GO:0005884, Q99638, CPX-503")
+    m.add_argument("--db", help="force a database table (e.g. UNIPROT, CHEBI, GO, CL, UBERON, COMPLEXPORTAL)")
+    m.set_defaults(func=cmd_map)
 
     s = sub.add_parser("search", help="search the icon library")
     s.add_argument("term")
