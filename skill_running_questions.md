@@ -4,6 +4,16 @@ Draft for discussion. **Structure:** *Part I* states the problem — why the obv
 from the repo root" approach breaks down. *Part II* explains the Claude Code mechanics behind it.
 *Part III* proposes the solutions, the process, and the decisions the team needs to make.
 
+> **Status (updated 2026-08-06).** Several proposals in this doc have since shipped and are marked
+> **[DONE]** inline: `CLAUDE.md` has been slimmed to an orientation index (§2, §11, §14), the
+> `.gitignore` now covers generated outputs (§7, §14), and the PMID "web search vs. E-utilities"
+> drift used as the running example (§1.6, §11) has been corrected across `SKILL.md`/READMEs/`CLAUDE.md`.
+> The repo now holds **eight** skills — `/curation-build-illustration` was added after this draft and
+> introduces a second allowlisted host (`reactome.org`) alongside `eutils.ncbi.nlm.nih.gov`, plus a
+> per-request output-directory convention (`illustrations/<slug>/`, git-ignored) that is a concrete
+> example of §13's output-convention recommendation. Remaining open items are the governance/CI and
+> preflight decisions in §15.
+
 ---
 
 # Part I — The problem
@@ -32,7 +42,8 @@ several compounding reasons:
    library, an MCP server, or the eutils permission, and only discover it mid-run. → *Preflight.*
 6. **Documentation drifts** across `SKILL.md`, the skill `README.md`, the top-level `README.md`, and
    `CLAUDE.md` (we already hit this: the PMID protocol was updated to NCBI E-utilities in `SKILL.md`
-   but still reads "web search" in the READMEs). → *Documentation & precedence.*
+   but still read "web search" in the READMEs — **[DONE]** since corrected everywhere; the risk pattern
+   stands even though this instance is fixed). → *Documentation & precedence.*
 
 Underlying all of this is a **discovery constraint** (Part II): Claude Code only finds skills
 relative to the directory you launch from — which is *why* people end up running everything from the
@@ -64,6 +75,9 @@ legitimate role here is a **contributor-orientation file**, not a runtime manual
 move all per-skill operating detail into the `SKILL.md` files. (Concrete recommendations under
 *Documentation & precedence*.)
 
+> **[DONE]** `CLAUDE.md` has since been slimmed to exactly this orientation-index form (512→191
+> lines). The recommendation below is now the shipped state, not a proposal.
+
 ---
 
 # Part II — Why these happen (the mechanics)
@@ -87,12 +101,13 @@ is *organised* (outputs, history) is keyed to the launch directory.
 | Travels with the repo (zero per-user setup, works when launched **from the repo**) | Does NOT travel — per-user setup |
 |---|---|
 | The skills (`SKILL.md` + companion files) | **MCP servers** (`gk-central-remote`, `ols`, `reactome`) — user config |
-| `.claude/settings.json` → `WebFetch(domain:eutils.ncbi.nlm.nih.gov)` permission | **Python libs**: `openpyxl` (xlsx output), `pypdf` (read uploaded PDFs) |
-| `CLAUDE.md` (auto-loaded when launched from repo) | Running **outside** the repo: replicate the eutils permission into `~/.claude/settings.json` and symlink skills into `~/.claude/skills/` |
+| `.claude/settings.json` → `WebFetch(domain:eutils.ncbi.nlm.nih.gov)` **and** `reactome.org` permissions | **Python libs**: `pandas` + `openpyxl` (xlsx/CSV output). *(No PDF library is needed — uploaded PDFs are read by Claude directly, not a `pypdf`-style import.)* |
+| `CLAUDE.md` (auto-loaded when launched from repo) | Running **outside** the repo: replicate the `eutils.ncbi.nlm.nih.gov` **and** `reactome.org` permissions into `~/.claude/settings.json` and symlink skills into `~/.claude/skills/` |
 
-> Note: the eutils permission is `WebFetch(domain:…)`. A skill that calls E-utilities via Bash
-> `curl` instead of WebFetch is governed by **Bash** permissions, not this rule — document per skill
-> which mechanism it uses, and allow-list accordingly.
+> Note: the host permissions are `WebFetch(domain:…)` for both `eutils.ncbi.nlm.nih.gov`
+> (`/extract-reactions`) and `reactome.org` (`/curation-build-illustration`). A skill that calls a
+> host via Bash `curl` instead of WebFetch is governed by **Bash** permissions, not this rule —
+> document per skill which mechanism it uses, and allow-list accordingly.
 
 ---
 
@@ -106,9 +121,9 @@ The target state that resolves Part I:
   → new skills auto-appear after `git pull`), so discovery no longer forces you into the repo.
 - **Run each skill from its own per-task project directory** — outputs, session history, and
   instructions stay scoped to that directory.
-- **Do the per-user runtime setup once** — replicate the eutils permission into
-  `~/.claude/settings.json`, `pip install openpyxl pypdf`, configure the MCP servers — and re-run
-  after skill updates (driven by committed requirement manifests).
+- **Do the per-user runtime setup once** — replicate the `eutils.ncbi.nlm.nih.gov` and
+  `reactome.org` permissions into `~/.claude/settings.json`, `pip install pandas openpyxl`, configure
+  the MCP servers — and re-run after skill updates (driven by committed requirement manifests).
 - **Trim `CLAUDE.md` to a contributor index**; make each `SKILL.md` the single source of truth.
 - **Give each skill a preflight** that verifies prerequisites on invocation.
 
@@ -153,12 +168,14 @@ Running from the repo root (Option A) drops every generated file into the git wo
   and it violates the repo's "not a place for raw data files" principle.
 - **Mitigations (cleanest first):**
   1. **Run from an external per-project working dir (Option B/C)** — outputs never touch the repo.
-  2. **`.gitignore`** the output patterns (`*_reactions.xlsx`, `*_reactions.csv`,
-     `*-session-progress.md`, `*_curation_report.xlsx`) as a safety net.
-  3. **Convention:** skills write to a per-run subfolder (`outputs/<pathway-slug>/`) rather than the
-     current dir.
+  2. **`.gitignore`** the output patterns as a safety net. **[DONE]** — the repo `.gitignore` now
+     ignores `*.xlsx`/`*.xls`, `output/`, and the `illustrations/` per-request output tree (with an
+     exception for committed skill reference spreadsheets under `.claude/skills/**`).
+  3. **Convention:** skills write to a per-run subfolder rather than the current dir. **[Partly done]**
+     — `/curation-build-illustration` already does this (`illustrations/<slug>/`); the convention is
+     not yet uniform across the other skills.
 
-*Team decision:* adopt (1) as recommended practice **and** add (2) as a safety net.
+*Team decision:* adopt (1) as recommended practice **and** keep (2) as a safety net (now in place).
 
 ## 8. Sessions, history, and "projects" (vs Claude Desktop)
 
@@ -203,8 +220,9 @@ directory where the eutils permission isn't loaded — and only discover it mid-
 **Proposal:** every skill begins by confirming prerequisites before doing work, e.g.:
 
 > **Preflight — confirm before I start.** This skill needs: (1) launched from the repo root *or*
-> skills symlinked into `~/.claude/skills/`; (2) `WebFetch(domain:eutils.ncbi.nlm.nih.gov)` permission
-> (repo `settings.json`, or your `~/.claude/settings.json`); (3) `openpyxl` and `pypdf` installed;
+> skills symlinked into `~/.claude/skills/`; (2) the `WebFetch` host permission it uses
+> (`eutils.ncbi.nlm.nih.gov` and/or `reactome.org`) — repo `settings.json`, or your
+> `~/.claude/settings.json`; (3) any Python libs it needs (`pandas`, `openpyxl`) installed;
 > (4) MCP servers X/Y **only if** using the database cross-check. Reply "ready", or ask for setup help.
 
 ### Will it fire if nobody reads `SKILL.md`? (yes — that's the point)
@@ -212,7 +230,7 @@ When a curator invokes the skill, Claude Code **loads the full `SKILL.md` and ex
 instructions** — so a preflight written as the **mandatory first step** runs automatically on every
 invocation. (Precedent: this skill's existing `SESSION OPENING — ALWAYS EXECUTE FIRST` block.)
 - **Verify, don't just ask.** The first step can *check* what's checkable (Bash
-  `python3 -c "import openpyxl, pypdf"`; confirm required MCP tools appear in the tool list) and only
+  `python3 -c "import pandas, openpyxl"`; confirm required MCP tools appear in the tool list) and only
   *ask* for the rest — stronger than trusting memory.
 - **Soft gate vs hard gate.** A `SKILL.md` first-step is a reliable **soft** gate (model-followed,
   not guaranteed). For a deterministic **hard** gate, use a Claude Code **hook** — a script that runs
@@ -231,8 +249,11 @@ after pulling skill changes.** Driving the setup script from committed requireme
 
 **For everyone — any run mode (Option A included):**
 ```bash
-# Python libs the skills need (xlsx output, PDF reading)
-pip install openpyxl pypdf
+# Python libs the skills need (xlsx/CSV output). No PDF library is required —
+# uploaded PDFs are read by Claude directly, not via a pypdf-style import.
+pip install pandas openpyxl
+#   /admin-drive-readme additionally needs the Google API client libraries:
+#   pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
 
 # MCP servers (gk-central-remote, ols, reactome) in user-level Claude config
 #   — needed for any skill/feature that queries the database or ontologies.
@@ -244,8 +265,9 @@ pip install openpyxl pypdf
 ln -s ~/Developer/reactome-curator-workflows/.claude/skills ~/.claude/skills
 #    (or individual: ln -s …/.claude/skills/<skill> ~/.claude/skills/<skill>)
 
-# Replicate the eutils permission the repo's .claude/settings.json already provides:
-#    ~/.claude/settings.json → merge "WebFetch(domain:eutils.ncbi.nlm.nih.gov)" into permissions.allow
+# Replicate the host permissions the repo's .claude/settings.json already provides:
+#    ~/.claude/settings.json → merge BOTH "WebFetch(domain:eutils.ncbi.nlm.nih.gov)"
+#    and "WebFetch(domain:reactome.org)" into permissions.allow
 ```
 
 > The libs + MCP steps are required in **every** run mode (per-machine, never travel with the repo).
@@ -258,7 +280,8 @@ in Part I §2. This section is the fix.)*
 
 **The drift problem:** a skill is currently described in up to four places — `SKILL.md`, the skill
 `README.md`, the top-level `README.md`, and `CLAUDE.md`. When one is updated and the others aren't,
-they diverge (we hit exactly this with the PMID protocol).
+they diverge (we hit exactly this with the PMID protocol — since reconciled, but the structural risk
+remains).
 
 **How/when is `CLAUDE.md` updated?** It's a plain repo file, edited by hand via PR — **nothing syncs
 it with `SKILL.md`.** It's *read* automatically every session but *maintained* manually, so it drifts
@@ -269,7 +292,8 @@ whenever someone forgets. The fix is to **not duplicate** (index, not copies).
    lives there and nowhere else.
 2. **Trim `CLAUDE.md` to a contributor index** — one line per skill (name, when to use, "see
    `.claude/skills/<name>/SKILL.md`") plus repo conventions and the "Adding a New Skill" SOP. Removes
-   always-on bloat, eliminates the precedence conflict, and stops duplication.
+   always-on bloat, eliminates the precedence conflict, and stops duplication. **[DONE]** — shipped
+   (512→191 lines).
 3. **READMEs are human-facing summaries** — short, and link to the `SKILL.md`; don't re-embed the
    full protocol.
 4. **Change checklist:** when a skill changes, update in order — `SKILL.md` (authoritative) → skill
@@ -358,25 +382,31 @@ Each is optional and a team decision; all can be **committed to the repo** so th
 | **`setup-user.sh` + `requirements.txt`** | Idempotent, re-runnable installer: symlink (outside-repo mode), merge eutils permission into `~/.claude/settings.json` without clobbering, `pip install`, and print remaining manual steps (MCP). | Per-user setup |
 | **Requirement manifests** | Committed lists the script consumes: libs, required MCP servers, host allow-list. | SOP |
 | **Hard-gate hook (optional)** | Hook + check script that blocks invocation on failed prerequisites; repo-committed (Option A) and/or user-global (Option B). | Preflight (hard gate) |
-| **Trimmed `CLAUDE.md` (index form)** | Reduce to one line per skill + conventions; `SKILL.md` authoritative. | Documentation & precedence |
-| **`.gitignore` output-safety block** | Ignore generated outputs so repo-root runs can't commit data. | Output hygiene |
+| **Trimmed `CLAUDE.md` (index form)** ✅ **[DONE]** | Reduce to one line per skill + conventions; `SKILL.md` authoritative. | Documentation & precedence |
+| **`.gitignore` output-safety block** ✅ **[DONE]** | Ignore generated outputs so repo-root runs can't commit data. | Output hygiene |
 
-**Suggested build order:** (1) trimmed `CLAUDE.md` + `.gitignore` — immediate, low-risk; (2) preflight
-block + `requirements.txt`/`setup-user.sh` — the propagation backbone; (3) hard-gate hook — only if
-soft gating proves insufficient.
+**Suggested build order:** (1) trimmed `CLAUDE.md` + `.gitignore` — **[DONE]**; (2) preflight
+block + `requirements.txt`/`setup-user.sh` — the propagation backbone (still open); (3) hard-gate hook —
+only if soft gating proves insufficient (still open).
 
 ## 15. Decisions the team needs to make
 
 1. **Standard run mode** — Option A (repo root) as default, Option B (symlink + per-project) for
-   regular users? Document both.
+   regular users? Document both. *(Still open.)*
 2. **Output policy** — external working dirs + `.gitignore` safety net? Standard output-subfolder
-   convention?
+   convention? *(Safety-net `.gitignore` **[DONE]**; the per-run-subfolder convention is adopted for
+   `/curation-build-illustration` but not yet standardised across all skills — still open.)*
 3. **Preflight — and how strong?** Mandatory first-step check in every `SKILL.md` (auto-fires; soft
    gate) that *verifies* rather than asks; optionally enforce with a hook (hard gate). Soft-only, or
-   soft + hook?
+   soft + hook? *(Still open.)*
 4. **`CLAUDE.md` slimming** — reduce to a contributor index and make `SKILL.md` authoritative?
+   ✅ **[DONE]** — implemented (512→191 lines).
 5. **MCP-dependent features** — the database cross-check / ontology / participant-ID diff are deferred
    (need MCP servers). Decide if/when they join a skill, and document the MCP prerequisites prominently.
+   *(Still open.)*
 6. **Supporting artifacts** — which to build, and in what order (see *Proposed supporting artifacts*)?
+   *(Trimmed `CLAUDE.md` and `.gitignore` **[DONE]**; preflight block, `setup-user.sh`, requirement
+   manifests, and hard-gate hook still open.)*
 7. **Governance & ownership** — adopt the ownership table + PR checklist, and optionally a CI
-   duplication/version check? Name the maintainer(s).
+   duplication/version check? Name the maintainer(s). *(Still open; repo lists Marc Gillespie as
+   maintainer.)*
