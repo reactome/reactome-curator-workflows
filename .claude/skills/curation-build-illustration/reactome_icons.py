@@ -34,6 +34,15 @@ Subcommands
       Prints the local path(s) as JSON. The downloaded SVG is verbatim library
       art — the sole permitted source of biological image parts.
 
+  fetch-ehld <ST_ID> [--outdir DIR]
+      Download an EXISTING Reactome EHLD SVG by pathway stable id (e.g.
+      R-HSA-109581) into DIR (default: cwd). This is the sanctioned base diagram
+      for Mode C (modify an existing EHLD): its structure — compartments,
+      REGION-/OVERLAY- subpathway groups, ANALINFO boxes, and already-placed
+      R-ICO icons — is preserved verbatim while new library icons are added
+      around it. A 404 means the pathway has no published EHLD; report that,
+      never fabricate a base diagram.
+
   info "<term>"
       Alias for `search` with --max 1: the single best match plus full
       attribution, for building the CC-BY credit line.
@@ -51,6 +60,7 @@ import json
 import os
 import re
 import sys
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -61,8 +71,14 @@ ICO_ID_RE = re.compile(r"^R-ICO-\d+$")
 
 CONTENT_SERVICE = "https://reactome.org/ContentService"
 ICON_BASE = "https://reactome.org/icon"           # /<R-ICO-id>.svg  and  .png
+EHLD_BASE = "https://reactome.org/download/current/ehld"  # /<ST_ID>.svg  (existing EHLDs)
 UA = "reactome-curator-workflows/curation-build-illustration"
 TIMEOUT = 30
+
+# A pathway stable id is "R-", a 3-letter species code, "-", digits (e.g.
+# R-HSA-109581). Enforced when fetching an existing EHLD so a crafted id cannot
+# escape the download directory or point off-endpoint.
+ST_ID_RE = re.compile(r"^R-[A-Z]{3}-\d+$")
 
 # Bundled accession -> icon mapping tables (icon_mappings/<DB>2Icon.txt), each a
 # tab-separated  <accession>\t<R-ICO-id>\t<icon name>  file. Ships with the skill
@@ -277,6 +293,42 @@ def cmd_fetch(args):
     return 0 if any(k in written for k in ("svg", "png")) else 2
 
 
+def cmd_fetch_ehld(args):
+    """Download an EXISTING Reactome EHLD SVG by pathway ST_ID, for Mode C
+    (modify an existing EHLD). This is the sanctioned way to obtain the base
+    diagram — its structure (compartments, REGION-/OVERLAY- groups, ANALINFO,
+    existing R-ICO placements) is preserved verbatim and new library icons are
+    added around it. A 404 means the pathway has no published EHLD — that is a
+    fact to report, never a licence to fabricate a base diagram."""
+    st_id = args.st_id.strip()
+    if not ST_ID_RE.match(st_id):
+        print(json.dumps({"error": f"not a valid pathway ST_ID: {st_id!r} "
+                                    "(expected R-XXX-#######, e.g. R-HSA-109581)"}),
+              file=sys.stderr)
+        return 2
+    outdir = args.outdir
+    os.makedirs(outdir, exist_ok=True)
+    dest = os.path.join(outdir, f"{st_id}.svg")
+    url = f"{EHLD_BASE}/{st_id}.svg"
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": UA})
+        with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
+            payload = r.read()
+    except urllib.error.HTTPError as exc:  # noqa: BLE001
+        hint = " — this pathway has no published EHLD" if exc.code == 404 else ""
+        print(json.dumps({"error": f"HTTP {exc.code} fetching {url}{hint}",
+                          "stId": st_id, "url": url}), file=sys.stderr)
+        return 2
+    except Exception as exc:  # noqa: BLE001
+        print(json.dumps({"error": str(exc), "url": url}), file=sys.stderr)
+        return 2
+    with open(dest, "wb") as fh:
+        fh.write(payload)
+    print(json.dumps({"stId": st_id, "svg": os.path.abspath(dest),
+                      "bytes": len(payload), "sourceUrl": url}, indent=2))
+    return 0
+
+
 def cmd_info(args):
     args.max = 1
     args.category = getattr(args, "category", None)
@@ -305,6 +357,11 @@ def main():
     f.add_argument("--outdir", default="./icons")
     f.add_argument("--png", action="store_true", help="also download the PNG")
     f.set_defaults(func=cmd_fetch)
+
+    fe = sub.add_parser("fetch-ehld", help="download an existing EHLD SVG by pathway ST_ID (Mode C base diagram)")
+    fe.add_argument("st_id", help="pathway stable id, e.g. R-HSA-109581")
+    fe.add_argument("--outdir", default=".", help="directory to write <ST_ID>.svg into (default: cwd)")
+    fe.set_defaults(func=cmd_fetch_ehld)
 
     i = sub.add_parser("info", help="single best match + attribution")
     i.add_argument("term")

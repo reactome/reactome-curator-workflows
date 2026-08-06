@@ -129,12 +129,15 @@ inputs, and options.
   EBI OLS MCP server for ontology lookups. A setup guide, not a curation command.
 
 - **`/curation-build-illustration`** — Builds an EHLD-style pathway illustration
-  (1366×768 SVG) from a description (Mode A) or example image (Mode B). All art comes
-  from the Reactome Icon Library — never hand-drawn or invented; icons resolved
-  deterministically by accession (bundled `icon_mappings/` + the helper's `map`)
-  first, live name `search` otherwise. Follows the bundled official Reactome specs
+  (1366×768 SVG) from a description (Mode A), example image (Mode B), or by modifying
+  an existing published EHLD fetched by ST_ID (Mode C — adds new elements, preserves
+  the original, writes `<ST_ID>_modified.svg`). All art comes from the Reactome Icon
+  Library — never hand-drawn or invented; icons resolved deterministically by
+  accession (bundled `icon_mappings/` + the helper's `map`) first, live name `search`
+  otherwise. Follows the bundled official Reactome specs
   (`EHLD_Specs_and_Guidelines.pdf`, `Icon_Library_Guidelines.pdf`). Needs Python 3
-  and network access to `reactome.org` (name search + download; `map` is offline).
+  and network access to `reactome.org` (name search, icon + EHLD download; `map` is
+  offline).
 
 ---
 

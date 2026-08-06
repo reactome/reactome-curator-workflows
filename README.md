@@ -340,13 +340,16 @@ an uploaded `.xlsx` / `.csv` instead of running the script.
 
 ### `/curation-build-illustration`
 
-Builds a new biological pathway illustration in Reactome's **EHLD** (Enhanced
-High-Level Diagram) style from either a written description (**Mode A**) or an
-example image / sketch (**Mode B**). Every biological image part — proteins,
-complexes, small molecules, cells, organelles, receptors, ion channels,
-tissues — is an actual icon from the **Reactome Icon Library**. The skill never
-hand-draws or invents an entity; anything the library does not cover is surfaced
-as a **gap**, not filled.
+Builds a biological pathway illustration in Reactome's **EHLD** (Enhanced
+High-Level Diagram) style from a written description (**Mode A**), an example
+image / sketch (**Mode B**), or by **modifying an existing published Reactome
+EHLD** (**Mode C**) — fetching that EHLD by ST_ID (`reactome_icons.py
+fetch-ehld`) and adding newly described elements to it, preserving the original
+verbatim and writing a new `<ST_ID>_modified.svg` (never overwriting the
+published diagram). Every biological image part — proteins, complexes, small
+molecules, cells, organelles, receptors, ion channels, tissues — is an actual
+icon from the **Reactome Icon Library**. The skill never hand-draws or invents an
+entity; anything the library does not cover is surfaced as a **gap**, not filled.
 
 Icons are resolved two ways, deterministic-first:
 
