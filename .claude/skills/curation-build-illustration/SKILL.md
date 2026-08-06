@@ -37,7 +37,10 @@ against the live pathway hierarchy.
 
     /curation-build-illustration
 
-No arguments. The skill prompts for the inputs below.
+No arguments. The skill prompts for the inputs below. **On a first run** (no
+`illustrations/` directory yet), it opens by briefly explaining the git-ignored
+`illustrations/` output convention and offering to create it before collecting
+anything else — see Required inputs step 1.
 
 ## Entry modes
 
@@ -105,6 +108,16 @@ Do not proceed until you have:
    written (the SVG, manifest, gaps file, and `icons/` — see Outputs). Use one
    directory per request so each illustration's inputs and outputs stay together
    and self-contained.
+   - **First-time users — set up the `illustrations/` home first.** Before asking
+     anything else, check whether an `illustrations/` directory exists at the repo
+     root (e.g. `ls -d illustrations`). **If it does not**, this is likely a first
+     run: briefly explain, in one or two friendly sentences, that all figures live
+     under a git-ignored `illustrations/` folder (one sub-folder per request) so
+     generated files never clutter or get committed to the repo — then **offer to
+     create it** and, on agreement, make `illustrations/` and this request's
+     `illustrations/<slug>/` sub-folder. If it already exists, skip the
+     explanation and just create the new per-request sub-folder. Never write
+     outputs to the repo root or the current directory.
    - **Where:** default is the gitignored `illustrations/<slug>/` (git already
      ignores `illustrations/`, so outputs are never committed), or any absolute
      path outside the repo (e.g. `~/reactome-work/<slug>/`).
