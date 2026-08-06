@@ -22,6 +22,10 @@ Full setup and usage instructions are in:
 This covers one-time prerequisites, cloning the repository, running each skill, and
 how to add new skills. Start here if you are setting up for the first time.
 
+For administering the Reactome Anthropic API organization and API-key billing
+(workspaces, spend limits, key rotation, cost controls), see
+**[API_Billing_Best_Practices.md](./API_Billing_Best_Practices.md)**.
+
 ---
 
 ## Setup (Quick Reference)
