@@ -128,16 +128,17 @@ inputs, and options.
   local Reactome Neo4j database connected to Claude Desktop via `neo4j-mcp`, plus the
   EBI OLS MCP server for ontology lookups. A setup guide, not a curation command.
 
-- **`/curation-build-illustration`** — Builds an EHLD-style pathway illustration
-  (1366×768 SVG) from a description (Mode A), example image (Mode B), or by modifying
-  an existing published EHLD fetched by ST_ID (Mode C — adds new elements, preserves
-  the original, writes `<ST_ID>_modified.svg`). All art comes from the Reactome Icon
-  Library — never hand-drawn or invented; icons resolved deterministically by
-  accession (bundled `icon_mappings/` + the helper's `map`) first, live name `search`
-  otherwise. Follows the bundled official Reactome specs
-  (`EHLD_Specs_and_Guidelines.pdf`, `Icon_Library_Guidelines.pdf`). Needs Python 3
-  and network access to `reactome.org` (name search, icon + EHLD download; `map` is
-  offline).
+- **`/curation-build-illustration`** — Builds/extends an EHLD-style pathway
+  illustration (1366×768 SVG). **Preferred mode: modify an existing published EHLD
+  fetched by ST_ID (Mode A)** — describes the base back for confirmation, then adds
+  new elements, preserves the original, and writes `<ST_ID>_modified.svg`. Can also
+  build a new EHLD from scratch from a description (Mode B) or example image (Mode C).
+  All art comes from the Reactome Icon Library — never hand-drawn or invented; icons
+  resolved deterministically by accession (bundled `icon_mappings/` + the helper's
+  `map`) first, live name `search` otherwise. Follows the bundled official Reactome
+  specs (`EHLD_Specs_and_Guidelines.pdf`, `Icon_Library_Guidelines.pdf`). Needs
+  Python 3 and network access to `reactome.org` (name search, icon + EHLD download;
+  `map` is offline).
 
 ---
 

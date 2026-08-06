@@ -37,7 +37,7 @@ Subcommands
   fetch-ehld <ST_ID> [--outdir DIR]
       Download an EXISTING Reactome EHLD SVG by pathway stable id (e.g.
       R-HSA-109581) into DIR (default: cwd). This is the sanctioned base diagram
-      for Mode C (modify an existing EHLD): its structure — compartments,
+      for Mode A (modify an existing EHLD): its structure — compartments,
       REGION-/OVERLAY- subpathway groups, ANALINFO boxes, and already-placed
       R-ICO icons — is preserved verbatim while new library icons are added
       around it. A 404 means the pathway has no published EHLD; report that,
@@ -294,7 +294,7 @@ def cmd_fetch(args):
 
 
 def cmd_fetch_ehld(args):
-    """Download an EXISTING Reactome EHLD SVG by pathway ST_ID, for Mode C
+    """Download an EXISTING Reactome EHLD SVG by pathway ST_ID, for Mode A
     (modify an existing EHLD). This is the sanctioned way to obtain the base
     diagram — its structure (compartments, REGION-/OVERLAY- groups, ANALINFO,
     existing R-ICO placements) is preserved verbatim and new library icons are
@@ -358,7 +358,7 @@ def main():
     f.add_argument("--png", action="store_true", help="also download the PNG")
     f.set_defaults(func=cmd_fetch)
 
-    fe = sub.add_parser("fetch-ehld", help="download an existing EHLD SVG by pathway ST_ID (Mode C base diagram)")
+    fe = sub.add_parser("fetch-ehld", help="download an existing EHLD SVG by pathway ST_ID (Mode A base diagram)")
     fe.add_argument("st_id", help="pathway stable id, e.g. R-HSA-109581")
     fe.add_argument("--outdir", default=".", help="directory to write <ST_ID>.svg into (default: cwd)")
     fe.set_defaults(func=cmd_fetch_ehld)

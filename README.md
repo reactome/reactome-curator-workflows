@@ -340,13 +340,16 @@ an uploaded `.xlsx` / `.csv` instead of running the script.
 
 ### `/curation-build-illustration`
 
-Builds a biological pathway illustration in Reactome's **EHLD** (Enhanced
-High-Level Diagram) style from a written description (**Mode A**), an example
-image / sketch (**Mode B**), or by **modifying an existing published Reactome
-EHLD** (**Mode C**) — fetching that EHLD by ST_ID (`reactome_icons.py
-fetch-ehld`) and adding newly described elements to it, preserving the original
-verbatim and writing a new `<ST_ID>_modified.svg` (never overwriting the
-published diagram). Every biological image part — proteins, complexes, small
+Builds or extends a biological pathway illustration in Reactome's **EHLD**
+(Enhanced High-Level Diagram) style. The **preferred, primary mode is modifying
+an existing published Reactome EHLD** (**Mode A**) — fetching that EHLD by ST_ID
+(`reactome_icons.py fetch-ehld`) and adding newly described elements to it,
+preserving the original verbatim and writing a new `<ST_ID>_modified.svg` (never
+overwriting the published diagram). It can also build a **new** EHLD from scratch
+from a written description (**Mode B**) or an example image / sketch (**Mode C**)
+when there is no suitable EHLD to extend. In Mode A the skill first fetches the
+EHLD, describes its biology back to the curator for confirmation, then asks what
+to add and where. Every biological image part — proteins, complexes, small
 molecules, cells, organelles, receptors, ion channels, tissues — is an actual
 icon from the **Reactome Icon Library**. The skill never hand-draws or invents an
 entity; anything the library does not cover is surfaced as a **gap**, not filled.
@@ -376,7 +379,8 @@ outputs stay together. Suggested layout: `illustrations/<slug>/`.
 
 **Workflow:**
 
-1. Interpret the spec (Mode A description and/or Mode B image); identify
+1. Interpret the spec (Mode B description and/or Mode C image, or the additions
+   for a Mode A base EHLD); identify
    compartments, subpathways, entities (with their compartments), and flow.
 2. Resolve an icon per entity/compartment — `map` by accession first, `search`
    by name otherwise — and present an **Icon Map** table for approval, including
@@ -421,7 +425,7 @@ required before Pathway Browser ingestion.
 | `/admin-drive-readme` | Python 3; `pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client`; OAuth credentials at `~/.config/reactome/credentials.json` |
 | `/release-qa-tracker` | `compare_dirs.sh` (in skill directory); Python 3 with `openpyxl`; two QA output directories (or an existing comparison file) |
 | `/analysis-graphdb-setup` | Claude Desktop (Pro plan); Docker Desktop; Node.js; `neo4j-mcp` binary (github.com/neo4j/mcp/releases); `uv` Python package manager |
-| `/curation-build-illustration` | Python 3 (stdlib only); network access to `reactome.org` for name `search` + icon download (accession `map` lookup works offline from bundled tables); a project directory for the request (and, for Mode B, a sample image) |
+| `/curation-build-illustration` | Python 3 (stdlib only); network access to `reactome.org` for name `search`, icon + EHLD download (accession `map` lookup works offline from bundled tables); a project directory for the request (a base-EHLD ST_ID for Mode A; a sample image for Mode C) |
 
 > **Note on `/extract-reactions` and NCBI access:** In Claude Code, `.claude/settings.json`
 > allowlists `eutils.ncbi.nlm.nih.gov` automatically. In claude.ai (browser), add it manually

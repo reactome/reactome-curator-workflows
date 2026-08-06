@@ -1,6 +1,6 @@
 ---
 name: curation-build-illustration
-description: Build a new biological pathway illustration in Reactome's Enhanced High-Level Diagram (EHLD) style from a curator's written description (Mode A), an example image/sketch (Mode B), or by modifying an existing published Reactome EHLD (Mode C) — fetching that EHLD by ST_ID and adding newly described elements to it. Every biological image part comes SOLELY from the Reactome Icon Library (searched and downloaded live via ContentService); the assistant composes a labelled 1366x768 SVG with pathway and subpathway labels following the official EHLD specification. Use when a curator wants a publication- or browser-ready pathway figure assembled from sanctioned Reactome icons rather than drawn from scratch, or wants to extend/update an existing EHLD.
+description: Build or extend a biological pathway illustration in Reactome's Enhanced High-Level Diagram (EHLD) style. The preferred, primary mode is modifying an existing published Reactome EHLD (Mode A) — fetching that EHLD by ST_ID and adding newly described elements to it while preserving the original — and it can also build a new EHLD from scratch from a written description (Mode B) or an example image/sketch (Mode C). Every biological image part comes SOLELY from the Reactome Icon Library (searched and downloaded live via ContentService); the assistant composes a labelled 1366x768 SVG with pathway and subpathway labels following the official EHLD specification. Use when a curator wants to extend/update an existing EHLD, or assemble a publication- or browser-ready pathway figure from sanctioned Reactome icons rather than drawing from scratch.
 ---
 
 # Build Reactome Illustration Skill
@@ -8,10 +8,13 @@ description: Build a new biological pathway illustration in Reactome's Enhanced 
 ## Purpose
 
 Produce a biological illustration in Reactome's **EHLD (Enhanced High-Level
-Diagram) style** — either a **new** one from a written description or an example
-image / sketch the curator supplies, or a **modified** one built by taking an
-**existing published Reactome EHLD** and adding newly described elements to it.
-The illustration represents one or more pathways and subpathways and is labelled
+Diagram) style**. The skill's **primary, preferred function is to modify an
+existing published Reactome EHLD** — taking a real EHLD and adding newly
+described elements to it (**Mode A**) — because extending an existing diagram is
+both the common case and more accurate than starting blank. It can also build a
+**new** EHLD from scratch from a written description (**Mode B**) or an example
+image / sketch (**Mode C**) when there is no suitable EHLD to extend. The
+illustration represents one or more pathways and subpathways and is labelled
 accordingly.
 
 **The single most important rule:** every *biological* image part — every
@@ -38,26 +41,20 @@ No arguments. The skill prompts for the inputs below.
 
 ## Entry modes
 
-The skill opens by determining how the curator is specifying the image:
+The skill opens by determining how the curator is specifying the image. **Mode A
+(modify an existing EHLD) is the preferred, primary function of this skill** —
+most requests build on Reactome's existing published EHLDs rather than starting
+from a blank canvas. Offer Mode A first; fall back to Mode B/C only when there is
+no suitable existing EHLD to extend.
 
-- **Mode A — Written description.** The curator describes the desired image in
-  words (the biology, the entities, the flow, the groupings). Proceed directly
-  to Phase 1 with that description.
-
-- **Mode B — Example image or sketch.** The curator uploads a reference image,
-  hand sketch, whiteboard photo, or an existing figure. Read the image
-  carefully — identify every biological entity, its type, the compartments, the
-  directional flow, and how entities are grouped into subpathways. Restate your
-  interpretation and proceed to Phase 1. You are re-creating the *content and
-  structure* of the reference using Reactome icons and Reactome style — not
-  tracing or copying the reference's own artwork.
-
-- **Mode C — Modify an existing Reactome EHLD.** The curator starts from an
-  **already-published EHLD** and wants to add newly described elements to it
-  (new entities, a new subpathway, extra compartment detail). This is an
+- **Mode A — Modify an existing Reactome EHLD *(preferred)*.** The curator starts
+  from an **already-published EHLD** and wants to add newly described elements to
+  it (new entities, a new subpathway, extra compartment detail). This is an
   *edit-in-place-then-branch* mode: the existing diagram is preserved verbatim
   and new **library icons** are added around it, producing a **new, modified**
-  EHLD — the original is never overwritten.
+  EHLD — the original is never overwritten. This is the skill's main use case:
+  extending or updating a real EHLD is both more common and more accurate than
+  re-drawing one from scratch.
   - The base EHLD comes from one of two places:
     - **By ST_ID (preferred):** the curator gives a pathway stable id
       (`R-HSA-#######`) and the skill downloads the live EHLD with
@@ -65,22 +62,35 @@ The skill opens by determining how the curator is specifying the image:
       that pathway has no published EHLD — report it; do not fabricate a base.
     - **By supplied SVG:** the curator places an existing EHLD SVG in the project
       directory (e.g. one they exported), and the skill reads it from there.
-  - **Announce the Mode C sequence up front, then follow it.** Before doing
-    anything, tell the curator how Mode C will proceed: you will (1) fetch/read
+  - **Announce the Mode A sequence up front, then follow it.** Before doing
+    anything, tell the curator how Mode A will proceed: you will (1) fetch/read
     the specific EHLD they name, (2) **describe back, in detail, the biology that
     EHLD depicts** and ask them to **confirm or correct** that description, and
     **only then** (3) ask them **what should be added and where in the image** it
     should go. This describe → confirm → collect-additions flow is **Phase 0**
     below. Do **not** ask what to add until the base-EHLD description is
-    confirmed — the additions (Mode-A-style words and/or a Mode-B sketch) are
+    confirmed — the additions (Mode-B-style words and/or a Mode-C sketch) are
     collected in Phase 0 step 5, after the description is agreed.
   - **The base diagram's biological art is immutable.** Every icon, region,
     label, and `ANALINFO` box already in the EHLD is sanctioned Reactome art and
     is kept exactly as-is (see Phase 2 §M). You add; you do not redraw, recolour,
     move, or delete existing elements unless the curator explicitly asks.
 
-Modes can be combined (e.g. Mode C base + a Mode B sketch of the additions, or a
-Mode A description plus a Mode B reference).
+- **Mode B — Written description (new EHLD from scratch).** The curator describes
+  the desired image in words (the biology, the entities, the flow, the
+  groupings). Use this when there is no existing EHLD to build on. Proceed
+  directly to Phase 1 with that description.
+
+- **Mode C — Example image or sketch (new EHLD from scratch).** The curator
+  uploads a reference image, hand sketch, whiteboard photo, or an existing
+  figure. Read the image carefully — identify every biological entity, its type,
+  the compartments, the directional flow, and how entities are grouped into
+  subpathways. Restate your interpretation and proceed to Phase 1. You are
+  re-creating the *content and structure* of the reference using Reactome icons
+  and Reactome style — not tracing or copying the reference's own artwork.
+
+Modes can be combined (e.g. Mode A base + a Mode C sketch of the additions, or a
+Mode B description plus a Mode C reference).
 
 ## Required inputs — ask before doing anything else
 
@@ -91,7 +101,7 @@ Do not proceed until you have:
    dedicated directory — **never scattered into the repo.** Ask the curator
    **where** it should live and **what** to name it, then **create it if it does
    not exist.** This directory is where the curator drops any sample / reference
-   images (the Mode B image/sketch), and it is where every output artefact is
+   images (the Mode C image/sketch), and it is where every output artefact is
    written (the SVG, manifest, gaps file, and `icons/` — see Outputs). Use one
    directory per request so each illustration's inputs and outputs stay together
    and self-contained.
@@ -100,17 +110,17 @@ Do not proceed until you have:
      path outside the repo (e.g. `~/reactome-work/<slug>/`).
    - **What to name it:** suggest `<slug>` — the pathway name lowercased with
      non-alphanumerics collapsed to single hyphens — if the curator has none.
-   - In **Mode B**, confirm the sample image(s) are in this directory (or ask the
+   - In **Mode C**, confirm the sample image(s) are in this directory (or ask the
      curator to place them there) and read them from it.
-   - In **Mode C**, the fetched or supplied base EHLD SVG also lives here, and the
+   - In **Mode A**, the fetched or supplied base EHLD SVG also lives here, and the
      modified EHLD is written back here alongside it (never overwriting the base).
-2. **The image specification** — the Mode A description and/or the Mode B
+2. **The image specification** — the Mode B description and/or the Mode C
    image/sketch (the sample image(s) in the project directory from step 1).
-   **In Mode C this input is deferred:** you do *not* collect what-to-add up
+   **In Mode A this input is deferred:** you do *not* collect what-to-add up
    front. You first describe the base EHLD back and get it confirmed (Phase 0
    steps 3–4), and only *then* ask what to add and where (Phase 0 step 5). Tell
-   the curator this sequence when Mode C is chosen.
-2a. **(Mode C only) The base EHLD.** Either a **pathway ST_ID** to download with
+   the curator this sequence when Mode A is chosen.
+2a. **(Mode A only) The base EHLD.** Either a **pathway ST_ID** to download with
    `reactome_icons.py fetch-ehld <ST_ID> --outdir <project-dir>`, **or** an
    existing EHLD SVG the curator has placed in the project directory. Confirm
    which, and obtain/verify the file in **Phase 0** (before asking for additions).
@@ -146,7 +156,7 @@ bundled accession→icon mapping tables:
     python3 reactome_icons.py search "<entity name>" [--category CAT] [--max N]
     python3 reactome_icons.py fetch  <R-ICO-id> [--outdir ./icons] [--png]
     python3 reactome_icons.py info   "<entity name>"     # single best match + attribution
-    python3 reactome_icons.py fetch-ehld <ST_ID> [--outdir <project-dir>]  # Mode C base diagram
+    python3 reactome_icons.py fetch-ehld <ST_ID> [--outdir <project-dir>]  # Mode A base diagram
 
 **`map` is the preferred match step — use it whenever you have an accession.** It
 resolves an external id (UniProt, ChEBI, GO, CL, UBERON, Ensembl, Complex Portal,
@@ -187,11 +197,11 @@ lookup via `map` is the strongest guard here — prefer it.
 
 ## Workflow
 
-### Phase 0 — (Mode C only) Describe the base EHLD, confirm, then collect the additions
+### Phase 0 — (Mode A only) Describe the base EHLD, confirm, then collect the additions
 
-Runs before Phase 1 whenever the curator chose **Mode C**. It has **two stops**:
+Runs before Phase 1 whenever the curator chose **Mode A**. It has **two stops**:
 the curator confirms your reading of the existing diagram *before* you ask what to
-change. (For Modes A/B, skip Phase 0 and start at Phase 1.)
+change. (For Modes B/C, skip Phase 0 and start at Phase 1.)
 
 1. **Prompt for the specific EHLD** and obtain it (input 2a): fetch by ST_ID with
    `reactome_icons.py fetch-ehld <ST_ID> --outdir <project-dir>`, or read the
@@ -221,8 +231,8 @@ change. (For Modes A/B, skip Phase 0 and start at Phase 1.)
    corrections (they are ground truth about the existing biology).
 5. **After the description is confirmed, ask the curator the two addition
    questions (gate 2 input):**
-   - **What to add** — the new entities, subpathway, or extra detail (Mode-A-style
-     words and/or a Mode-B sketch placed in the project directory), with
+   - **What to add** — the new entities, subpathway, or extra detail (Mode-B-style
+     words and/or a Mode-C sketch placed in the project directory), with
      accessions where available; and
    - **Where in the image it should be added** — which **existing** compartment or
      `REGION-` subpathway it joins, or that it forms a **new** subpathway region,
@@ -231,7 +241,7 @@ change. (For Modes A/B, skip Phase 0 and start at Phase 1.)
 
 ### Phase 1 — Interpret and plan (build the icon map, then STOP)
 
-0. **(Mode C only)** The base EHLD was fetched, inventoried, described-and-
+0. **(Mode A only)** The base EHLD was fetched, inventoried, described-and-
    confirmed, and the additions collected in **Phase 0**. Carry that structural
    inventory (canvas, layers, existing `REGION-`/`OVERLAY-` ST_IDs, placed
    `R-ICO` ids, free space) and the confirmed description into the steps below so
@@ -243,7 +253,7 @@ change. (For Modes A/B, skip Phase 0 and start at Phase 1.)
    (each becomes a labelled region), and within each, the ordered list of
    **biological entities** — noting each entity's **compartment** and whether it is
    an integral-membrane / transported entity — plus the **directional flow** /
-   relationships between them. **In Mode C, decompose only the *additions*** and
+   relationships between them. **In Mode A, decompose only the *additions*** and
    note, per addition, whether it drops into an **existing** compartment/region
    from step 0 or forms a **new** subpathway region.
 2. For **each** entity **and each compartment**, resolve an icon:
@@ -276,7 +286,7 @@ change. (For Modes A/B, skip Phase 0 and start at Phase 1.)
    list (entities with no library icon) and a one-line layout sketch (how
    compartments and subpathways/regions will be arranged on the canvas).
 
-   **In Mode C**, the Icon Map covers **only the new additions**, and the layout
+   **In Mode A**, the Icon Map covers **only the new additions**, and the layout
    sketch shows how they fit into the base EHLD inventoried in step 0. For each
    addition state whether it lands in an **existing** region (give the
    `REGION-R-HSA-#######` id it joins) or in a **new** subpathway region (give the
@@ -294,22 +304,22 @@ change. (For Modes A/B, skip Phase 0 and start at Phase 1.)
    `--outdir <project-dir>/icons`; SVG only, add `--png` only if the curator
    wants raster previews).
 2. Compose the SVG:
-   - **Modes A / B (new EHLD).** Build one EHLD-compliant SVG from scratch per the
+   - **Modes B / C (new EHLD).** Build one EHLD-compliant SVG from scratch per the
      spec below and the layer order in `EHLD_layout_reference.md` §2: lay down
      `BG`, then compartment layers, then entity icons placed inside their
      compartments (membrane proteins straddling the band), then `TEXT`, `ARROWS`,
      `LOGO`, the analysis `ICON` legend, and finally the `REGION-`/`OVERLAY-`
      subpathway groups. Embed each downloaded icon verbatim (see "Embedding
      icons").
-   - **Mode C (modify existing EHLD).** Start from the base EHLD SVG and
+   - **Mode A (modify existing EHLD).** Start from the base EHLD SVG and
      **preserve it verbatim**, then splice the new elements in (see "Modifying an
-     existing EHLD (Mode C)" below). Keep the base's root `<svg>`/`viewBox`,
+     existing EHLD (Mode A)" below). Keep the base's root `<svg>`/`viewBox`,
      every existing layer group, region, label, `ANALINFO`, and `R-ICO`
      placement exactly as-is; only **add** nodes.
 3. Write every artefact into the **project directory** from step 1 of Required
    inputs (see Outputs) and report.
 
-#### Modifying an existing EHLD (Mode C) — how to splice safely
+#### Modifying an existing EHLD (Mode A) — how to splice safely
 
 Editing a published EHLD is an **additive, structure-preserving** operation:
 
@@ -526,7 +536,7 @@ pathway name lowercased, non-alphanumerics → single hyphen):
 1. **`<project-dir>/<ST_ID-or-slug>.svg`** — the composed EHLD-style illustration
    (1366×768, `#0F82BC` labels, `REGION-`/`OVERLAY-` ids). This is the final
    image, saved alongside the sample images it was built from.
-   - **Mode C (modified EHLD):** name it **`<base-ST_ID>_modified.svg`** (or
+   - **Mode A (modified EHLD):** name it **`<base-ST_ID>_modified.svg`** (or
      `<base-ST_ID>_v2.svg` / a curator-chosen name) — **never** the bare
      `<base-ST_ID>.svg`, so the published original is never overwritten. Keep the
      downloaded base EHLD in the directory too (e.g. `<base-ST_ID>.svg`) as the
@@ -535,13 +545,38 @@ pathway name lowercased, non-alphanumerics → single hyphen):
    `Subpathway, Entity, Accession, DB, R-ICO id, Icon name, Category, References,
    SVG URL, Designer, Curator, ORCID`. `Accession`/`DB` record how the icon was
    resolved (the `map` input, or `search` + term). This is the attribution +
-   provenance record. **In Mode C**, add a `Status` column marking each row
+   provenance record. **In Mode A**, add a `Status` column marking each row
    `retained` (already in the base EHLD) or `added` (new this run), and record the
    base EHLD's source ST_ID at the top so it is clear what was extended.
 3. **`<project-dir>/<slug>_gaps.md`** *(only if gaps exist)* — entities with no
    library icon.
 4. **`<project-dir>/icons/`** — the downloaded source SVGs (and PNGs if
    requested).
+
+## Previewing the SVG
+
+The composite is delivered as SVG (per the EHLD spec); no SVG rasteriser is
+assumed to be installed. To *look* at the result:
+
+- **Best — open in a web browser.** `open <file>.svg` (macOS) renders it
+  faithfully at the correct 1366×768 aspect via the browser's SVG engine.
+- **Best for an inline/checked render — headless Chrome at the exact canvas
+  size.** This produces a faithful PNG you (or the curator) can inspect:
+
+      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+        --headless=new --disable-gpu --force-device-scale-factor=1 \
+        --window-size=1366,768 --default-background-color=FFFFFFFF \
+        --screenshot=preview.png "file://$PWD/<file>.svg"
+
+  Pixel coordinates in the resulting PNG map ~1:1 to SVG user units, so it is also
+  useful for checking icon/arrow placement.
+- **Avoid macOS Quick Look (`qlmanage`) for EHLDs.** It distorts the aspect ratio
+  (renders ~square rather than 1366×768) and can drop outlined-text glyphs — so a
+  Quick Look thumbnail misrepresents both layout and labels. Use it only as a
+  last resort, and never judge placement from it.
+
+If you produced a preview PNG for a placement check, note that it is a scratch
+artefact (not one of the deliverables in Outputs).
 
 ## Attribution and licence
 
@@ -558,7 +593,7 @@ curator, and ORCID; include a credit line in the final report, e.g.:
   gaps file, and `<project-dir>/icons/` — all saved together in that one
   directory with the sample images.
 - Counts: subpathways/regions, icons placed, unique icons, gaps.
-- **In Mode C:** the base EHLD's source ST_ID, the counts of **retained** vs
+- **In Mode A:** the base EHLD's source ST_ID, the counts of **retained** vs
   **added** icons/regions, confirmation that the published original was **not**
   overwritten (the modified file has a distinct name), and the new/placeholder
   ST_IDs used for any newly added subpathway regions.
@@ -578,7 +613,7 @@ curator, and ORCID; include a credit line in the final report, e.g.:
 ## Network / platform note
 
 The skill reaches `reactome.org` (ContentService search + `/icon/*.svg` icon
-download + `/download/current/ehld/<ST_ID>.svg` for the Mode C base diagram).
+download + `/download/current/ehld/<ST_ID>.svg` for the Mode A base diagram).
 This repo's `.claude/settings.json` allowlists `reactome.org` so the helper's
 calls run without prompting in Claude Code.
 
