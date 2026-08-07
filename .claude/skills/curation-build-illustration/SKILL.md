@@ -173,6 +173,7 @@ bundled accession→icon mapping tables:
     python3 reactome_icons.py place  <icon.svg> --x X --y Y --prefix TOK \
             [--width W | --height H | --scale S] [--class CAT] [--into <base.svg>]
     python3 reactome_icons.py validate <composed.svg>    # spec check — run before delivering
+    python3 reactome_icons.py check-plan <plan>.json [--online]   # Figma route only
 
 **`map` is the preferred match step — use it whenever you have an accession.** It
 resolves an external id (UniProt, ChEBI, GO, CL, UBERON, Ensembl, Complex Portal,
@@ -559,6 +560,47 @@ the whole rewrite mechanically:
   and overlay behave correctly; place the label box in the nested `OVERLAY-`
   group.
 
+## Optional: hand off to Figma instead of Illustrator
+
+The skill's default output is a composed SVG the curator refines in Illustrator.
+A bundled **Figma plugin** (`figma-plugin/`, see its `README.md`) is an
+alternative surface for that refinement step: it builds the EHLD scaffolding for
+you and pre-wires the export settings. **Offer it only when the curator asks for
+Figma** — the default path is unchanged.
+
+Where it fits (everything before the build is identical):
+
+1. Phase 1 as normal — resolve icons with `map`/`search`, **curator approves the
+   Icon Map**. The approval gate does not move.
+2. Write a **placement plan JSON** into the project directory
+   (`<project-dir>/<slug>_plan.json`) — schema and a worked example in
+   `figma-plugin/README.md` and `figma-plugin/example-plan.json`.
+3. `python3 reactome_icons.py check-plan <plan>.json --online` — **always pass
+   `--online`.** The plugin draws only what the plan names, so the plan is the
+   one place a fabricated R-ICO id could enter the figure; a well-formed but
+   nonexistent id like `R-ICO-999999` survives every offline check and is caught
+   only here.
+4. Curator builds and hand-tunes in Figma, then exports.
+5. `python3 reactome_icons.py validate <exported>.svg` — same gate as any other
+   output.
+
+**Two limits to state plainly when offering this route:**
+
+- **Do not use the plugin for Mode A.** Importing a published EHLD into Figma and
+  re-exporting rewrites the whole file, which breaks the "preserve the base
+  verbatim" rule Mode A depends on. Mode A stays on `place --into` + `validate`,
+  which are additive by construction.
+- **Figma re-interprets SVG on import**, so the library art is not guaranteed to
+  round-trip byte-identical, whereas `place` copies path data verbatim. When
+  exact preservation of the icon art matters more than layout convenience, stay
+  with `place`.
+
+The two export settings that are load-bearing (the plugin sets both):
+`svgIdAttribute: true`, so layer names become the `REGION-`/`OVERLAY-`/`ANALINFO`
+ids — the Illustrator *Object IDs = Layer Names* equivalent; and
+`svgOutlineText: false`, because Figma outlines text by default and the spec
+forbids converting text to shapes — the *Font = SVG* equivalent.
+
 ## Validate before delivering
 
 Run the spec checker on the composed SVG and **fix every error before reporting
@@ -698,6 +740,10 @@ The skill reaches `reactome.org` (ContentService search + `/icon/*.svg` icon
 download + `/download/current/ehld/<ST_ID>.svg` for the Mode A base diagram).
 This repo's `.claude/settings.json` allowlists `reactome.org` so the helper's
 calls run without prompting in Claude Code.
+
+The bundled Figma plugin reaches the same three endpoints from the plugin
+iframe; all three send `access-control-allow-origin: *`, and its
+`manifest.json` declares `networkAccess` for `https://reactome.org` only.
 
 > **claude.ai users:** add `reactome.org` under **Settings → Capabilities →
 > Domain allowlist**, otherwise icon search and download will fail.

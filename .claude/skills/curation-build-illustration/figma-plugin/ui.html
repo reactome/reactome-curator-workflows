@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<!--
+  Reactome EHLD Builder — plugin UI (iframe).
+
+  This is the ONLY place the plugin touches the network. It talks to exactly
+  three reactome.org endpoints, all of which send `access-control-allow-origin: *`
+  so they are reachable from the plugin iframe:
+
+    GET /ContentService/search/query?types=Icon   — browse the Icon Library
+    GET /icon/<R-ICO-id>.svg                      — download sanctioned art
+    GET /download/current/ehld/<ST_ID>.svg        — fetch a published EHLD (Mode A)
+
+  It never uploads anything, and it cannot invent an icon: an R-ICO id either
+  comes back from the library or nothing is drawn.
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font: 11px/1.45 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    margin: 0; padding: 12px; color: var(--figma-color-text, #333);
+    background: var(--figma-color-bg, #fff);
+  }
+  h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+       margin: 16px 0 6px; opacity: .6; }
+  h2:first-child { margin-top: 0; }
+  button {
+    font: inherit; font-weight: 600; padding: 7px 12px; border-radius: 6px;
+    border: 1px solid var(--figma-color-border, #ddd); cursor: pointer;
+    background: var(--figma-color-bg-secondary, #f5f5f5);
+    color: var(--figma-color-text, #333);
+  }
+  button.primary { background: #0F82BC; border-color: #0F82BC; color: #fff; }
+  button:disabled { opacity: .45; cursor: default; }
+  textarea, input {
+    width: 100%; box-sizing: border-box; font: inherit; padding: 6px 8px;
+    border: 1px solid var(--figma-color-border, #ddd); border-radius: 6px;
+    background: var(--figma-color-bg, #fff); color: var(--figma-color-text, #333);
+  }
+  textarea { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; height: 130px; resize: vertical; }
+  .row { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
+  .row > input { flex: 1; }
+  .hint { opacity: .6; margin-top: 4px; }
+  #log { margin-top: 10px; max-height: 150px; overflow-y: auto; }
+  .msg { padding: 6px 8px; border-radius: 5px; margin-bottom: 4px; white-space: pre-wrap; }
+  .err  { background: rgba(220,50,50,.12);  border-left: 3px solid #d33; }
+  .warn { background: rgba(230,160,20,.12); border-left: 3px solid #e6a014; }
+  .ok   { background: rgba(20,160,90,.12);  border-left: 3px solid #14a05a; }
+  .hit { display: flex; gap: 8px; align-items: center; padding: 5px 6px;
+         border-bottom: 1px solid var(--figma-color-border, #eee); }
+  .hit img { width: 28px; height: 28px; object-fit: contain; }
+  .hit .meta { flex: 1; min-width: 0; }
+  .hit .nm { font-weight: 600; }
+  .hit .id { opacity: .55; font-family: ui-monospace, Menlo, monospace; }
+  #results { max-height: 190px; overflow-y: auto; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<h2>1 · Build from an approved plan</h2>
+<textarea id="plan" spellcheck="false" placeholder='Paste the placement plan JSON written by /curation-build-illustration, e.g.
+
+{
+  "pathway":     { "stId": "R-HSA-109581", "name": "Apoptosis" },
+  "compartments":[ { "icon": "R-ICO-013570", "x": 100, "y": 120, "width": 500 } ],
+  "subpathways": [
+    { "stId": "R-HSA-109606", "label": "Intrinsic Pathway",
+      "labelPos": { "x": 120, "y": 560 },
+      "entities": [ { "icon": "R-ICO-012706", "name": "BAX",
+                      "x": 200, "y": 300, "width": 60 } ] }
+  ]
+}'></textarea>
+<div class="row">
+  <button id="build" class="primary">Build EHLD</button>
+  <button id="checkPlan">Check plan only</button>
+</div>
+<div class="hint">Only icons named in the plan are drawn. A missing icon is
+reported, never substituted.</div>
+
+<h2>2 · Browse the Icon Library</h2>
+<div class="row">
+  <input id="q" placeholder="Search icons by name, e.g. potassium channel">
+  <button id="search">Search</button>
+</div>
+<div class="row">
+  <span class="hint">Category</span>
+  <select id="cat" style="flex:1">
+    <option value="">any</option>
+    <option>protein</option><option>compound</option><option>receptor</option>
+    <option>transporter</option><option>cell_type</option><option>cell_element</option>
+    <option>human_tissue</option><option>background</option><option>therapeutic</option>
+  </select>
+</div>
+<div id="results"></div>
+
+<h2>3 · Export</h2>
+<button id="export">Export EHLD as SVG</button>
+<div class="hint">Exports with <code>svgIdAttribute</code> on (layer names become
+REGION-/OVERLAY- ids) and <code>svgOutlineText</code> off (text stays editable,
+as the spec requires). Then run
+<code>python3 reactome_icons.py validate &lt;file&gt;</code>.</div>
+
+<div id="log"></div>
+
+<script>
+const API  = "https://reactome.org/ContentService";
+const ICON = "https://reactome.org/icon";
+const $ = (id) => document.getElementById(id);
+
+function log(text, kind) {
+  const el = document.createElement("div");
+  el.className = "msg " + (kind || "ok");
+  el.textContent = text;
+  $("log").prepend(el);
+}
+function clearLog() { $("log").innerHTML = ""; }
+function post(msg) { parent.postMessage({ pluginMessage: msg }, "*"); }
+
+function readPlan() {
+  const raw = $("plan").value.trim();
+  if (!raw) { log("Paste a placement plan first.", "err"); return null; }
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    log("Plan is not valid JSON: " + e.message, "err");
+    return null;
+  }
+}
+
+// Collect every R-ICO id the plan references, so we fetch each icon once even
+// when it is placed many times.
+function iconIdsOf(plan) {
+  const ids = new Set();
+  for (const c of plan.compartments || []) if (c.icon) ids.add(c.icon);
+  for (const s of plan.subpathways || [])
+    for (const e of s.entities || []) if (e.icon) ids.add(e.icon);
+  return [...ids];
+}
+
+async function fetchIcons(ids) {
+  const icons = {};
+  const missing = [];
+  await Promise.all(ids.map(async (id) => {
+    if (!/^R-ICO-\d+$/.test(id)) { missing.push(id + " (not an R-ICO id)"); return; }
+    try {
+      const res = await fetch(`${ICON}/${id}.svg`);
+      if (!res.ok) { missing.push(`${id} (HTTP ${res.status})`); return; }
+      icons[id] = await res.text();
+    } catch (e) {
+      missing.push(`${id} (${e.message})`);
+    }
+  }));
+  return { icons, missing };
+}
+
+$("checkPlan").onclick = () => {
+  const plan = readPlan();
+  if (plan) { clearLog(); post({ type: "validate-plan", plan }); }
+};
+
+$("build").onclick = async () => {
+  const plan = readPlan();
+  if (!plan) return;
+  clearLog();
+  $("build").disabled = true;
+  try {
+    const ids = iconIdsOf(plan);
+    log(`Downloading ${ids.length} icon(s) from the Reactome Icon Library…`);
+    const { icons, missing } = await fetchIcons(ids);
+    for (const m of missing) log("Could not download " + m + " — it will be reported as a gap, not substituted.", "warn");
+    post({ type: "build", plan, icons });
+  } catch (e) {
+    log("Build failed: " + e.message, "err");
+    $("build").disabled = false;
+  }
+};
+
+$("search").onclick = async () => {
+  const term = $("q").value.trim();
+  if (!term) return;
+  const cat = $("cat").value;
+  $("results").innerHTML = "<div class='hint'>Searching…</div>";
+  try {
+    const url = `${API}/search/query?query=${encodeURIComponent(term)}&types=Icon&cluster=true&rows=${cat ? 200 : 40}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    const seen = new Set();
+    const hits = [];
+    for (const g of data.results || []) {
+      for (const e of g.entries || []) {
+        const id = e.stId || e.id;
+        if (!id || seen.has(id)) continue;
+        const cats = e.iconCategories || [];
+        if (cat && !cats.includes(cat)) continue;
+        seen.add(id);
+        hits.push({ id, name: (e.iconName || e.name || "").replace(/<[^>]*>/g, ""), cats });
+      }
+    }
+    render(hits.slice(0, 40));
+  } catch (e) {
+    $("results").innerHTML = "";
+    log("Search failed: " + e.message, "err");
+  }
+};
+
+function render(hits) {
+  const box = $("results");
+  box.innerHTML = "";
+  if (!hits.length) {
+    box.innerHTML = "<div class='hint'>No icons matched. That is a gap — request the icon at reactome.org/icon-info rather than drawing one.</div>";
+    return;
+  }
+  for (const h of hits) {
+    const row = document.createElement("div");
+    row.className = "hit";
+    row.innerHTML =
+      `<img src="${ICON}/${h.id}.svg" alt="">` +
+      `<div class="meta"><div class="nm"></div><div class="id"></div></div>` +
+      `<button>Insert</button>`;
+    row.querySelector(".nm").textContent = h.name;
+    row.querySelector(".id").textContent = `${h.id} · ${h.cats.join(", ")}`;
+    row.querySelector("button").onclick = async () => {
+      try {
+        const res = await fetch(`${ICON}/${h.id}.svg`);
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        post({
+          type: "insert-icon",
+          svg: await res.text(),
+          spec: { icon: h.id, name: h.name, x: 0, y: 0 },
+        });
+      } catch (e) { log("Insert failed: " + e.message, "err"); }
+    };
+    box.appendChild(row);
+  }
+}
+
+$("export").onclick = () => { clearLog(); post({ type: "export" }); };
+
+onmessage = (event) => {
+  const msg = event.data.pluginMessage;
+  if (!msg) return;
+
+  if (msg.type === "plan-errors") {
+    if (!msg.errors.length) log("Plan looks valid.", "ok");
+    else msg.errors.forEach((e) => log(e, "err"));
+
+  } else if (msg.type === "build-result") {
+    $("build").disabled = false;
+    const r = msg.result;
+    (r.errors || []).forEach((e) => log(e, "err"));
+    (r.warnings || []).forEach((w) => log(w, "warn"));
+    if (r.ok) {
+      const s = r.summary;
+      log(`Built ${s.frame}: ${s.regions} region(s), ${s.compartments} compartment(s), font ${s.font}.`, "ok");
+    }
+
+  } else if (msg.type === "export-result") {
+    const r = msg.result;
+    if (!r.ok) { (r.errors || []).forEach((e) => log(e, "err")); return; }
+    const blob = new Blob([new Uint8Array(r.bytes)], { type: "image/svg+xml" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = r.filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    log(`Exported ${r.filename}. ${r.note}`, "ok");
+  }
+};
+</script>
+</body>
+</html>

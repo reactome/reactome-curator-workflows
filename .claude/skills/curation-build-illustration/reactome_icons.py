@@ -61,6 +61,15 @@ Subcommands
       chosen prefix against an existing SVG's ids first, which is what you want
       when splicing into a base EHLD in Mode A.
 
+  check-plan <plan.json> [--online]
+      Verify the placement plan handed to the bundled Figma plugin
+      (figma-plugin/) before it is built: pathway/subpathway ST_ID form, at
+      least two subpathways, R-ICO id form, category tokens, and whether any
+      placement falls outside the canvas. `--online` additionally confirms that
+      every R-ICO id resolves to a real icon — the plugin can only draw what the
+      plan names, so the plan is the one place a fabricated id could enter the
+      figure, and this closes it.
+
   validate <ehld.svg>
       Check a composed EHLD against the official spec and the corpus
       conventions: canvas size, duplicate ids, dangling url(#…) references,
@@ -839,6 +848,121 @@ def cmd_validate(args):
     return 1 if errors else 0
 
 
+# ---------------------------------------------------------------------------
+# check-plan — verify a Figma-plugin placement plan before it is built
+# ---------------------------------------------------------------------------
+
+def cmd_check_plan(args):
+    """Validate the placement plan handed to the Figma plugin (figma-plugin/).
+
+    The plugin can only draw icons the plan names, so the plan is where a
+    fabricated R-ICO id would enter the figure. `--online` closes that hole
+    completely by confirming every id resolves to a real icon."""
+    try:
+        with open(args.plan, encoding="utf-8") as fh:
+            plan = json.load(fh)
+    except OSError as exc:
+        print(json.dumps({"ok": False, "errors": [str(exc)]}), file=sys.stderr)
+        return 2
+    except json.JSONDecodeError as exc:
+        print(json.dumps({"ok": False, "file": args.plan,
+                          "errors": [f"not valid JSON: {exc}"]}, indent=2))
+        return 1
+
+    errors, warnings = [], []
+    if not isinstance(plan, dict):
+        print(json.dumps({"ok": False, "errors": ["plan is not a JSON object"]}, indent=2))
+        return 1
+
+    pathway = plan.get("pathway") or {}
+    if not pathway.get("stId"):
+        errors.append("pathway.stId is required")
+    elif not REGION_ST_ID_RE.match(pathway["stId"]):
+        errors.append(f"pathway.stId {pathway['stId']!r} is not a valid ST_ID")
+
+    canvas = plan.get("canvas") or {}
+    cw = canvas.get("width", 1366)
+    ch = canvas.get("height", 768)
+    if (float(cw), float(ch)) not in VALID_CANVASES:
+        errors.append(f"canvas {cw}x{ch}; expected 1366x768 or 1396x798")
+
+    subs = plan.get("subpathways") or []
+    if len(subs) < 2:
+        errors.append(f"{len(subs)} subpathway(s); an EHLD needs two or more active regions")
+
+    # Every icon reference in the plan, tagged with where it came from, so an
+    # error names the entity the curator recognises rather than a bare id.
+    placements = [("compartment", c) for c in (plan.get("compartments") or [])]
+    seen_st = set()
+    for sub in subs:
+        st = sub.get("stId")
+        if not st or not REGION_ST_ID_RE.match(st):
+            errors.append(f"subpathway stId {st!r} is not a valid ST_ID")
+        elif st in seen_st:
+            errors.append(f"duplicate subpathway stId {st}")
+        else:
+            seen_st.add(st)
+        if not sub.get("label"):
+            warnings.append(f"{st}: no label; the box will fall back to the ST_ID")
+        for ent in sub.get("entities") or []:
+            placements.append((st or "?", ent))
+
+    for where, item in placements:
+        ico = item.get("icon")
+        # Report every problem with a placement in one pass. Short-circuiting on
+        # a bad id would hide the others and cost the curator a fix-rerun cycle.
+        if item.get("category") and item["category"] not in CATEGORIES:
+            errors.append(f"{where}/{ico}: category {item['category']!r} is not "
+                          f"one of {', '.join(CATEGORIES)}")
+        if not ico or not ICO_ID_RE.match(str(ico)):
+            errors.append(f"{where}: {ico!r} is not an R-ICO id "
+                          "(resolve it with `map`/`search` — never write one by hand)")
+            continue
+        x, y = item.get("x", 0), item.get("y", 0)
+        w = item.get("width") or 0
+        h = item.get("height") or 0
+        if not (0 <= x <= cw and 0 <= y <= ch):
+            warnings.append(f"{where}/{ico}: origin ({x},{y}) is outside the "
+                            f"{cw:g}x{ch:g} canvas")
+        elif x + w > cw or y + h > ch:
+            warnings.append(f"{where}/{ico}: extends past the canvas edge; the spec "
+                            "says portray elements in full or fade them with a gradient")
+
+    ids = sorted({str(i.get("icon")) for _, i in placements
+                  if ICO_ID_RE.match(str(i.get("icon") or ""))})
+
+    # The anti-fabrication check: confirm each id is a real icon.
+    unresolved = []
+    if args.online:
+        for ico in ids:
+            try:
+                req = urllib.request.Request(_svg_url(ico), method="HEAD",
+                                             headers={"User-Agent": UA})
+                urllib.request.urlopen(req, timeout=TIMEOUT).close()
+            except Exception as exc:  # noqa: BLE001
+                unresolved.append(f"{ico} ({exc})")
+        for u in unresolved:
+            errors.append(f"icon does not exist in the library: {u}")
+
+    report = {
+        "file": os.path.abspath(args.plan),
+        "ok": not errors,
+        "errors": errors,
+        "warnings": warnings,
+        "info": {
+            "pathway": pathway.get("stId"),
+            "canvas": f"{cw:g}x{ch:g}",
+            "subpathways": len(subs),
+            "placements": len(placements),
+            "distinctIcons": len(ids),
+            "iconIds": ids,
+            "verifiedOnline": bool(args.online) and not unresolved,
+        },
+    }
+    print(json.dumps(report, indent=2, ensure_ascii=False))
+    return 1 if errors else 0
+
+
 def cmd_info(args):
     args.max = 1
     args.category = getattr(args, "category", None)
@@ -896,6 +1020,12 @@ def main():
     v = sub.add_parser("validate", help="check a composed EHLD against the spec")
     v.add_argument("svg", help="path to the composed EHLD SVG")
     v.set_defaults(func=cmd_validate)
+
+    cp = sub.add_parser("check-plan", help="verify a Figma-plugin placement plan")
+    cp.add_argument("plan", help="path to the placement plan JSON")
+    cp.add_argument("--online", action="store_true",
+                    help="confirm every R-ICO id resolves to a real icon (network)")
+    cp.set_defaults(func=cmd_check_plan)
 
     i = sub.add_parser("info", help="single best match + attribution")
     i.add_argument("term")

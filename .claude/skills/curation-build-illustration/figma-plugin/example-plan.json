@@ -1,0 +1,87 @@
+{
+  "_comment": [
+    "Placement plan for the Reactome EHLD Builder Figma plugin.",
+    "Written by /curation-build-illustration AFTER the curator approves the Phase 1",
+    "Icon Map — every R-ICO id here was resolved with `reactome_icons.py map` or",
+    "`search`, never written from memory. Check it with",
+    "`python3 reactome_icons.py check-plan example-plan.json --online` before building.",
+    "Coordinates are top-left origin in a 1366x768 canvas; `width` scales the icon",
+    "proportionally from its own viewBox. This example is a structural illustration,",
+    "not a curated Apoptosis EHLD."
+  ],
+  "pathway": {
+    "stId": "R-HSA-109581",
+    "name": "Apoptosis"
+  },
+  "canvas": { "width": 1366, "height": 768 },
+  "compartments": [
+    {
+      "icon": "R-ICO-013570",
+      "name": "cell",
+      "category": "cell_element",
+      "x": 90,
+      "y": 90,
+      "width": 560
+    },
+    {
+      "icon": "R-ICO-013020",
+      "name": "mitochondrion",
+      "category": "cell_element",
+      "x": 250,
+      "y": 250,
+      "width": 150
+    }
+  ],
+  "subpathways": [
+    {
+      "stId": "R-HSA-109606",
+      "label": "Intrinsic Pathway for Apoptosis",
+      "labelPos": { "x": 120, "y": 620 },
+      "entities": [
+        {
+          "icon": "R-ICO-014273",
+          "name": "BAX/BAK pore",
+          "category": "protein",
+          "accession": "Q07812",
+          "db": "UNIPROT",
+          "x": 300,
+          "y": 200,
+          "width": 70
+        },
+        {
+          "icon": "R-ICO-014258",
+          "name": "CYCS",
+          "category": "protein",
+          "accession": "P99999",
+          "db": "UNIPROT",
+          "x": 420,
+          "y": 300,
+          "width": 55
+        }
+      ]
+    },
+    {
+      "stId": "R-HSA-75153",
+      "label": "Apoptotic Execution Phase",
+      "labelPos": { "x": 700, "y": 620 },
+      "entities": [
+        {
+          "icon": "R-ICO-012511",
+          "name": "CASPASE",
+          "category": "protein",
+          "x": 760,
+          "y": 300,
+          "width": 70
+        },
+        {
+          "icon": "R-ICO-012517",
+          "name": "CASPASE8",
+          "category": "protein",
+          "x": 880,
+          "y": 300,
+          "width": 70
+        }
+      ]
+    }
+  ]
+}

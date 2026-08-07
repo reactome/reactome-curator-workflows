@@ -138,7 +138,10 @@ inputs, and options.
   `map`) first, live name `search` otherwise. Follows the bundled official Reactome
   specs (`EHLD_Specs_and_Guidelines.pdf`, `Icon_Library_Guidelines.pdf`). Needs
   Python 3 and network access to `reactome.org` (name search, icon + EHLD download;
-  `map` is offline).
+  `map` is offline). The helper also provides `place` (id-namespaced icon
+  embedding) and `validate` (spec check — run on every output). Ships an optional
+  **Figma plugin** (`figma-plugin/`) as an alternative to Illustrator for the
+  hand-tuning step; not for Mode A. See the skill's `SKILL.md`.
 
 ---
 

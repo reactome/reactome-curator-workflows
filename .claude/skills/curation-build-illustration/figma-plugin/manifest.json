@@ -1,0 +1,15 @@
+{
+  "name": "Reactome EHLD Builder",
+  "id": "reactome-ehld-builder",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "editorType": ["figma"],
+  "documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": [
+      "https://reactome.org"
+    ],
+    "reasoning": "Downloads pathway icons from the Reactome Icon Library (reactome.org/icon/<R-ICO-id>.svg), searches the library via the public ContentService, and fetches published EHLDs from reactome.org/download/current/ehld/. These are the only sanctioned sources of biological art for a Reactome EHLD; no other host is contacted and nothing is uploaded."
+  }
+}
