@@ -195,8 +195,8 @@ PhysicalEntities the icon is mapped to (`mappedEntities`), a short `summation`,
 attribution (`designer`, `curator`, `curatorOrcid`), and the direct `svgUrl` /
 `pngUrl`.
 
-**Category tokens** (pass to `--category`) — these nine are the *only* accepted
-values, verified against the live library metadata:
+**Category tokens** (pass to `--category`) — these ten are the *only* accepted
+values, enumerated exhaustively over all 2,569 icons in the library:
 
 | Token | Icon Library category | Typical use |
 |---|---|---|
@@ -209,6 +209,17 @@ values, verified against the live library metadata:
 | `human_tissue` | Human tissue | organs and tissue settings |
 | `background` | — | scene backgrounds |
 | `therapeutic` | — | therapeutic agents / drugs |
+| `arrow` | — | **connectors — 13 of them** (see below) |
+
+> **Arrows come from the library too.** There are 13 `arrow` icons with distinct
+> meanings: **Process** (`R-ICO-012348`), **Motion**, **Indication**,
+> **Inhibition** and **Transformation**, each with a "No …" negated form and a
+> "Disease related …" form. Production EHLDs use them — the Apoptosis EHLD draws
+> all five of its connectors from `R-ICO-012348`, tagged `class="arrow"`.
+> **Prefer a library arrow over a hand-drawn one** and pick the type that matches
+> the biology (Motion for a translocation, Inhibition for negative regulation).
+> `place` has no `--rotate`, so a non-horizontal arrow needs the emitted `<g>`
+> wrapped in your own `rotate()` — a rigid transform, so the art stays verbatim.
 
 > **There is no `ion_channel` token.** The official
 > `Icon_Library_Guidelines.pdf` names the category "Ion channels", but the
@@ -753,7 +764,7 @@ iframe; all three send `access-control-allow-origin: *`, and its
 - **Layout is best-effort.** Automatic placement of icons and regions will need
   hand-tuning in Illustrator; treat the SVG as a structured starting point, not a
   final figure.
-- **Icon coverage.** The library (~2,500 icons across the nine category tokens
+- **Icon coverage.** The library (2,569 icons across the ten category tokens
   above) does not cover every entity. Missing entities are reported as gaps,
   never invented.
 - **Match confidence.** Icon search is name-based; verify that the chosen icon's

@@ -112,6 +112,11 @@ ICO_ID_RE = re.compile(r"^R-ICO-\d+$")
 # token is `transporter`. Passing an unknown token used to return an empty list,
 # which reads exactly like "no icon exists" — i.e. a fabricated gap — so an
 # unknown token is now a hard error instead.
+# Enumerated exhaustively over all 2,569 icons in the library (query *:* with
+# rows=5000 — note `start` does not paginate this endpoint, so a single large
+# pull is the only way to see the whole set). Counts at time of writing:
+# protein 1429, compound 457, cell_element 242, receptor 203, cell_type 116,
+# transporter 74, human_tissue 69, therapeutic 56, background 41, arrow 13.
 CATEGORIES = (
     "protein",       # Proteins
     "compound",      # Compounds
@@ -122,6 +127,7 @@ CATEGORIES = (
     "human_tissue",  # Human tissue
     "background",    # Scene backgrounds (tissue/organ settings)
     "therapeutic",   # Therapeutic agents
+    "arrow",         # Connector glyphs (e.g. R-ICO-012348 "Process arrow")
 )
 
 CONTENT_SERVICE = "https://reactome.org/ContentService"
