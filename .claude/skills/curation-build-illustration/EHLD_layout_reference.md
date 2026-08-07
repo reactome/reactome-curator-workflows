@@ -53,6 +53,13 @@ viewBox="0 0 1396 798"`. Exported corpus files may add a white `1366×768` rect 
 the first child (the artboard), but — per the official spec — you should **not**
 author a full-canvas background; keep only necessary compartment backgrounds.
 
+> **Both sizes are live.** The bulk corpus download is mostly `1396×798`, but
+> EHLDs served individually from
+> `reactome.org/download/current/ehld/<ST_ID>.svg` — the Mode A fetch path — come
+> back at **`1366×768`**, with no bleed. So a Mode A base may be either size.
+> `reactome_icons.py validate` accepts both and rejects anything else; keep the
+> base's own root `<svg>` verbatim rather than normalising it.
+
 ---
 
 ## 2. Layer / group stacking order (back → front)
@@ -211,8 +218,32 @@ REGION-R-HSA-5357769              ← selectable region; may include its arrows
 - `PATHWAY_LABEL` box: Arial-Bold, white UPPERCASE text, rounded rect
   170 × 30 px (43 px for two lines), fill `#0F82BC` (RGB 15,130,188).
 - `ANALINFO` box: Arial-Bold white text, rounded rect 8 px radius, 170 × 20 px,
-  fill `#C6C6C6` (RGB 198,198,198), group opacity 0 %. One per subpathway
-  (1168/217 → present for every subpathway).
+  fill `#C6C6C6` (RGB 198,198,198). One per subpathway (1168/217 → present for
+  every subpathway).
+  - **Group opacity is `0.01`, not `0`.** The spec says "0 %", but every
+    `ANALINFO*` group in every corpus file checked carries `opacity="0.01"` —
+    a fully transparent group can be dropped from hit-testing, which would
+    disable the analysis overlay the box exists to receive. Author `0.01`;
+    `reactome_icons.py validate` accepts anything ≤ 0.01.
+
+---
+
+## 7a. Placed icons carry their category as a CSS class
+
+Production EHLDs tag each placed icon group with its Icon Library **category
+token** as a `class`, alongside the `R-ICO` id:
+
+```
+<g class="cell_type" id="R-ICO-013570" opacity="0.8"> … </g>
+<g class="protein" id="R-ICO-012706"> … </g>
+<g class="receptor protein" id="…"> … </g>   ← multiple categories, space-separated
+<g class="arrow" …>                          ← arrows are tagged too
+```
+
+Reproduce this: pass `--class <category>` to `reactome_icons.py place`, using the
+token(s) the icon's `categories` field reported from `map`/`search`. The
+`class="arrow"` marker on connectors is also what `validate` uses to detect
+arrows wrongly nested inside an `OVERLAY-` group.
 
 ---
 
@@ -226,5 +257,6 @@ REGION-R-HSA-5357769              ← selectable region; may include its arrows
 - [ ] Receptors / channels / transporters straddle the membrane band; ligands extracellular; effectors cytosolic.
 - [ ] Transport = same cargo icon on both membrane sides + a crossing arrow in the `ARROWS` layer.
 - [ ] One `REGION-`⊃`OVERLAY-` pair per subpathway, real ST_IDs (or flagged placeholders); label text kept as editable `<text>`, not outlined paths.
-</content>
-</invoke>
+- [ ] Each placed icon embedded via `reactome_icons.py place` with a unique `--prefix`, and tagged `--class <category>` as production files are.
+- [ ] `ANALINFO` groups at `opacity="0.01"` (see §7), inner shapes at 100%.
+- [ ] `reactome_icons.py validate <file>.svg` reports **zero errors** before the file goes to the curator.

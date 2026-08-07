@@ -170,6 +170,9 @@ bundled accession→icon mapping tables:
     python3 reactome_icons.py fetch  <R-ICO-id> [--outdir ./icons] [--png]
     python3 reactome_icons.py info   "<entity name>"     # single best match + attribution
     python3 reactome_icons.py fetch-ehld <ST_ID> [--outdir <project-dir>]  # Mode A base diagram
+    python3 reactome_icons.py place  <icon.svg> --x X --y Y --prefix TOK \
+            [--width W | --height H | --scale S] [--class CAT] [--into <base.svg>]
+    python3 reactome_icons.py validate <composed.svg>    # spec check — run before delivering
 
 **`map` is the preferred match step — use it whenever you have an accession.** It
 resolves an external id (UniProt, ChEBI, GO, CL, UBERON, Ensembl, Complex Portal,
@@ -191,11 +194,27 @@ PhysicalEntities the icon is mapped to (`mappedEntities`), a short `summation`,
 attribution (`designer`, `curator`, `curatorOrcid`), and the direct `svgUrl` /
 `pngUrl`.
 
-**Category tokens** (pass to `--category`): `protein`, `compound`, `cell_type`,
-`cell_element`, `receptor`, `ion_channel`, `human_tissue`. These map to the
-**seven Icon Library categories** in the official **`Icon_Library_Guidelines.pdf`**
-(Cell elements, Cell types, Compounds, Human tissue, Ion channels, Proteins,
-Receptors — the metadata token for a transporter-type channel is `transporter`).
+**Category tokens** (pass to `--category`) — these nine are the *only* accepted
+values, verified against the live library metadata:
+
+| Token | Icon Library category | Typical use |
+|---|---|---|
+| `protein` | Proteins | enzymes, ligands, cytosolic/nuclear proteins |
+| `compound` | Compounds | small molecules, ions, metabolites |
+| `receptor` | Receptors | membrane receptors |
+| `transporter` | Ion channels | channels, pumps, transporters |
+| `cell_type` | Cell types | whole cells (neuron, hepatocyte, T cell) |
+| `cell_element` | Cell elements | **compartments**: cell, nucleus, organelles, membranes |
+| `human_tissue` | Human tissue | organs and tissue settings |
+| `background` | — | scene backgrounds |
+| `therapeutic` | — | therapeutic agents / drugs |
+
+> **There is no `ion_channel` token.** The official
+> `Icon_Library_Guidelines.pdf` names the category "Ion channels", but the
+> metadata token is **`transporter`** — use that. Passing an unknown token is a
+> hard error from the helper (it will not return an empty list), so a typo can
+> never be mistaken for a genuine gap.
+
 Consult that PDF to understand how each icon type is drawn (e.g. proteins =
 rounded rectangles; compounds = octagons/hexagons with the chemical symbol;
 ion channels = funnels crossing the membrane; human tissue = simple "toy-like"
@@ -322,14 +341,17 @@ change. (For Modes B/C, skip Phase 0 and start at Phase 1.)
      `BG`, then compartment layers, then entity icons placed inside their
      compartments (membrane proteins straddling the band), then `TEXT`, `ARROWS`,
      `LOGO`, the analysis `ICON` legend, and finally the `REGION-`/`OVERLAY-`
-     subpathway groups. Embed each downloaded icon verbatim (see "Embedding
-     icons").
+     subpathway groups. Embed each downloaded icon with `place` — one unique
+     `--prefix` per placement (see "Embedding icons").
    - **Mode A (modify existing EHLD).** Start from the base EHLD SVG and
      **preserve it verbatim**, then splice the new elements in (see "Modifying an
      existing EHLD (Mode A)" below). Keep the base's root `<svg>`/`viewBox`,
      every existing layer group, region, label, `ANALINFO`, and `R-ICO`
      placement exactly as-is; only **add** nodes.
-3. Write every artefact into the **project directory** from step 1 of Required
+3. **Validate the result** — run `reactome_icons.py validate` on the composed SVG
+   and **fix every reported error before going further** (see "Validate before
+   delivering"). Do not hand a file with errors to the curator.
+4. Write every artefact into the **project directory** from step 1 of Required
    inputs (see Outputs) and report.
 
 #### Modifying an existing EHLD (Mode A) — how to splice safely
@@ -347,12 +369,16 @@ Editing a published EHLD is an **additive, structure-preserving** operation:
   entity that joins an **existing** subpathway inside that subpathway's existing
   `REGION-` group; give a **brand-new** subpathway its own new
   `REGION-`/`OVERLAY-` group (with label box + mandatory `ANALINFO`) per spec.
-- **Avoid id collisions with the base.** The base already uses `R-ICO-######`
-  and `_2/_3…` suffixes. Namespace every newly placed icon and all its internal
-  `url(#…)`/`clip-path`/gradient references with a fresh per-placement token that
-  cannot clash (e.g. `add01-`, `add02-`, …), so new defs never collide with the
-  base's. New region ids use the new/placeholder subpathway ST_IDs, never reusing
-  an existing region's id.
+- **Avoid id collisions with the base — let `place --into` prove it.** The base
+  already uses `R-ICO-######` with `_2/_3…` suffixes plus generic inner ids
+  (`Vector`, `BG`, `Nucleus`, `paint0_linear_…`). Place each addition with a
+  fresh per-placement token (`add01-`, `add02-`, …) **and pass
+  `--into <base>.svg`**, which checks the prefixed ids against everything already
+  in the base and exits non-zero if any clash — so a collision is caught before
+  the splice, not discovered as a mis-rendered gradient afterwards. New region
+  ids use the new/placeholder subpathway ST_IDs, never reusing an existing
+  region's id. Confirm the finished file with `validate`, whose duplicate-id and
+  dangling-reference checks are the backstop.
 - **Respect the canvas.** Fit additions within the existing 1366×768 content area
   and the no-full-canvas-background rule; if the diagram is crowded, note it as a
   layout item for the curator to hand-tune in Illustrator rather than shrinking or
@@ -426,6 +452,11 @@ Put the placeholder text **`XXX/YYY`** inside. Centred, UPPERCASE, **Arial Bold
 but leave the inner shapes/text at 100 %. Place it beside its pathway label, on
 the side *opposite* the content (label above content → ANALINFO above the label).
 
+> **In practice, use `opacity="0.01"`, not `0`.** Every production EHLD does
+> (verified across the corpus: all `ANALINFO*` groups carry `opacity="0.01"`) —
+> a fully transparent group can be dropped from hit-testing, which would break
+> the analysis overlay the box exists for. `validate` accepts anything ≤ 0.01.
+
 **Active regions (interactivity).** Annotate via the `id` attribute of a group:
 - `id="OVERLAY-R-HSA-#######"` — the group holding the subpathway's **label box**
   only. Selectable **and** analysis-overlayable. **MANDATORY** for every
@@ -495,24 +526,59 @@ to this file). Read that file before composing. The essentials:
 
 ## Embedding icons into the composite SVG
 
-Each downloaded icon is a standalone `<svg width height viewBox>` whose inner art
-is wrapped in `<g id="R-ICO-######"><g id="ICONNAME">…</g></g>`. To place one on
-the canvas without corrupting coordinates or colliding ids:
+**Use `reactome_icons.py place` — do not hand-write the embedding.** Each
+downloaded icon is a standalone `<svg width height viewBox>` whose inner art is
+wrapped in `<g id="R-ICO-######">…</g>`, and these are Figma exports full of
+**generic internal ids** — `Vector`, `Vector_2`, `BG`, `CYTOPLASM`, `Nucleus`,
+`paint0_linear_938_22846`, `clip0_…`. Two placements of the same icon, or two
+different icons, therefore collide by default, and a collision silently
+repoints a gradient, clip-path, or mask at the wrong definition. `place` does
+the whole rewrite mechanically:
 
-- Wrap each placed icon in a positioned, scaled group:
-  `<g transform="translate(X,Y) scale(S)"> …icon inner <g>… </g>`, scaling by the
-  icon's own `viewBox` so its intrinsic proportions are preserved.
-- **Namespace ids to avoid collisions.** Two placements of the same icon, or two
-  icons sharing an inner id, will clash. Prefix every `id` (and every
-  `url(#…)` / `xlink:href="#…"` / clip-path / gradient reference) inside a placed
-  icon with a per-placement token, e.g. `p03-`. Rewrite both the definitions and
-  their references together so gradients/clip-paths still resolve.
-- Keep the icon's own vector paths **verbatim** — do not recolour, redraw, or
-  simplify the biological art. (Repositioning, uniform scaling, and id-prefixing
-  are the only permitted transforms.)
+    python3 reactome_icons.py place icons/R-ICO-013570.svg \
+        --x 100 --y 150 --width 400 --prefix p01- --class cell_type \
+        [--into <base-EHLD>.svg]
+
+- It emits the positioned `<g transform="translate(X,Y) scale(S)">…</g>` on
+  **stdout** (splice that straight into the composite) and placement metadata —
+  prefix, ids namespaced, computed scale, bounding box — on **stderr**.
+- Size with `--width`/`--height` (scale is derived from the icon's own `viewBox`
+  so proportions are preserved) or `--scale` for an explicit factor.
+- **`--prefix` is mandatory and must be unique per placement** (`p01-`, `p02-`,
+  … ; `add01-`, `add02-`, … for Mode A additions). Every declared `id` and every
+  `url(#…)` / `href="#…"` / clip-path / gradient / mask reference is rewritten
+  together, so references still resolve. Dangling references are reported.
+- **`--class`** tags the placed group with its category, matching production
+  EHLDs (`class="cell_type"`, `class="protein"`, `class="receptor protein"`).
+- **`--into <base>.svg` in Mode A**: checks the prefix against the ids already in
+  the base EHLD and exits non-zero on collision, before you splice.
+- The icon's vector paths are copied **verbatim** — only ids are touched — so the
+  "never redraw library art" rule holds by construction. Repositioning, uniform
+  scaling, and id-prefixing remain the only permitted transforms.
 - Place biological icons *inside* their subpathway's `REGION-` group so selection
   and overlay behave correctly; place the label box in the nested `OVERLAY-`
   group.
+
+## Validate before delivering
+
+Run the spec checker on the composed SVG and **fix every error before reporting
+to the curator**:
+
+    python3 reactome_icons.py validate <project-dir>/<output>.svg
+
+It prints `{ok, errors, warnings, info}` and exits 1 if any error. It checks:
+canvas size (1366×768 authoring, or 1396×798 with export bleed), duplicate ids
+and dangling `url(#…)` references (the signature of an unnamespaced splice),
+raster `<image>` content, at least two `OVERLAY-` regions, `REGION-`/`OVERLAY-`
+ST_ID form and containment, arrows wrongly inside an `OVERLAY-` group, `ANALINFO`
+presence and opacity, outlined-vs-editable text, full-canvas background,
+placeholder ST_IDs, logo opacity, the `ICON` legend, and label-box geometry.
+
+Two warnings are **expected and fine on a Mode A output**, because the published
+base EHLD is the distributed export: *"no `<text>` elements"* (label text was
+outlined upstream) and *"a full-canvas background rect is present"* (Illustrator
+artboard artifact). Say so in the report rather than trying to "fix" the base.
+Report the `info` counts — they are the numbers the final report needs.
 
 ## Labelling rules
 
@@ -610,6 +676,9 @@ curator, and ORCID; include a credit line in the final report, e.g.:
   **added** icons/regions, confirmation that the published original was **not**
   overwritten (the modified file has a distinct name), and the new/placeholder
   ST_IDs used for any newly added subpathway regions.
+- **The `validate` result** — confirm it reports zero errors, and list any
+  remaining warnings with a one-line note on why each is acceptable (the two
+  distributed-form warnings are expected on a Mode A output).
 - Canvas confirmation (1366×768) and the ST_ID(s)/placeholders used for
   `REGION-`/`OVERLAY-` ids and the filename.
 - The CC-BY credit line with the designer names.
@@ -638,11 +707,14 @@ calls run without prompting in Claude Code.
 - **Layout is best-effort.** Automatic placement of icons and regions will need
   hand-tuning in Illustrator; treat the SVG as a structured starting point, not a
   final figure.
-- **Icon coverage.** The library (~1,150+ icons across 7 categories) does not
-  cover every entity. Missing entities are reported as gaps, never invented.
+- **Icon coverage.** The library (~2,500 icons across the nine category tokens
+  above) does not cover every entity. Missing entities are reported as gaps,
+  never invented.
 - **Match confidence.** Icon search is name-based; verify that the chosen icon's
   `mappedEntities`/`references` truly correspond to the intended entity,
-  especially for ambiguous or family-level names.
+  especially for ambiguous or family-level names. `search` reports
+  `# showing N of M matches` on stderr when it truncated — raise `--max` before
+  concluding the right icon isn't there.
 - **EHLD ingestion.** A browser-ingestable EHLD requires real subpathway ST_IDs
   and validation against the live hierarchy — out of scope here; placeholders are
   flagged for the curator to resolve.
