@@ -265,6 +265,14 @@ the result with `--scale 1`, and confirm with:
 Every arrow in the file should report the same width. See the **"Arrow weight
 MUST match its neighbours"** rule in `SKILL.md` for the full procedure.
 
+The same applies to the **gradient fade**. Each arrow's shaft is stroked with a
+`userSpaceOnUse` linear gradient running light at the tail to dark at the tip
+(`#9CDAFF` -> `#0052AF`), declared across the arrow's full native shaft
+(`x1="0"` .. `x2="61"`). Shortening the shaft without moving `x1` leaves the
+visible span sampling only the dark end, so the arrow renders flat and loses a
+directional cue. `arrow_fit.py` remaps the gradient with the shaft; `validate`
+warns when a shaft shows only part of its ramp.
+
 ---
 
 ## 8. Quick checklist for a corpus-faithful draft

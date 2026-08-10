@@ -268,9 +268,32 @@ Do this instead:
    means some arrow is a different weight from the rest — the bug this rule
    exists to prevent.
 
-Match **style** as well as weight: use the same arrow icon the neighbours use
-unless the biology calls for a different type, and keep the icon's own gradient
-and fill rather than recolouring it.
+### The gradient fade is part of the arrow, and must span its full length
+
+Library arrows are **not** flat-coloured. The shaft is stroked with a
+`userSpaceOnUse` linear gradient running **light at the tail → dark at the tip**
+(`#9CDAFF` → `#0052AF` on `R-ICO-012348`). That fade is **directional** — it
+shows which way the arrow points, so it is a visual cue, not decoration. A new
+arrow without it reads as a different kind of mark next to arrows that have it.
+
+The trap: that gradient is declared in **user space over the arrow's full native
+shaft** (`x1="0" … x2="61"`). Shorten the shaft without moving `x1` and the
+visible part samples only the dark end of the ramp — the arrow renders as a flat
+dark line. It is still the right icon, still the right stroke width, and still
+looks wrong.
+
+**So whenever you change an arrow's length, move the gradient's light end to the
+new tail.** `arrow_fit.py` does this for you — it remaps `x1` to the truncated
+shaft's tail so the full fade spans the new length. If you shorten an arrow by
+any other means, remap the gradient yourself.
+
+`validate` checks this: it compares each arrow's gradient span against its shaft
+extent and warns when the shaft shows only part of the ramp
+(*"the shaft shows just 33% of the fade"*).
+
+Otherwise, match **style** as well as weight: use the same arrow icon the
+neighbours use unless the biology calls for a different type, and keep the icon's
+own gradient and fill rather than recolouring it.
 
 > **There is no `ion_channel` token.** The official
 > `Icon_Library_Guidelines.pdf` names the category "Ion channels", but the
@@ -442,8 +465,9 @@ Editing a published EHLD is an **additive, structure-preserving** operation:
   ids use the new/placeholder subpathway ST_IDs, never reusing an existing
   region's id. Confirm the finished file with `validate`, whose duplicate-id and
   dangling-reference checks are the backstop.
-- **Match the neighbouring arrows' weight and style.** New connectors must have
-  the same effective stroke width and arrow type as the arrows already nearby —
+- **Match the neighbouring arrows' weight, fade and style.** New connectors must
+  have the same effective stroke width, the same light-to-dark gradient fade
+  across their full length, and the same arrow type as the arrows already nearby —
   measure the base's arrows before placing, and never uniformly scale an arrow to
   make it fit. See **"Arrow weight MUST match its neighbours"**. This is the
   single easiest way to make an otherwise-correct addition look wrong.
@@ -681,8 +705,9 @@ and dangling `url(#…)` references (the signature of an unnamespaced splice),
 raster `<image>` content, at least two `OVERLAY-` regions, `REGION-`/`OVERLAY-`
 ST_ID form and containment, arrows wrongly inside an `OVERLAY-` group, `ANALINFO`
 presence and opacity, outlined-vs-editable text, full-canvas background,
-placeholder ST_IDs, logo opacity, the `ICON` legend, label-box geometry, and
-**arrow-weight consistency** (see the arrow rule above).
+placeholder ST_IDs, logo opacity, the `ICON` legend, label-box geometry,
+**arrow-weight consistency**, and **arrow gradient-fade coverage** (see the
+arrow rules above).
 
 Two warnings are **expected and fine on a Mode A output**, because the published
 base EHLD is the distributed export: *"no `<text>` elements"* (label text was
@@ -789,8 +814,9 @@ curator, and ORCID; include a credit line in the final report, e.g.:
 - **The `validate` result** — confirm it reports zero errors, and list any
   remaining warnings with a one-line note on why each is acceptable (the two
   distributed-form warnings are expected on a Mode A output).
-- **Arrow-weight check** — report `info.arrowStrokeWidths` from `validate` and
-  confirm it holds a single value, so any new connector matches its neighbours.
+- **Arrow checks** — report `info.arrowStrokeWidths` from `validate` and confirm
+  it holds a single value, and confirm there is no gradient-fade warning, so any
+  new connector matches its neighbours in both weight and fade.
 - Canvas confirmation (1366×768) and the ST_ID(s)/placeholders used for
   `REGION-`/`OVERLAY-` ids and the filename.
 - The CC-BY credit line with the designer names.

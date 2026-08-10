@@ -811,6 +811,50 @@ def cmd_validate(args):
             "uniformly scale an arrow to fit a gap (that shrinks its stroke). Use "
             "arrow_fit.py to shorten the shaft and place with --scale 1")
 
+    # --- arrow gradient fade ------------------------------------------------
+    # Library arrows stroke their shaft with a userSpaceOnUse linear gradient
+    # running light (tail) -> dark (tip). That fade is directional, so it is a
+    # visual cue, not decoration. Shortening a shaft without moving the
+    # gradient's light end leaves the visible span sampling only the dark end:
+    # the arrow renders flat and loses the fade every other arrow has.
+    grads = {el.get("id"): el for el in els
+             if _tag(el) in ("linearGradient", "radialGradient") and el.get("id")}
+
+    def _x_extent(dattr):
+        xs, cx = [], 0.0
+        for c, chunk in re.findall(r"([MLCHVZmlchvz])([^MLCHVZmlchvz]*)", dattr or ""):
+            n = [float(v) for v in re.findall(r"-?\d*\.?\d+(?:[eE][-+]?\d+)?", chunk)]
+            if c in "ML":
+                for j in range(0, len(n) - 1, 2): cx = n[j]; xs.append(cx)
+            elif c == "C":
+                for j in range(0, len(n) - 5, 6): cx = n[j + 4]; xs.append(cx)
+            elif c == "H":
+                for v in n: cx = v; xs.append(cx)
+        return (min(xs), max(xs)) if xs else None
+
+    for root in arrow_roots:
+        for el in root.iter():
+            ref = re.match(r"url\(#(.+)\)", (el.get("stroke") or "").strip())
+            if not ref:
+                continue
+            g = grads.get(ref.group(1))
+            if g is None or g.get("gradientUnits") != "userSpaceOnUse":
+                continue
+            gx1, gx2 = _num(g.get("x1")), _num(g.get("x2"))
+            ext = _x_extent(el.get("d"))
+            if gx1 is None or gx2 is None or not ext:
+                continue
+            gspan = abs(gx2 - gx1)
+            sspan = ext[1] - ext[0]
+            if gspan > 0 and sspan > 0 and gspan > sspan * 1.25:
+                shown = sspan / gspan
+                warnings.append(
+                    f"{root.get('id') or 'an arrow'}: stroke gradient spans {gspan:.1f} units "
+                    f"but the shaft is only {sspan:.1f} — the shaft shows just {shown:.0%} of the "
+                    "fade, so it renders flat instead of light-to-dark like the other arrows. "
+                    "When shortening an arrow, move the gradient's light end to the new tail "
+                    "(arrow_fit.py does this)")
+
     # --- text ---------------------------------------------------------------
     texts = by_tag.get("text", [])
     if not texts:

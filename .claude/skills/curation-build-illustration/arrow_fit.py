@@ -25,11 +25,38 @@ def _x_at(p, t):
     mt = 1-t
     return (mt**3*p[0][0] + 3*mt*mt*t*p[1][0] + 3*mt*t*t*p[2][0] + t**3*p[3][0])
 
+def _remap_gradient(svg_text, grad_id, new_tail_x):
+    """Move the gradient's light end to the shaft's new tail.
+
+    The library arrows stroke their shaft with a userSpaceOnUse linear gradient
+    spanning the FULL native shaft (x1=0 light -> x2=61 dark). Shortening the
+    shaft without moving x1 leaves the visible part sampling only the dark end,
+    so the arrow renders as a flat dark line and loses the light-to-dark fade
+    that every other arrow in the diagram has. The fade is also directional —
+    light at the tail, solid at the tip — so losing it drops a visual cue, not
+    just a decoration.
+    """
+    m = re.search(r'<linearGradient\b[^>]*\bid="' + re.escape(grad_id) + r'"[^>]*>', svg_text)
+    if not m:
+        return svg_text, None
+    tag = m.group(0)
+    if 'gradientUnits="userSpaceOnUse"' not in tag:
+        # objectBoundingBox gradients rescale with the shape automatically.
+        return svg_text, None
+    old_x1 = re.search(r'\bx1="([-\d.eE]+)"', tag)
+    if not old_x1:
+        return svg_text, None
+    new_tag = re.sub(r'\bx1="[-\d.eE]+"', f'x1="{new_tail_x:.4f}"', tag, count=1)
+    return svg_text[:m.start()] + new_tag + svg_text[m.end():], float(old_x1.group(1))
+
+
 def truncate_shaft(svg_text, tail_x):
-    """Rewrite the shaft path so its tail sits at local x = tail_x."""
+    """Rewrite the shaft path so its tail sits at local x = tail_x, and move the
+    stroke gradient's light end with it so the full fade spans the new length."""
     m = re.search(r'(<path[^>]*\bd=")(M[^"]*)("[^>]*stroke-width="8"[^>]*>)', svg_text)
     if not m:
         raise SystemExit('shaft path not found')
+    shaft_tag = m.group(1) + m.group(2) + m.group(3)
     nums = [float(v) for v in re.findall(r'-?\d*\.?\d+(?:[eE][-+]?\d+)?', m.group(2))]
     p = [(nums[0],nums[1]), (nums[2],nums[3]), (nums[4],nums[5]), (nums[6],nums[7])]
     # x decreases along the curve; bisect for the t where x == tail_x
@@ -41,7 +68,12 @@ def truncate_shaft(svg_text, tail_x):
     q = _split_cubic(p, (lo+hi)/2)
     d = (f"M{q[0][0]:.4f} {q[0][1]:.4f}"
          f"C{q[1][0]:.4f} {q[1][1]:.4f} {q[2][0]:.4f} {q[2][1]:.4f} {q[3][0]:.4f} {q[3][1]:.4f}")
-    return svg_text[:m.start(2)] + d + svg_text[m.end(2):]
+    out = svg_text[:m.start(2)] + d + svg_text[m.end(2):]
+
+    ref = re.search(r'stroke="url\(#([^)]+)\)"', shaft_tag)
+    if ref:
+        out, _ = _remap_gradient(out, ref.group(1), tail_x)
+    return out
 
 
 def fit(icon_svg_path, total_length, out_path, native_width=70.0):
