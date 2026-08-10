@@ -221,6 +221,57 @@ values, enumerated exhaustively over all 2,569 icons in the library:
 > `place` has no `--rotate`, so a non-horizontal arrow needs the emitted `<g>`
 > wrapped in your own `rotate()` — a rigid transform, so the art stays verbatim.
 
+### Arrow weight MUST match its neighbours
+
+**A new arrow has to read as the same kind of mark as the arrows already around
+it — same stroke thickness, same arrow type, same colour treatment.** An arrow
+that is visibly lighter than its neighbours looks like a different class of
+relationship, which is a *semantic* error in a diagram where arrow style carries
+meaning, not just a cosmetic one.
+
+**Never use `--scale` / `--width` / `--height` to fit an arrow into a gap.**
+Those scale uniformly, so they shrink the stroke along with the length. Squeezing
+the 70-unit Process arrow into a 29-unit gap with `--scale 0.414` drops its
+stroke-width from 8 to 3.3 — less than half the weight of every other arrow in
+the file.
+
+Do this instead:
+
+1. **Measure the neighbours first.** Run `validate` on the *base* EHLD and read
+   `info.arrowStrokeWidths` — it reports each arrow's **effective** width
+   (`stroke-width` × cumulative transform scale), which is the number that
+   matters. Match it. In `R-HSA-109581` it is `[8.0]`: all five arrows are
+   `stroke-width="8"` with **no** transform, because production EHLDs vary an
+   arrow's *length* by reshaping its shaft and never scale it.
+
+2. **Shorten the shaft, not the whole arrow.** `arrow_fit.py` (bundled) truncates
+   the shaft curve to a target length while leaving stroke-width and the
+   arrowhead at native size:
+
+       python3 arrow_fit.py icons/R-ICO-012348.svg 29 icons/_arrow29.svg
+       python3 reactome_icons.py place icons/_arrow29.svg --x .. --y .. \
+           --scale 1 --prefix add02- --class arrow
+
+   Always `--scale 1` on the result. The shortened icon spans local x
+   `(70 - length) .. 70`, so translate by `target_x - (70 - length)`.
+
+3. **If the gap is too short for any sensible arrow, move the entities apart** —
+   don't thin the arrow to make it fit. `arrow_fit.py` refuses lengths under ~12
+   units because the arrowhead alone is ~10.
+
+4. **Verify after composing**, not by eye. `validate` checks this for you and
+   warns when arrows disagree:
+
+       python3 reactome_icons.py validate <output>.svg   # info.arrowStrokeWidths
+
+   `info.arrowStrokeWidths` should contain **exactly one** value. More than one
+   means some arrow is a different weight from the rest — the bug this rule
+   exists to prevent.
+
+Match **style** as well as weight: use the same arrow icon the neighbours use
+unless the biology calls for a different type, and keep the icon's own gradient
+and fill rather than recolouring it.
+
 > **There is no `ion_channel` token.** The official
 > `Icon_Library_Guidelines.pdf` names the category "Ion channels", but the
 > metadata token is **`transporter`** — use that. Passing an unknown token is a
@@ -391,6 +442,11 @@ Editing a published EHLD is an **additive, structure-preserving** operation:
   ids use the new/placeholder subpathway ST_IDs, never reusing an existing
   region's id. Confirm the finished file with `validate`, whose duplicate-id and
   dangling-reference checks are the backstop.
+- **Match the neighbouring arrows' weight and style.** New connectors must have
+  the same effective stroke width and arrow type as the arrows already nearby —
+  measure the base's arrows before placing, and never uniformly scale an arrow to
+  make it fit. See **"Arrow weight MUST match its neighbours"**. This is the
+  single easiest way to make an otherwise-correct addition look wrong.
 - **Respect the canvas.** Fit additions within the existing 1366×768 content area
   and the no-full-canvas-background rule; if the diagram is crowded, note it as a
   layout item for the curator to hand-tune in Illustrator rather than shrinking or
@@ -625,7 +681,8 @@ and dangling `url(#…)` references (the signature of an unnamespaced splice),
 raster `<image>` content, at least two `OVERLAY-` regions, `REGION-`/`OVERLAY-`
 ST_ID form and containment, arrows wrongly inside an `OVERLAY-` group, `ANALINFO`
 presence and opacity, outlined-vs-editable text, full-canvas background,
-placeholder ST_IDs, logo opacity, the `ICON` legend, and label-box geometry.
+placeholder ST_IDs, logo opacity, the `ICON` legend, label-box geometry, and
+**arrow-weight consistency** (see the arrow rule above).
 
 Two warnings are **expected and fine on a Mode A output**, because the published
 base EHLD is the distributed export: *"no `<text>` elements"* (label text was
@@ -732,6 +789,8 @@ curator, and ORCID; include a credit line in the final report, e.g.:
 - **The `validate` result** — confirm it reports zero errors, and list any
   remaining warnings with a one-line note on why each is acceptable (the two
   distributed-form warnings are expected on a Mode A output).
+- **Arrow-weight check** — report `info.arrowStrokeWidths` from `validate` and
+  confirm it holds a single value, so any new connector matches its neighbours.
 - Canvas confirmation (1366×768) and the ST_ID(s)/placeholders used for
   `REGION-`/`OVERLAY-` ids and the filename.
 - The CC-BY credit line with the designer names.

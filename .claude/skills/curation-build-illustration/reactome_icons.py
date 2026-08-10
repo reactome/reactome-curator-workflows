@@ -29,8 +29,8 @@ Subcommands
       direct SVG/PNG download URLs. Use this when you have no accession; never
       invent an icon that does not appear here.
       Valid --category tokens: protein, compound, receptor, transporter,
-      cell_type, cell_element, human_tissue, background, therapeutic. (Note
-      `transporter` — there is no `ion_channel` token.) An unknown token is a
+      cell_type, cell_element, human_tissue, background, therapeutic, arrow.
+      (Note `transporter` — there is no `ion_channel` token.) An unknown token is a
       hard error, never an empty result, so a typo can't masquerade as a gap.
 
   fetch <R-ICO-id> [--outdir DIR] [--png]
@@ -75,7 +75,9 @@ Subcommands
       conventions: canvas size, duplicate ids, dangling url(#…) references,
       REGION-/OVERLAY- pairing and ST_ID form, arrows wrongly inside an OVERLAY-
       group, ANALINFO presence and opacity, raster content, outlined vs editable
-      text, full-canvas background, placeholder ST_IDs, and label-box geometry.
+      text, full-canvas background, placeholder ST_IDs, label-box geometry, and
+      arrow-weight consistency (every arrow should share one effective
+      stroke-width; a thinner one usually means an arrow was scaled to fit).
       Prints JSON {ok, errors, warnings, info}; exit 1 if any error. Run it on
       every composed SVG before handing the file to the curator.
 
@@ -768,6 +770,47 @@ def cmd_validate(args):
             errors.append(f"{el.get('id')}: group opacity is {op!r}; must be 0 "
                           "(production EHLDs use 0.01) with inner shapes left at 100%")
 
+    # --- arrow weight consistency ------------------------------------------
+    # A new connector that is thinner than the ones around it reads as a
+    # different class of relationship, not just a cosmetic mismatch. Uniformly
+    # scaling an arrow to fit a gap is the usual cause: it shrinks stroke-width
+    # in proportion. Compare EFFECTIVE width (stroke-width x cumulative scale).
+    def _scale_of(el):
+        t = el.get("transform") or ""
+        s = 1.0
+        for m in re.finditer(r"scale\(\s*([-\d.]+)(?:[\s,]+([-\d.]+))?\s*\)", t):
+            sx = float(m.group(1))
+            sy = float(m.group(2)) if m.group(2) else sx
+            s *= (abs(sx) + abs(sy)) / 2      # uniform in practice; average if not
+        for m in re.finditer(r"matrix\(\s*([-\d.]+)[\s,]+[-\d.]+[\s,]+[-\d.]+[\s,]+([-\d.]+)", t):
+            s *= (abs(float(m.group(1))) + abs(float(m.group(2)))) / 2
+        return s
+
+    arrow_roots = [el for el in els
+                   if "arrow" in (el.get("class") or "").split()
+                   or (el.get("id") or "").upper().startswith("ARROW")]
+    weights = {}
+    for root in arrow_roots:
+        # cumulative scale from the document root down to this arrow
+        chain = [root] + list(ancestors(root))
+        scale = 1.0
+        for el in chain:
+            scale *= _scale_of(el)
+        for el in root.iter():
+            sw = _num(el.get("stroke-width"))
+            if sw:
+                weights.setdefault(round(sw * scale, 2), []).append(
+                    root.get("id") or "(unnamed arrow)")
+    if len(weights) > 1:
+        detail = "; ".join(
+            f"{w} on {len(set(ids))} arrow(s) ({', '.join(sorted(set(ids))[:3])})"
+            for w, ids in sorted(weights.items()))
+        warnings.append(
+            f"arrows have {len(weights)} different effective stroke widths — {detail}. "
+            "A new connector must match the weight of the arrows around it; do not "
+            "uniformly scale an arrow to fit a gap (that shrinks its stroke). Use "
+            "arrow_fit.py to shorten the shaft and place with --scale 1")
+
     # --- text ---------------------------------------------------------------
     texts = by_tag.get("text", [])
     if not texts:
@@ -844,6 +887,7 @@ def cmd_validate(args):
             "textElements": len(texts),
             "paths": len(by_tag.get("path", [])),
             "rasterImages": len(by_tag.get("image", [])),
+            "arrowStrokeWidths": sorted(weights) if weights else [],
             "distinctIcons": len(ico_ids),
             "iconIds": ico_ids,
             "topLevelLayers": [el.get("id") for el in root if el.get("id")],

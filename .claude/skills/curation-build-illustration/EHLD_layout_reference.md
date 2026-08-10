@@ -247,6 +247,26 @@ arrows wrongly nested inside an `OVERLAY-` group.
 
 ---
 
+## 7b. Arrows are reshaped, never scaled
+
+Measured in `R-HSA-109581`: all five connectors are the same icon
+(`R-ICO-012348`, *Process arrow*), each carrying **`stroke-width="8"` with no
+enclosing transform**. Their different lengths and curvatures come from **edited
+path geometry**, not from scaling.
+
+That is the convention to follow, and it matters: uniformly scaling an arrow to
+fit a gap shrinks its stroke in proportion, so a short arrow ends up visually
+lighter than its neighbours and reads as a different class of relationship. Use
+the bundled `arrow_fit.py` to shorten the shaft at constant stroke width, place
+the result with `--scale 1`, and confirm with:
+
+    grep -o 'stroke-width="[0-9.]*"' <output>.svg | sort | uniq -c
+
+Every arrow in the file should report the same width. See the **"Arrow weight
+MUST match its neighbours"** rule in `SKILL.md` for the full procedure.
+
+---
+
 ## 8. Quick checklist for a corpus-faithful draft
 
 - [ ] Author within a `1366×768` artboard (exported `viewBox` may be `1396×798` with 15 px bleed); all art inside the inner box; **no** full-canvas background.
