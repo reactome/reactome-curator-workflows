@@ -442,7 +442,7 @@ optional, and it is the SOLE record of verification results — there is no sepa
 citation-block narrative (see "STAGE 3 OUTPUT — GO STRAIGHT TO THE TABLE"). Requires
 Python 3 + `openpyxl` for the .xlsx; always also write the .csv. If `openpyxl` is not
 installed, write the .csv, tell the curator the .xlsx was skipped, and suggest
-`pip install openpyxl`.
+`pip3 install --user -r requirements.txt` from the repo root.
 
 Filenames: `<pathway-slug>_reactions.xlsx` and `<pathway-slug>_reactions.csv`
 (slug = the proposed pathway name, lowercased and hyphenated).

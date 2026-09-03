@@ -1,0 +1,45 @@
+# Python dependencies for the Reactome curator workflow skills.
+#
+# Install (macOS / Linux):
+#     pip3 install --user -r requirements.txt
+#
+# If pip refuses with "externally-managed-environment" (PEP 668 — common with
+# Homebrew and uv-managed Pythons), prefer a virtual environment:
+#     python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+#     # then run skill scripts with .venv/bin/python3 rather than python3
+# Use --break-system-packages only as a last resort: it writes into the
+# OS-managed Python and can break system tooling.
+#
+# Versions are pinned so every curator gets the same set rather than whatever
+# PyPI happens to serve that day. Verified 2026-09-02 on macOS (arm64) with
+# Python 3.9.6; these releases also support Python 3.10-3.12.
+#
+# SCOPE: only DIRECT dependencies are pinned here. Their transitive dependencies
+# (numpy, cryptography, protobuf, requests, urllib3, ...) still resolve freely.
+# For hard reproducibility, capture a full lock from a clean virtual environment
+# (NOT `pip freeze --user` — that silently omits anything already satisfied by the
+# system site-packages, e.g. six):
+#     python3 -m venv /tmp/lockenv
+#     /tmp/lockenv/bin/pip install -r requirements.txt
+#     /tmp/lockenv/bin/pip freeze > requirements-lock.txt
+# and install it with:
+#     pip3 install --user --no-deps -r requirements-lock.txt
+#
+# No PDF library is required — uploaded PDFs are read by Claude directly, not
+# via a pypdf-style import.
+
+# ── Spreadsheet I/O ────────────────────────────────────────────────────────────
+pandas==2.3.3           # /release-doi-batch — reads DOIs.xlsx
+openpyxl==3.1.5         # .xlsx output — /release-qa-tracker, /release-doi-batch,
+                        # /annotate-pathway-from-reviews-or-topic_name
+
+# ── Google Drive + Docs API (/admin-drive-readme) ──────────────────────────────
+google-api-python-client==2.198.0
+google-auth==2.50.0
+google-auth-httplib2==0.3.1
+google-auth-oauthlib==1.3.1
+
+# ── No third-party packages needed ─────────────────────────────────────────────
+# /extract-reactions and /curation-build-illustration use the standard library
+# only (urllib against eutils.ncbi.nlm.nih.gov and reactome.org).
+# /analysis-graphdb-setup installs its own tooling via uv — see that SKILL.md.

@@ -615,7 +615,9 @@ the comparison script:
 
 ## Dependencies
 
-- `openpyxl` (`pip install openpyxl --break-system-packages`)
+- `openpyxl` — install the pinned set with `pip3 install --user -r requirements.txt`
+  from the repo root. Only if pip reports `externally-managed-environment`, use a
+  virtualenv (preferred) or `--break-system-packages` as a last resort.
 - `compare_dirs.sh` — included in this skill directory
 - Google Drive fetch tool (for Sheets URLs, when running in claude.ai Projects)
 - `present_files` tool (to deliver output in claude.ai Projects)

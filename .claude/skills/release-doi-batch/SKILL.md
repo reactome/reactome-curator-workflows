@@ -41,8 +41,8 @@ Confirm the following before running:
 1. Python 3 is installed:
     python3 --version
 
-2. pandas is installed:
-    pip install pandas openpyxl
+2. pandas is installed (pinned versions live in the repo's requirements.txt):
+    pip3 install --user -r requirements.txt
 
 3. DOIs.xlsx is available locally (from the Reactome Team Drive).
   Default location the script expects:
@@ -118,7 +118,7 @@ The output XML conforms to CrossRef schema 5.3.1. Key construction details:
 
 ### pandas / openpyxl import error
  ModuleNotFoundError: No module named 'pandas'
- → Run: pip install pandas openpyxl
+ → Run: pip3 install --user -r requirements.txt   (from the repo root)
 
 ### Missing or malformed ORCID
  If a contributor row has a blank ORCID, the script omits the <ORCID> element

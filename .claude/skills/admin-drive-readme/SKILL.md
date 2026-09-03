@@ -46,8 +46,8 @@ the path back. Do not write generated files to the repo root or `.claude/`.
 1. Python 3:
        python3 --version
 
-2. Google API client libraries:
-       pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
+2. Google API client libraries (pinned in the repo's requirements.txt):
+       pip3 install --user -r requirements.txt
 
 3. OAuth credentials (default mode, USE_SERVICE_ACCOUNT = False):
    - Obtain a `credentials.json` client secrets file from the Google Cloud Console
@@ -129,7 +129,7 @@ are resolved. Then re-run to push the update to the doc.
 
 ### Missing dependencies
     ModuleNotFoundError: No module named 'googleapiclient'
-    → pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
+    → pip3 install --user -r requirements.txt   (from the repo root)
 
 ### credentials.json not found / OAuth failure
     FileNotFoundError: [Errno 2] No such file or directory: '...credentials.json'

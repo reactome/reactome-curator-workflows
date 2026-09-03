@@ -46,11 +46,15 @@ Set your Anthropic API key (add to `~/.zshrc`):
 export ANTHROPIC_API_KEY=your-key-here
 ```
 
-Install Python dependencies (use `pip3` on macOS):
+Install Python dependencies (use `pip3` on macOS). Versions are pinned in
+`requirements.txt` so every curator gets the same set:
 
 ```bash
-pip3 install pandas openpyxl
+pip3 install --user -r requirements.txt
 ```
+
+If pip reports `externally-managed-environment`, see the notes at the top of
+`requirements.txt` for the virtualenv alternative.
 
 ### 2. Clone the repository
 
@@ -422,7 +426,7 @@ required before Pathway Browser ingestion.
 | `/annotate-pathway-from-reviews-or-topic_name` | claude.ai Pro/Team/Enterprise (Projects) or Claude API; PubMed and PMC MCP servers recommended; internet access for Mode B |
 | `/release-doi-batch` | DOIs.xlsx from Team Drive; Python 3 with `pandas` and `openpyxl` |
 | `/extract-reactions` | One or more review-article PDFs (absolute paths); internet access to `eutils.ncbi.nlm.nih.gov` |
-| `/admin-drive-readme` | Python 3; `pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client`; OAuth credentials at `~/.config/reactome/credentials.json` |
+| `/admin-drive-readme` | Python 3; Google API client libraries (`pip3 install --user -r requirements.txt`); OAuth credentials at `~/.config/reactome/credentials.json` |
 | `/release-qa-tracker` | `compare_dirs.sh` (in skill directory); Python 3 with `openpyxl`; two QA output directories (or an existing comparison file) |
 | `/analysis-graphdb-setup` | Claude Desktop (Pro plan); Docker Desktop; Node.js; `neo4j-mcp` binary (github.com/neo4j/mcp/releases); `uv` Python package manager |
 | `/curation-build-illustration` | Python 3 (stdlib only); network access to `reactome.org` for name `search`, icon + EHLD download (accession `map` lookup works offline from bundled tables); a project directory for the request (a base-EHLD ST_ID for Mode A; a sample image for Mode C) |
