@@ -40,6 +40,18 @@ Service account:
   Set USE_SERVICE_ACCOUNT = True and place service_account.json at
   ~/.config/reactome/service_account.json (or set GOOGLE_APPLICATION_CREDENTIALS).
   The service account must be a Content Manager on the Team Drive.
+
+Scopes
+------
+Least privilege — see the SCOPES comment below for the reasoning:
+  drive.metadata.readonly  list Team Drive folder metadata (read-only; cannot read
+                           file contents, cannot write, cannot delete)
+  documents                read and rewrite the single README Doc
+
+Earlier versions requested the full auth/drive scope. If you ran one of those, the
+cached ~/.config/reactome/token.json still holds that broader grant; the script now
+detects the mismatch and re-runs consent automatically (deleting token.json does the
+same). Revoke the stale grant at https://myaccount.google.com/permissions.
 """
 
 import argparse
@@ -102,8 +114,17 @@ CREDENTIALS_PATH = os.environ.get(
 )
 USE_SERVICE_ACCOUNT = False  # True = service account, False = OAuth user credentials
 
+# Least-privilege scopes. The script's entire API surface is:
+#   files().list()          -> folder metadata only  : drive.metadata.readonly
+#   documents().get()       -> read README_DOC_ID    : documents
+#   documents().batchUpdate -> rewrite README_DOC_ID : documents
+# It never creates, moves, trashes or deletes a Drive file, and never reads file
+# contents, so the full https://www.googleapis.com/auth/drive scope (read + write
+# + delete on every file in every Drive the user can reach) is deliberately NOT
+# requested. If you add a call that writes to Drive itself, widen this list
+# consciously rather than reaching for auth/drive.
 SCOPES = [
-    "https://www.googleapis.com/auth/drive",
+    "https://www.googleapis.com/auth/drive.metadata.readonly",
     "https://www.googleapis.com/auth/documents",
 ]
 
@@ -139,7 +160,23 @@ def build_services():
         token_path = Path.home() / ".config" / "reactome" / "token.json"
         creds = None
         if token_path.exists():
-            creds = Credentials.from_authorized_user_file(str(token_path), SCOPES)
+            # A token cached before SCOPES was narrowed still carries the older,
+            # broader grant, and an unexpired one would otherwise be reused as-is —
+            # silently keeping full-Drive authority. Compare against the scopes
+            # recorded *in the token file*: passing SCOPES to
+            # from_authorized_user_file() overwrites the stored list, so
+            # creds.has_scopes(SCOPES) would compare SCOPES to itself and always
+            # pass. Any difference (broader or narrower) forces re-consent.
+            try:
+                granted = set(json.loads(token_path.read_text()).get("scopes") or [])
+            except (OSError, ValueError):
+                granted = set()
+            if granted == set(SCOPES):
+                creds = Credentials.from_authorized_user_file(str(token_path), SCOPES)
+            else:
+                print("Cached token was issued for different scopes — re-running "
+                      "consent to reissue a least-privilege token.\n"
+                      "  Revoke the old grant at https://myaccount.google.com/permissions")
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())

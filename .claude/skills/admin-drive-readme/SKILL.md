@@ -57,6 +57,13 @@ the path back. Do not write generated files to the repo root or `.claude/`.
    - On first run a browser window opens for the OAuth consent flow.
    - The token is cached at `~/.config/reactome/token.json` for subsequent runs.
      The `~/.config/reactome/` directory is created automatically if it does not exist.
+   - The script requests least-privilege scopes: `drive.metadata.readonly` (list
+     folder metadata — no file contents, no write, no delete) and `documents`
+     (rewrite the one README Doc). It never creates or deletes Drive files.
+   - **If you ran this skill before the scopes were narrowed**, your cached token
+     still carries the old full-Drive grant. The script detects this and re-runs the
+     consent flow once — expect one extra browser prompt. Afterwards, revoke the
+     stale grant at https://myaccount.google.com/permissions.
 
    Override the default credentials path via env var:
 
