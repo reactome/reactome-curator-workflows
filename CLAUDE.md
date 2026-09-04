@@ -36,7 +36,8 @@ reactome-curator-workflows/
         ├── admin-drive-readme/                       ← /admin-drive-readme
         ├── release-qa-tracker/                        ← /release-qa-tracker
         ├── analysis-graphdb-setup/                   ← /analysis-graphdb-setup
-        └── curation-build-illustration/                ← /curation-build-illustration
+        ├── curation-build-illustration/                ← /curation-build-illustration
+        └── spotlight-article-drafter/                ← /spotlight-article-drafter
 ```
 
 Each skill directory holds its own `SKILL.md` plus any scripts, templates, and
@@ -143,6 +144,12 @@ inputs, and options.
   embedding) and `validate` (spec check — run on every output). Ships an optional
   **Figma plugin** (`figma-plugin/`) as an alternative to Illustrator for the
   hand-tuning step; not for Mode A. See the skill's `SKILL.md`.
+
+- **`/spotlight-article-drafter`** — Drafts a candidate Reactome "Research Spotlight"
+  article from a paper that used Reactome data or tools, producing both forms at once:
+  the short one-paragraph homepage/archive teaser and the expanded long-form version.
+  Drafts text only — final HTML/Joomla formatting is a separate step, done after a
+  curator approves the wording and publish date.
 
 ---
 
