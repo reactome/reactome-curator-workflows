@@ -122,7 +122,7 @@ The target state that resolves Part I:
 - **Run each skill from its own per-task project directory** — outputs, session history, and
   instructions stay scoped to that directory.
 - **Do the per-user runtime setup once** — replicate the `eutils.ncbi.nlm.nih.gov` and
-  `reactome.org` permissions into `~/.claude/settings.json`, `pip install pandas openpyxl`, configure
+  `reactome.org` permissions into `~/.claude/settings.json`, `pip3 install --user -r requirements.txt`, configure
   the MCP servers — and re-run after skill updates (driven by committed requirement manifests).
 - **Trim `CLAUDE.md` to a contributor index**; make each `SKILL.md` the single source of truth.
 - **Give each skill a preflight** that verifies prerequisites on invocation.
@@ -249,11 +249,11 @@ after pulling skill changes.** Driving the setup script from committed requireme
 
 **For everyone — any run mode (Option A included):**
 ```bash
-# Python libs the skills need (xlsx/CSV output). No PDF library is required —
-# uploaded PDFs are read by Claude directly, not via a pypdf-style import.
-pip install pandas openpyxl
-#   /admin-drive-readme additionally needs the Google API client libraries:
-#   pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
+# Python libs the skills need (xlsx/CSV output), pinned in the repo's
+# requirements.txt. No PDF library is required — uploaded PDFs are read by
+# Claude directly, not via a pypdf-style import.
+pip3 install --user -r requirements.txt
+#   This already covers the Google API client libraries /admin-drive-readme needs.
 
 # MCP servers (gk-central-remote, ols, reactome) in user-level Claude config
 #   — needed for any skill/feature that queries the database or ontologies.

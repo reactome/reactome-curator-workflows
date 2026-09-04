@@ -204,17 +204,26 @@ You should see files including `CLAUDE.md`, `README.md`, and a `.claude/` direct
 
 ## Step 8 — Install Python Dependencies
 
-Two skills (`/release-doi-batch` and `/release-qa-tracker`) require Python 3 and two packages. Python 3 is already on modern Macs. Install the packages:
+Several skills (`/release-doi-batch`, `/release-qa-tracker`, `/admin-drive-readme`, and the
+reaction-table output of `/annotate-pathway-from-reviews-or-topic_name`) require Python 3 and a
+handful of packages. Python 3 is already on modern Macs. The package versions are pinned in the
+repo's `requirements.txt` so every curator gets the same set — install from there, running this
+from inside the `reactome-curator-workflows` folder you cloned in Step 7:
 
 ```bash
-pip3 install pandas openpyxl
+pip3 install --user -r requirements.txt
 ```
 
-If you see a permissions error, try:
+If pip refuses with `externally-managed-environment` (PEP 668 — common with Homebrew- or
+uv-managed Pythons), use a virtual environment instead:
 
 ```bash
-pip3 install --user pandas openpyxl
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
 ```
+
+...then run skill scripts with `.venv/bin/python3` rather than `python3`. See the notes at the top
+of `requirements.txt` for details.
 
 If you see a PATH warning after installing, add the path to your shell config (replace `3.x` with the version number shown in the warning, and `[you]` with your username):
 
@@ -223,9 +232,8 @@ echo 'export PATH="/Users/[you]/Library/Python/3.x/bin:$PATH"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
-> `/admin-drive-readme` additionally needs the Google API client libraries — install them only
-> if you use that skill:
-> `pip3 install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client`
+> `requirements.txt` already includes the Google API client libraries that `/admin-drive-readme`
+> needs, so there is nothing extra to install for that skill.
 
 ---
 
@@ -301,7 +309,7 @@ New or updated skills are available immediately after pulling — no restart of 
 
 **`git: command not found`** Git is not installed. Repeat Step 3.
 
-**Python package import errors when running a skill** Run `pip3 install pandas openpyxl` again. If you get a permissions error, use `pip3 install --user pandas openpyxl`.
+**Python package import errors when running a skill** Run `pip3 install --user -r requirements.txt` again from inside the `reactome-curator-workflows` folder. If pip reports `externally-managed-environment`, use the virtual-environment route in Step 8.
 
 **GitHub prompts for a password during clone** Use a personal access token, not your GitHub password. See Step 7.
 
