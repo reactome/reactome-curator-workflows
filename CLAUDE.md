@@ -49,8 +49,8 @@ directory to see its bundled materials.
 Reactome is a free, open-source, peer-reviewed pathway database. Human pathways are
 manually curated and computationally inferred across ~15 other species; researchers
 use it for pathway analysis, drug-target identification, and systems biology.
-Institutional homes: OICR (Toronto), EMBL-EBI (Hinxton), NYU Grossman (New York),
-St. John's University (New York).
+Institutional homes: OICR (Toronto), EMBL-EBI (Hinxton), St. John's University
+(New York), UC Berkeley (Berkeley). NYU Grossman (New York) is a past affiliation.
 
 Key public resources:
 - Website / GitHub: https://reactome.org · https://github.com/reactome
@@ -207,8 +207,8 @@ the same host. A new skill that fetches via Bash needs a Bash permission, not a
 ## Team
 
 Marc Gillespie (SJU, repo maintainer) · Lisa Matthews (SJU) · Joel Weiser
-(OICR) · Guanming Wu (OHSU) · Adam Wright (OICR) · Ralf Stephan (AICurator
-maintainer).
+(OICR) · Guanming Wu (OHSU) · Adam Wright (OICR) · Ian Holmes (UC Berkeley) ·
+Ralf Stephan (AICurator maintainer).
 
 Curation-standards questions: consult Curator Guide V94.
 Repo/skill questions: open a GitHub issue.
