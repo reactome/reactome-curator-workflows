@@ -84,8 +84,9 @@ supplementary methods) for every mention of "Reactome" and answer:
   decision (see Step 5) even though it doesn't change the article text.
 
 Be honest about how central or peripheral the usage was. Reactome's own
-archive includes plenty of Spotlights where Reactome was one of several tools —
-the goal is an accurate description, not an inflated one. Overstating Reactome's role is the single easiest way to make a
+archive includes plenty of Spotlights where Reactome was one of several tools
+(see `references/examples.md`) — the goal is an accurate description, not an
+inflated one. Overstating Reactome's role is the single easiest way to make a
 curator distrust the draft.
 
 ## Step 2 — Collect the bibliographic facts
@@ -98,12 +99,15 @@ differ). Get the DOI or a stable article URL for linking the title.
 
 ## Step 3 — Calibrate style against the archive
 
-Calibrate against real published Spotlights before drafting, rather than
-inventing a house style. The best exemplars are the tracker rows where a curator
-filled in *both* the short and long fields; the published archive on
-reactome.org is the fallback if the tracker is not to hand. Ask the curator for
-a couple of recent examples if you have access to neither — do not proceed from
-a guess at the format. If you have live access to the tracking spreadsheet
+Read `references/examples.md` before drafting. It holds verbatim short/long
+pairs from the Spotlight archive together with the house conventions they
+demonstrate — the opening formula, how explicitly Reactome's role must be named,
+pathway naming and linking, where the PMID goes, length bounds, the curator
+footnote device, and the two-form protocol in force since October 2025. Where a
+convention there conflicts with a general instinct about summary writing, follow
+the convention. It is a sample of the archive, not all of it, so treat a pattern
+absent from it as unsettled rather than forbidden. If you have live access to the
+tracking spreadsheet
 (https://docs.google.com/spreadsheets/d/1F0v7altKbHRCbdDDkJprpYJbol36fbN7DE7W_uS9Qj4)
 pull a few recent rows too, since new examples accumulate monthly and reflect
 the curators' current preferences. Notice, across examples:
@@ -161,7 +165,9 @@ Same linking conventions as the short version.
 ## Step 6 — Add an editorial note for the curator (recommended)
 
 Curators screening candidates track a brief Pros/Cons note before drafting,
-alongside a "How was Reactome used?" summary.
+alongside a "How was Reactome used?" summary (see "The screening note pattern"
+in `references/examples.md` for a real one, including which usages count
+against a candidate).
 Include one alongside your draft — it's not part of the published article,
 just a decision aid:
 
