@@ -207,7 +207,8 @@ the same host. A new skill that fetches via Bash needs a Bash permission, not a
 ## Team
 
 Marc Gillespie (SJU, repo maintainer) · Lisa Matthews (NYU) · Joel Weiser
-(OICR) · Guanming Wu (OHSU) · Adam Wright (OICR).
+(OICR) · Guanming Wu (OHSU) · Adam Wright (OICR) · Ralf Stephan (AICurator
+maintainer).
 
 Curation-standards questions: consult Curator Guide V94.
 Repo/skill questions: open a GitHub issue.
