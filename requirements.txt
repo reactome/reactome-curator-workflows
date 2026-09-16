@@ -39,6 +39,11 @@ google-auth==2.50.0
 google-auth-httplib2==0.3.1
 google-auth-oauthlib==1.3.1
 
+# ── DOCX authoring ─────────────────────────────────────────────────────────────
+python-docx==1.2.0      # maintaining the /review-internal output template
+                        # (Reactome_InternalReview_TEMPLATE.docx). Not needed to
+                        # RUN the skill — Claude writes the review DOCX itself.
+
 # ── No third-party packages needed ─────────────────────────────────────────────
 # /extract-reactions and /curation-build-illustration use the standard library
 # only (urllib against eutils.ncbi.nlm.nih.gov and reactome.org).

@@ -3,12 +3,9 @@
 ## Purpose
 
 Perform a formal internal curation review of a Reactome pathway report, following
-Curator Guide V94 (or current version) standards. This skill applies the complete
-Reactome Internal Curation Review prompt (v1.4, March 2026) and produces a
-structured review DOCX identical to the established Reactome internal review format.
-
-The full prompt specification is maintained in:
- @Reactome_InternalReview_PROMPT_v1_4.docx
+Curator Guide V94 (or current version) standards. This file is the complete and
+authoritative specification for the review; it produces a structured review DOCX
+identical to the established Reactome internal review format.
 
 The companion output template is:
  @Reactome_InternalReview_TEMPLATE.docx
