@@ -95,7 +95,9 @@ inputs, and options.
 
 - **`/review-internal`** — Formal structured review of a pathway report
   against Curator Guide V94; outputs a prioritized seven-section review DOCX that
-  opens with a Critical Issues table of every HIGH-priority finding.
+  opens with a Critical Issues table of every HIGH-priority finding. Section 3 runs
+  `verify_pmids.py`, resolving every PubMed URL in the report against NCBI
+  E-utilities; PMIDs are never validated from training data.
   Requires the report DOCX + Curator Guide PDF in the conversation. No pathway-type
   modifiers — disease and drug standards apply automatically where the report
   carries that annotation. Takes an optional release version (e.g. `V95`) that

@@ -207,11 +207,48 @@ GO BP POLICY (apply these rules when evaluating assignments):
 
 ### SECTION 3 — LITERATURE REFERENCES
 
-3.1 Flag preprints (bioRxiv, medRxiv) not labeled as such.
-3.2 Flag author name discrepancies, including diacritical marks.
-3.3 Flag comment thread text that has leaked into summation bodies.
-3.4 Flag any references needing publication status verification.
+**Run the verifier first.** Before writing this section, run the bundled helper
+against the report. It resolves every PubMed URL in the report through NCBI
+E-utilities in one batched call and reports discrepancies:
+
+    python3 .claude/skills/review-internal/verify_pmids.py <report.docx>
+
+Optional: `--json <path>` to capture findings as JSON, `--email you@org` to send
+a courtesy contact address to NCBI.
+
+What it checks:
+ - first-author surname, initials, publication year and journal, against the
+   PubMed record for each PMID in the reference lists
+ - PMIDs PubMed does not recognise
+ - the same PMID listed twice in one reference list (duplicate
+   LiteratureReference — cf. QA check GT037)
+ - in-text citations with no matching reference in the same section, and the
+   near-miss case where the same author is listed under a different year
+ - references listed but never cited in that section's summation
+
+Fold its output into 3.1-3.5 below with the priorities it assigns. Two rules:
+
+ - **If the script cannot reach NCBI it exits non-zero and verifies nothing.**
+   Do not record references as checked in that case. Say in the review that PMID
+   verification did not run, and flag the whole section for manual checking.
+ - **Never assert a PMID is correct that the script did not resolve.** Anything
+   it lists as UNCHECKED stays unchecked in the review.
+
+The script reads the DOCX directly and uses the standard library only. It calls
+`eutils.ncbi.nlm.nih.gov` via urllib under Bash, so it is governed by Bash
+permission rather than the `WebFetch` allowlist entry.
+
+3.1 Report the verifier's findings: author, year and journal disagreements,
+   unresolved PMIDs, and duplicate PMIDs within a reference list.
+3.2 Report citations with no matching reference, and references never cited.
+3.3 Flag preprints (bioRxiv, medRxiv) not labeled as such.
+3.4 Flag comment thread text that has leaked into summation bodies.
+3.5 Flag any remaining references needing publication status verification.
    Note the overall quality of literature coverage as a strength if warranted.
+
+Author-name discrepancies that survive the automated check — diacritical marks,
+transliteration variants, inconsistent rendering of the same author across
+events — still need reading by eye; the script compares only the first author.
 
 ---
 
@@ -495,7 +532,9 @@ directory and release version are the exception and must still be asked.
 - Claude will suggest GO BP terms based on training data. Always
  cross-check suggested GO IDs against OLS4 (https://www.ebi.ac.uk/ols4/)
  or AmiGO before committing terms.
-- Claude cannot access live PubMed or bioRxiv. Flag all preprints for
- manual verification.
+- PMID verification runs through verify_pmids.py against NCBI E-utilities
+ (see Section 3). Claude itself has no PubMed access and must never assert a
+ PMID is valid without the script's output. bioRxiv and medRxiv are not covered
+ by the script — flag all preprints for manual verification.
 - This prompt was calibrated against Curator Guide V94/V95. If the guide
  changes substantially, review the standards block and update accordingly.

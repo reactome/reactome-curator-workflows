@@ -127,7 +127,10 @@ for anything it needs.
 
 Formal structured internal review of a pathway report against Curator Guide V94,
 producing a prioritized seven-section review DOCX that opens with a Critical Issues
-table collecting every HIGH-priority finding from all seven sections. Upload the
+table collecting every HIGH-priority finding from all seven sections. Literature
+references are checked against PubMed via NCBI E-utilities rather than from memory —
+author, year and journal per PMID, duplicate references, and citations with no matching
+reference. Upload the
 pathway report DOCX and
 the Curator Guide PDF to the conversation before invoking. Every review applies the
 same standards and covers the full report; disease and drug standards apply
@@ -243,7 +246,7 @@ directly.
 
 | Skill | Requirements |
 |---|---|
-| `/review-internal` | Internet access; pathway report DOCX and Curator Guide PDF uploaded to the conversation |
+| `/review-internal` | Pathway report DOCX and Curator Guide PDF uploaded to the conversation; Python 3 (stdlib only) and access to `eutils.ncbi.nlm.nih.gov` for PMID verification |
 | `/annotate-pathway-from-reviews-or-topic_name` | claude.ai Pro/Team/Enterprise (Projects) or the Claude API; PubMed and PMC MCP servers recommended; internet access for Mode B |
 | `/extract-reactions` | One or more review-article PDFs; internet access to `eutils.ncbi.nlm.nih.gov` |
 | `/release-doi-batch` | DOIs.xlsx from the Team Drive; Python 3 with `pandas` and `openpyxl` |
