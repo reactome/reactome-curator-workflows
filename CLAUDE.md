@@ -190,7 +190,15 @@ Repo/skill questions: open a GitHub issue.
 2. Add `SKILL.md` with YAML frontmatter (`name`, `description`) and step-by-step
    instructions.
 3. Add any supporting files the skill references (scripts, templates, reference docs).
-4. Open a PR describing what the skill does and when to use it.
+4. Add any new Python dependencies to the root `requirements.txt`, pinned — don't
+   have your `SKILL.md` tell curators to `pip install` things itself.
+5. If the skill authenticates to an external service, request least privilege.
+   For Google APIs that means naming the narrowest scopes that cover the calls you
+   actually make, not reaching for `auth/drive` (read + write + delete on every
+   file in every Drive the curator can reach). See the `SCOPES` comment in
+   `admin-drive-readme/update_drive_readme.py` for a worked example, including why
+   a token cached under broader scopes has to force re-consent.
+6. Open a PR describing what the skill does and when to use it.
 
 Keep skills focused on a single repeatable workflow, and keep their full
 documentation in the skill directory — this file only needs a one-line pointer.
