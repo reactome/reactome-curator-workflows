@@ -88,7 +88,39 @@ DOCX titled:
 
  Reactome_[PathwayName]_[ReactomeID]_InternalReview.docx
 
-The review must contain exactly these seven sections:
+The review opens with a report header and an Executive Summary, then contains
+exactly these seven sections.
+
+---
+
+### REPORT OPENING — EXECUTIVE SUMMARY
+
+Before Section 1, and after the metadata header block, the report must carry:
+
+1. **Issue Count by Priority** — a HIGH / MEDIUM / LOW / Total tally.
+
+2. **Critical Issues — Action Required.** A table of every HIGH-priority issue
+   found anywhere in Sections 1-7, so a reviewer sees what must change without
+   reading to the end:
+
+    Issue | Section(s) | Location (§) | Required Action
+
+   Rules for this table:
+   - **HIGH priority only.** MEDIUM and LOW belong in their own sections and in
+     Section 6, not here.
+   - **It is a strict subset of Section 6.** Every row here must also appear in
+     the Section 6 consolidated table, worded consistently. Never list an issue
+     here that is absent from Section 6, and never omit a HIGH-priority issue
+     from here that Section 6 records.
+   - **Order by section**, then by severity of consequence within a section.
+   - **If there are no HIGH-priority issues, say so explicitly** — write "No
+     HIGH-priority issues identified" rather than leaving the table empty.
+
+3. **Overall Recommendation** — ready for peer review / needs revision / needs
+   significant revision.
+
+4. **Overall Notes** — observations that apply to the pathway as a whole and do
+   not fit a specific section.
 
 ---
 
@@ -210,6 +242,10 @@ GO BP POLICY (apply these rules when evaluating assignments):
 Present ALL issues from Sections 1-7 (including all Section 1.3 entity chain
 mismatches and all Section 7 naming violations) in a single consolidated table:
  Issue | Section(s) | Type | Priority | Action Required
+
+This table is the complete record at every priority. The Critical Issues table in
+the Executive Summary is its HIGH-priority subset — reconcile the two before
+finishing, so no HIGH issue appears in one and not the other.
 
 Sort HIGH → MEDIUM → LOW within each type.
 

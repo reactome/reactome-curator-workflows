@@ -126,7 +126,9 @@ for anything it needs.
 ### `/review-internal`
 
 Formal structured internal review of a pathway report against Curator Guide V94,
-producing a prioritized seven-section review DOCX. Upload the pathway report DOCX and
+producing a prioritized seven-section review DOCX that opens with a Critical Issues
+table collecting every HIGH-priority finding from all seven sections. Upload the
+pathway report DOCX and
 the Curator Guide PDF to the conversation before invoking. Every review applies the
 same standards and covers the full report; disease and drug standards apply
 automatically where the report carries that annotation.

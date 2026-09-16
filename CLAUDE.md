@@ -95,7 +95,8 @@ One-line orientation per skill; see each skill's `SKILL.md` for full instruction
 inputs, and options.
 
 - **`/review-internal`** — Formal structured review of a pathway report
-  against Curator Guide V94; outputs a prioritized seven-section review DOCX.
+  against Curator Guide V94; outputs a prioritized seven-section review DOCX that
+  opens with a Critical Issues table of every HIGH-priority finding.
   Requires the report DOCX + Curator Guide PDF in the conversation. No pathway-type
   modifiers — disease and drug standards apply automatically where the report
   carries that annotation. Takes an optional release version (e.g. `V95`) that
