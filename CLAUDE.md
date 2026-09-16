@@ -155,6 +155,32 @@ inputs, and options.
 
 ---
 
+## Chrome Extensions
+
+**`AICurator`** — a browser extension covering a similar pre-curation path to
+`/extract-reactions`, driven from a Google Sheet rather than Claude Code. Not part
+of this repo; install from the Chrome Web Store:
+<https://chromewebstore.google.com/detail/aicurator/jkdcmghlpgfilhdlngmopljpocpbnhdc>
+
+Open it on a fresh Google Sheet. Four tabs:
+
+1. **Main** — pick or create a project (a folder under `<Downloads>/aicurator/`)
+   bound to a Google Sheet, configure the AI provider, manage settings.
+2. **Extract** — feed review-article PDFs and a pathway name to an LLM, resolve
+   PMIDs against PubMed, write a 12-column reaction table to the sheet.
+3. **Summate** — for each row, send the cited PMID-prefixed PDFs and the row
+   context to an LLM, draft a Reactome-style summation paragraph, write it to
+   column B.
+4. **Canonize** — replace protein/gene mentions in columns A-F with their
+   canonical UniProt-confirmed (human-only, reviewed-first) gene symbols.
+
+> A `pmid-tagger` extension previously lived in this repo at
+> `chrome-extensions/pmid-tagger/`; it was removed in `3578fb3` (2026-05-06) in
+> favour of AICurator. Recover it with
+> `git checkout 3578fb3^ -- chrome-extensions/pmid-tagger/` if needed.
+
+---
+
 ## Claude Code Configuration
 
 `.claude/settings.json` holds the host allowlist Claude Code reads on launch from the
