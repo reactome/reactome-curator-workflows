@@ -24,7 +24,6 @@ reactome-curator-workflows/
 ├── CLAUDE.md                      ← you are here (orientation index)
 ├── README.md                      ← setup instructions for new users
 ├── requirements.txt               ← pinned Python deps for all skills
-├── Reactome_CuratorWorkflows_ClaudeCode_Guide.docx   ← full onboarding guide
 ├── chrome-extensions/pmid-tagger/ ← Chrome extension (see Chrome Extensions)
 └── .claude/
     ├── settings.json              ← Claude Code host/network allowlist
