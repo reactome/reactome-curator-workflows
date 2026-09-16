@@ -162,6 +162,10 @@ inputs, and options.
 of this repo; install from the Chrome Web Store:
 <https://chromewebstore.google.com/detail/aicurator/jkdcmghlpgfilhdlngmopljpocpbnhdc>
 
+Ralf Stephan maintains AICurator and handles its support — take questions, bug
+reports, and feature requests for the extension there rather than to this repo's
+issue tracker.
+
 Open it on a fresh Google Sheet. Four tabs:
 
 1. **Main** — pick or create a project (a folder under `<Downloads>/aicurator/`)
