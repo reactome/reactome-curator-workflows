@@ -1,6 +1,6 @@
 ---
 name: spotlight-article-drafter
-description: Draft candidate Reactome "Research Spotlight" articles — both the short (one-paragraph) and expanded/long-form versions — that highlight a published paper's use of Reactome data or tools. Use this whenever Lisa asks to draft, write, or generate a Spotlight article, a "candidate spotlight," a spotlight blurb/summary, or asks whether a paper would make a good Spotlight — even if she just attaches a PDF/DOI and says something like "spotlight this," "is this a good candidate," "write up the long and short versions," or points at a paper found in a journal-scan/candidate deck and asks for the write-up. Also use it when she references the Spotlight tracking spreadsheet, the Spotlight archive, or a "how was Reactome used" slide and wants article text produced from it. This skill only drafts the article text/content — it does NOT do the final HTML/Joomla formatting (use the separate spotlight-to-joomla skill for that, after a curator has approved wording and a publish date).
+description: Draft candidate Reactome "Research Spotlight" articles — both the short (one-paragraph) and expanded/long-form versions — that highlight a published paper's use of Reactome data or tools. Use this whenever Lisa asks to draft, write, or generate a Spotlight article, a "candidate spotlight," a spotlight blurb/summary, or asks whether a paper would make a good Spotlight — even if she just attaches a PDF/DOI and says something like "spotlight this," "is this a good candidate," "write up the long and short versions," or points at a paper found in a journal-scan/candidate deck and asks for the write-up. Also use it when she references the Spotlight tracking spreadsheet, the Spotlight archive, or a "how was Reactome used" slide and wants article text produced from it. This skill only drafts the article text/content — it does NOT do the final HTML/Joomla formatting, which is a separate step taken after a curator has approved the wording and a publish date.
 ---
 
 # Reactome Spotlight Article Drafter
@@ -84,9 +84,8 @@ supplementary methods) for every mention of "Reactome" and answer:
   decision (see Step 5) even though it doesn't change the article text.
 
 Be honest about how central or peripheral the usage was. Reactome's own
-archive includes plenty of Spotlights where Reactome was one of several tools
-(see `references/examples.md`) — the goal is an accurate description, not an
-inflated one. Overstating Reactome's role is the single easiest way to make a
+archive includes plenty of Spotlights where Reactome was one of several tools —
+the goal is an accurate description, not an inflated one. Overstating Reactome's role is the single easiest way to make a
 curator distrust the draft.
 
 ## Step 2 — Collect the bibliographic facts
@@ -99,10 +98,12 @@ differ). Get the DOI or a stable article URL for linking the title.
 
 ## Step 3 — Calibrate style against the archive
 
-Read `references/examples.md` before drafting — it contains full short+long
-pairs pulled from Reactome's own Spotlight tracker (the ones where a curator
-filled in *both* fields, which are the highest-quality style exemplars). If
-you have live access to the tracking spreadsheet
+Calibrate against real published Spotlights before drafting, rather than
+inventing a house style. The best exemplars are the tracker rows where a curator
+filled in *both* the short and long fields; the published archive on
+reactome.org is the fallback if the tracker is not to hand. Ask the curator for
+a couple of recent examples if you have access to neither — do not proceed from
+a guess at the format. If you have live access to the tracking spreadsheet
 (https://docs.google.com/spreadsheets/d/1F0v7altKbHRCbdDDkJprpYJbol36fbN7DE7W_uS9Qj4)
 pull a few recent rows too, since new examples accumulate monthly and reflect
 the curators' current preferences. Notice, across examples:
@@ -131,8 +132,8 @@ One paragraph, ~80-150 words. Structure:
 
 Format the title as a markdown link `[Title](url)`, and format any named
 Reactome pathway mentions as `[pathway text](Stable ID or DB_ID)` — this
-matches the input format the spotlight-to-joomla skill expects downstream, so
-a curator can hand your draft straight to that skill once it's approved.
+keeps the draft ready for the HTML conversion step downstream, so a curator
+can hand it straight on once it's approved.
 Prefix the draft with a `[Spotlight publish date]` placeholder rather than
 guessing a date; a curator assigns that when scheduling.
 
@@ -159,8 +160,8 @@ Same linking conventions as the short version.
 
 ## Step 6 — Add an editorial note for the curator (recommended)
 
-Curators screening candidates track a brief Pros/Cons note before drafting
-(see the "How was Reactome used?" pattern in `references/examples.md`).
+Curators screening candidates track a brief Pros/Cons note before drafting,
+alongside a "How was Reactome used?" summary.
 Include one alongside your draft — it's not part of the published article,
 just a decision aid:
 
@@ -193,6 +194,6 @@ normally stored) in addition to sending the file directly. Otherwise, just
 deliver the file.
 
 Remind whoever reviews the draft that the next step, once wording and a
-publish date are finalized, is the spotlight-to-joomla skill, which converts
-the approved short paragraph into the exact HTML block used on the Reactome
-website — don't do that conversion yourself as part of this skill.
+publish date are finalized, is converting the approved short paragraph into the
+HTML block used on the Reactome website. That conversion is a separate step and
+is not yet a skill in this repo — don't attempt it yourself as part of this one.

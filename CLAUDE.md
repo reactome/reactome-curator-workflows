@@ -24,7 +24,6 @@ reactome-curator-workflows/
 ├── CLAUDE.md                      ← you are here (orientation index)
 ├── README.md                      ← setup instructions for new users
 ├── requirements.txt               ← pinned Python deps for all skills
-├── chrome-extensions/pmid-tagger/ ← Chrome extension (see Chrome Extensions)
 └── .claude/
     ├── settings.json              ← Claude Code host/network allowlist
     └── skills/
@@ -104,7 +103,7 @@ inputs, and options.
   the skill writes locally and does not upload.
 
 - **`/annotate-pathway-from-reviews-or-topic_name`** — AI-assisted pre-curation
-  (v1.4). From a topic (Mode B) or supplied references/PMIDs/DOIs/PDFs (Mode A),
+  (v1.5). From a topic (Mode B) or supplied references/PMIDs/DOIs/PDFs (Mode A),
   proposes a full pathway → subpathway → reaction hierarchy and verifies primary
   literature via a mandatory ten-step PMID protocol, applying the species/chimeric
   framework. Does **not** touch the database or resolve ontology/UniProt IDs (those
@@ -156,20 +155,18 @@ inputs, and options.
 
 ---
 
-## Chrome Extensions
-
-**`pmid-tagger`** (`chrome-extensions/pmid-tagger/`) — Prefixes PDF downloads with
-`PMID-<id>_` when started from a PubMed/PMC article page, keeping downloaded papers
-matched to their references. Install: `chrome://extensions/` → enable Developer mode
-→ Load unpacked → select the extension folder. Active immediately, no config.
-
----
-
 ## Claude Code Configuration
 
-`.claude/settings.json` holds the host/network allowlist Claude Code reads on launch
-from the repo root. It allowlists `eutils.ncbi.nlm.nih.gov` (for `/extract-reactions`)
-and `reactome.org` (for `/curation-build-illustration`).
+`.claude/settings.json` holds the host allowlist Claude Code reads on launch from the
+repo root. It allows `WebFetch` to `eutils.ncbi.nlm.nih.gov` and `reactome.org`.
+
+Note which mechanism each skill actually uses. `/extract-reactions` resolves PMIDs via
+`WebFetch`, so the eutils entry is what skips its permission prompt.
+`/curation-build-illustration` reaches `reactome.org` through its bundled
+`reactome_icons.py` (python urllib, run under Bash), so it is governed by Bash
+approval rather than this rule — the `reactome.org` entry covers `WebFetch` access to
+the same host. A new skill that fetches via Bash needs a Bash permission, not a
+`WebFetch(domain:…)` line.
 
 > **claude.ai (browser) users:** the allowlist file does not apply — add those hosts
 > manually via **Settings → Capabilities → Domain allowlist**, or PMID resolution and

@@ -254,11 +254,13 @@ directly.
 | `/analysis-graphdb-setup` | Claude Desktop (Pro plan); Docker Desktop; Node.js; `neo4j-mcp` binary; `uv` package manager |
 
 > **Host allowlisting.** In Claude Code launched from the repo root,
-> `.claude/settings.json` allowlists `eutils.ncbi.nlm.nih.gov` (`/extract-reactions`)
-> and `reactome.org` (`/curation-build-illustration`) automatically. In claude.ai
-> (browser), add both manually via **Settings → Capabilities → Domain allowlist**.
-> Without them, PMID resolution and icon search fail rather than falling back to
-> fabricated values.
+> `.claude/settings.json` allows `WebFetch` to `eutils.ncbi.nlm.nih.gov` and
+> `reactome.org`, so `/extract-reactions` resolves PMIDs without a prompt.
+> `/curation-build-illustration` fetches through its bundled Python helper instead,
+> so it asks for Bash approval on first run — that is expected, not a
+> misconfiguration. In claude.ai (browser), add both hosts manually via
+> **Settings → Capabilities → Domain allowlist**. Without network access, PMID
+> resolution and icon search fail rather than falling back to fabricated values.
 
 ---
 
