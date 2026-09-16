@@ -206,7 +206,7 @@ the same host. A new skill that fetches via Bash needs a Bash permission, not a
 
 ## Team
 
-Marc Gillespie (SJU, repo maintainer) · Lisa Matthews (NYU) · Joel Weiser
+Marc Gillespie (SJU, repo maintainer) · Lisa Matthews (SJU) · Joel Weiser
 (OICR) · Guanming Wu (OHSU) · Adam Wright (OICR) · Ralf Stephan (AICurator
 maintainer).
 
