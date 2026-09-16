@@ -127,11 +127,17 @@ for anything it needs.
 
 Formal structured internal review of a pathway report against Curator Guide V94,
 producing a prioritized seven-section review DOCX. Upload the pathway report DOCX and
-the Curator Guide PDF to the conversation before invoking. Optional modifiers:
-`disease`, `drug`, `large` (50+ reactions).
+the Curator Guide PDF to the conversation before invoking. Every review applies the
+same standards and covers the full report; disease and drug standards apply
+automatically where the report carries that annotation.
+
+Pass an optional release version to label the review. The skill asks where to write
+the DOCX locally, then tells you to upload it to that release's subfolder of the
+[Internal Reviews Drive folder](https://drive.google.com/drive/folders/1J_T0-Ihx8hdsNv75pvrsJqjYwJo3gYpP) — the destination is also written into the
+top of the report, so the file carries its own filing instructions.
 
 ```
-/review-internal "HHV8 Infection" R-HSA-9521541 "Lisa Matthews" 2026-04-15
+/review-internal "HHV8 Infection" R-HSA-9521541 "Lisa Matthews" 2026-06-16 V95
 ```
 
 ### `/annotate-pathway-from-reviews-or-topic_name`

@@ -20,20 +20,35 @@ Reference materials for entity and event name checking (Section 7):
  @Small_molecule_renaming.xlsx
  @bau060.pdf
 
-## Working directory — set this up first (keeps the repo clean)
+## Working directory and upload destination — set this up first
 
 To keep this repository clean, **never write generated files into it.** Before
-doing anything else, agree on one working directory for this run and put every
-output (the review DOCX and any intermediates) there. Ask the curator:
+doing anything else, settle two things with the curator:
 
-- **Where** it should live — default is a gitignored `output/` folder in the repo
-  (`./output/<name>/`; git already ignores `output/`), or give an absolute path
-  outside the repo (e.g. `~/reactome-work/<name>/`).
-- **What** to name it — suggested default: `<pathway-slug>-review` (e.g.
-  `hhv8-infection-review`).
+- **Local directory** — where the review DOCX and any intermediates are written.
+  Default is a gitignored `output/` folder in the repo
+  (`./output/<pathway-slug>-review/`; git already ignores `output/`), or give an
+  absolute path outside the repo (e.g. `~/reactome-work/hhv8-infection-review/`).
+- **Release version** — e.g. `V95`. This labels the review and names the Drive
+  upload subfolder; it does not affect where the file is written locally. If it
+  was supplied in $ARGUMENTS, confirm it rather than asking again.
 
-Create it with `mkdir -p`, write all outputs there, and report the full path
-back. Do not write into the repo root, `.claude/`, or next to the skill files.
+Create the directory with `mkdir -p`, write all outputs there, and report the
+full path back. Do not write into the repo root, `.claude/`, or next to the
+skill files.
+
+**Upload destination.** Reviews are archived on the shared Drive so the whole
+team can see the full set for a release. This skill does not upload — it writes
+locally and tells the curator where the file belongs. Once the review is
+written, state:
+
+> Upload this review to the `<release>` subfolder of the Reactome Internal
+> Reviews Drive folder: https://drive.google.com/drive/folders/1J_T0-Ihx8hdsNv75pvrsJqjYwJo3gYpP
+> Create the `<release>` subfolder if it does not already exist.
+
+The same destination and release label also go in the report's own metadata
+header block (see Formatting Standards), so the DOCX carries its filing
+instructions with it.
 
 ## Required Inputs
 
@@ -58,15 +73,16 @@ $ARGUMENTS should specify:
  - Reactome ID / ST_ID, e.g. R-HSA-9985686 (required)
  - Reviewer name (required)
  - Review date (required)
- - Pathway type modifier, if applicable (optional):
-     disease     — applies disease pathway additional standards
-     drug        — applies drug curation additional standards
-     large       — applies scope restriction for 50+ reaction pathways;
-                   specify sub-pathway names or §-references to focus on
+ - Release version, e.g. V95 (optional) — labels the review and names the
+   Drive upload subfolder. If omitted, ask for it at the opening gate.
 
 Examples:
- /review-internal "HHV8 Infection" R-HSA-9521541 "Marc Gillespie" 2026-04-15
- /review-internal "TP53 Regulation of DNA Repair" R-HSA-6796648 "Lisa Matthews" 2026-04-15 disease
+ /review-internal "HHV8 Infection" R-HSA-9521541 "Marc Gillespie" 2026-06-16 V95
+ /review-internal "TP53 Regulation of DNA Repair" R-HSA-6796648 "Lisa Matthews" 2026-04-15
+
+There are no pathway-type modifiers. Every review applies the same standards and
+covers the full report; disease and drug standards apply automatically wherever
+the report carries disease or drug annotation (see Standards to Apply).
 
 ## What This Skill Does
 
@@ -371,7 +387,11 @@ ordering or cosmetic issues.
 - Output a properly formatted DOCX, not plain text
 - Use navy (#1F3864) for H1 headings, teal (#1F7A8C) for H2
 - Include the metadata header block: pathway name, report filename,
- guide version, reviewer name, review date
+ guide version, reviewer name, review date, and — at the top of the report —
+ the release version and upload destination:
+   Release:   <release version, e.g. V95>
+   Upload to: https://drive.google.com/drive/folders/1J_T0-Ihx8hdsNv75pvrsJqjYwJo3gYpP
+              (the <release> subfolder — create it if it does not exist)
 - Priority labels: HIGH in red, MEDIUM in amber, LOW in green
 - Reference reactions using §-notation matching the report's structure
 - Reference curator comments by number (Comment #N)
@@ -398,42 +418,38 @@ ordering or cosmetic issues.
             title/summation text
    LOW    — modification state is biologically ambiguous or data is from
             heterologous systems only
+- Disease pathway standards — apply wherever the report carries disease
+ annotation, and say nothing if it carries none:
+   - Disease terms assigned from DOID, not free text
+   - FailedReactions have entityFunctionalStatus and normalReaction
+     attributes, referenced in their summations
+   - Loss-of-function and gain-of-function reactions sit in separate
+     sub-pathways, per Curator Guide disease structure standards
+   - COSMIC / ClinVar / ClinGen cross-references present for
+     characterized variants
+- Drug curation standards — apply wherever the report carries drug
+ annotation, and say nothing if it carries none:
+   - Every drug entity has a GtP identifier in the referenceEntity slot
+   - Drug binding reactions are typed 'Association' in the ELV
+   - The disease attribute is set on drug entities
+   - Flag any drug without a ChEBI cross-reference (desirable, not mandatory)
+   - Regulation instances reference the correct downstream event
 
-## Optional Additions (append via $ARGUMENTS modifier)
-
-### disease — Disease Pathway Additional Standards
-
-- Verify that disease terms are assigned from DOID (not free text)
-- Check that FailedReactions have entityFunctionalStatus and normalReaction
- attributes referenced in summations
-- Verify that loss-of-function and gain-of-function reactions are in
- separate sub-pathways per Curator Guide disease structure standards
-- Check that COSMIC / ClinVar / ClinGen cross-references are present
- for characterized variants
-
-### drug — Drug Curation Additional Standards
-
-- Verify that all drug entities have a GtP identifier in the referenceEntity slot
-- Check that drug binding reactions are typed as 'Association' in the ELV
-- Verify that disease attribute is set on drug entities
-- Flag any drug without ChEBI cross-reference (desirable but not mandatory)
-- Check that regulation instances reference the correct downstream event
-
-### large — Large Pathway Scope Restriction (50+ reactions)
-
-- Focus reaction connectivity and grammar review on the sub-pathways
- specified in $ARGUMENTS
-- For Section 1.3, focus on the same sub-pathways but flag any entity
- naming inconsistency that spans sub-pathway boundaries
-- Complete all other sections (GO terms, references, quality) across
- the full report
+Review the full report. There is no scope restriction for large pathways — if
+output is truncated, continue from the section where it stopped (see Notes and
+Limitations) rather than narrowing what is covered.
 
 ## Output
 
 Produce the review as a downloadable DOCX file named:
  Reactome_[PathwayName]_[ReactomeID]_InternalReview.docx
 
-Do not ask clarifying questions. Work from the two uploaded documents alone.
+Write it to the local directory agreed at the opening gate, report the full
+path, and repeat the Drive upload destination and release subfolder.
+
+Do not ask clarifying questions about the review content — work from the two
+uploaded documents alone. The opening gate's questions about the local output
+directory and release version are the exception and must still be asked.
 
 ## Notes and Limitations
 

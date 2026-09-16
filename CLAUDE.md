@@ -96,8 +96,11 @@ inputs, and options.
 
 - **`/review-internal`** — Formal structured review of a pathway report
   against Curator Guide V94; outputs a prioritized seven-section review DOCX.
-  Requires the report DOCX + Curator Guide PDF in the conversation. Modifiers:
-  `disease`, `drug`, `large` (50+ reactions).
+  Requires the report DOCX + Curator Guide PDF in the conversation. No pathway-type
+  modifiers — disease and drug standards apply automatically where the report
+  carries that annotation. Takes an optional release version (e.g. `V95`) that
+  labels the review and names the shared-Drive subfolder the curator uploads to;
+  the skill writes locally and does not upload.
 
 - **`/annotate-pathway-from-reviews-or-topic_name`** — AI-assisted pre-curation
   (v1.4). From a topic (Mode B) or supplied references/PMIDs/DOIs/PDFs (Mode A),
