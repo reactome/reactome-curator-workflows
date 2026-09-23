@@ -18,7 +18,7 @@ This skill does three things, and the curator picks one when it starts:
 
 | Server | What it gives Claude | Needs |
 |---|---|---|
-| `gk-central` | Read-only queries against Guanming Wu's Neo4j copy of **gk_central**, the editing database, on the curator server, refreshed nightly. Includes unreleased curation. Mostly human (R-HSA) plus other species' directly curated pathways, e.g. *Arabidopsis*, rice, *Drosophila*; no computationally inferred events, which are generated at release. | The connection card and shared password from the curation team |
+| `gk-central` | Read-only queries against Guanming Wu's Neo4j copy of **gk_central**, the editing database, on the curator server, refreshed nightly. Includes unreleased curation. Mostly human (R-HSA) plus other species' directly curated pathways, e.g. *Arabidopsis*, rice, *Drosophila*; no computationally inferred events, which are generated at release. | The connection card — email Marc Gillespie for it |
 | `ols` | Live lookups in the EBI Ontology Lookup Service: GO, ChEBI, HP, EFO and 300+ others. | Internet only |
 
 Other skills in this repo (`/review-internal`, `/release-doi-batch`) use the
@@ -152,11 +152,13 @@ password, and Guanming Wu plans to replace it with an https MCP endpoint at
 `curator.reactome.org`. If that has happened, see Function 3, "https endpoint is
 live", instead of steps 1–5.
 
-**1. Connection card.** The curator needs Guanming's "Setting Up the Reactome MCP
-Server" card: bolt URL, browser (http) URL, username, password. It's deliberately
-not in this repo; a curation-team colleague can forward it. Ignore the card's
-Claude Desktop JSON block — it puts the password in plain text in the config file.
-This skill does that step instead.
+**1. Connection card.** The curator needs the gk_central connection card (a
+one-page PDF with the bolt URL, browser URL, username and password). It's
+deliberately not in this repo. **Curators should email Marc Gillespie for the
+connection card**, rather than getting it forwarded by a colleague. If the curator
+doesn't have it yet, stop here and tell them that. An older version of Guanming's
+setup instructions includes a Claude Desktop JSON block that puts the password in
+plain text in the config file; ignore it — this skill does that step instead.
 
 **2. Install both programs and the launcher:**
 
@@ -262,7 +264,7 @@ schedule or automatic check.
 | What changed | How you notice | What to do | What changes locally |
 |---|---|---|---|
 | **Password rotated** | `authentication failed`, for everyone at once | Get the new password from Guanming. The curator reruns `set-password gk-central` in their own terminal, then `test gk-central` | The Keychain item only |
-| **Server address moved** | Connection refused or timeouts; a new card from Guanming | `configure gk-central --bolt ... --http ...`, then `test` | `config.json` only; Claude registrations are untouched |
+| **Server address moved** | Connection refused or timeouts; a new card from Marc | `configure gk-central --bolt ... --http ...`, then `test` | `config.json` only; Claude registrations are untouched |
 | **https endpoint is live** | Guanming announces it | `disable gk-central`, then register what he provides: `claude mcp add --scope user --transport http gk-central <url>`, plus whatever auth he specifies (keep tokens out of the repo and chat the same way). Keep the name `gk-central` so other skills' permissions still match | Claude registrations; the old password can be removed from Keychain Access |
 | **Newer server software** | A maintainer bumps the pinned versions at the top of `reactome_mcp.py` after testing them | `git pull`, then `update-server` | The two programs in `~/.local/bin/` and the launcher |
 | **This skill's helper changed** | `status` says "Launcher out of date" (usually after a `git pull`) | `update-server` | The launcher copy in `~/.config/reactome/mcp/` |

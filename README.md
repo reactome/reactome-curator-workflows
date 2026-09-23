@@ -240,9 +240,9 @@ ontology lookups). It opens with a menu of three functions: **install** both ser
 password, new server address, new software versions, or checking that the nightly
 gk_central refresh has run). Passwords go into the macOS Keychain from your own
 terminal — never into the repo, a Claude config file, or the chat — and gk_central
-connection details come from the team's connection card, not this public repo. Once
-a server is on, `/review-internal` and `/release-doi-batch` use it for optional
-database cross-checks.
+connection details come from a connection card (curators email Marc Gillespie for
+it), not this public repo. Once a server is on, `/review-internal` and
+`/release-doi-batch` use it for optional database cross-checks.
 
 ```
 /analysis-reactome-mcp            # opens the menu
@@ -265,7 +265,7 @@ database cross-checks.
 | `/curation-build-illustration` | Python 3 (stdlib only); network access to `reactome.org` for name search and icon/EHLD download (accession lookup works offline); a base-EHLD ST_ID for Mode A, or a sample image for Mode C |
 | `/admin-drive-readme` | Python 3; Google API client libraries (in `requirements.txt`); OAuth credentials at `~/.config/reactome/credentials.json` |
 | `/spotlight-article-drafter` | The candidate paper (PDF, DOI, or URL) |
-| `/analysis-reactome-mcp` | Python 3 (stdlib only); `uv`; Claude Code and/or Claude Desktop; the gk_central connection card and password from the curation team (for `gk-central`) |
+| `/analysis-reactome-mcp` | Python 3 (stdlib only); `uv`; Claude Code and/or Claude Desktop; the gk_central connection card — email Marc Gillespie for it (for `gk-central`) |
 
 > **Host allowlisting.** In Claude Code launched from the repo root,
 > `.claude/settings.json` allows `WebFetch` to `eutils.ncbi.nlm.nih.gov` and
