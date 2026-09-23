@@ -61,6 +61,41 @@ Before invoking this skill, upload both of the following to the conversation:
 
 If either file is missing, stop and ask the user to upload it before proceeding.
 
+## Optional — live database cross-check
+
+The report is what's being reviewed. The live database, if you can reach it,
+catches what a report can't show: a report exported before a rename, events
+dropped when a multi-part report was merged, a GO ID that doesn't exist.
+
+**Detect, don't require.** Check whether the session has the `gk-central` MCP
+tools (`mcp__gk-central__read_neo4j_cypher`) and the `ols` tools. Use whichever
+are present. If neither is, add one line to Overall Notes — "Live database
+cross-check not run (no Reactome MCP server available; see
+/analysis-reactome-mcp)" — and review from the documents alone. Never stop the
+review to set a server up.
+
+With **gk-central**, read-only queries matching on the report's ST_ID (confirm
+unfamiliar property or relationship names with `get_neo4j_schema` first):
+
+- The pathway ST_ID exists and its `displayName` matches the report → if not,
+  MEDIUM, in Overall Notes.
+- Events under the pathway in gk_central versus events in the report → events
+  missing from the report go in Overall Notes, MEDIUM: the report may be an
+  unmerged multi-part export, or stale.
+- PMIDs attached to each event in gk_central versus the report's reference lists
+  → differences go in Section 3.
+- GO biological process terms on the pathway and its reactions in gk_central
+  versus the report → differences go in Section 2.
+
+With **ols**: resolve every GO ID you recommend in Section 2 and confirm its label
+before writing it down. Don't recommend an ID that OLS doesn't return.
+
+Label every database-derived finding "(gk_central)" or "(OLS)", and note in the
+metadata header whether the cross-check ran. gk_central may be newer than the
+exported report, so a report-versus-database difference is something for the
+curator to reconcile. It is not proof the report is wrong: rate it MEDIUM unless
+it also breaks a Curator Guide rule on its own.
+
 ## Invocation
 
  /review-internal $ARGUMENTS
@@ -529,9 +564,11 @@ directory and release version are the exception and must still be asked.
 - The entity chain analysis in Section 1.3 is based on reading summation
  text and reaction diagram images. All flagged mismatches should be
  verified by the curator in the Curator Tool before correction.
-- Claude will suggest GO BP terms based on training data. Always
- cross-check suggested GO IDs against OLS4 (https://www.ebi.ac.uk/ols4/)
- or AmiGO before committing terms.
+- Claude will suggest GO BP terms based on training data. When the `ols`
+ MCP server is available, every suggested GO ID is resolved through it (see
+ Optional — live database cross-check). Otherwise, always cross-check
+ suggested GO IDs against OLS4 (https://www.ebi.ac.uk/ols4/) or AmiGO before
+ committing terms.
 - PMID verification runs through verify_pmids.py against NCBI E-utilities
  (see Section 3). Claude itself has no PubMed access and must never assert a
  PMID is valid without the script's output. bioRxiv and medRxiv are not covered

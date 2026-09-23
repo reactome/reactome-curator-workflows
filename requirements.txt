@@ -47,4 +47,5 @@ python-docx==1.2.0      # maintaining the /review-internal output template
 # ── No third-party packages needed ─────────────────────────────────────────────
 # /extract-reactions and /curation-build-illustration use the standard library
 # only (urllib against eutils.ncbi.nlm.nih.gov and reactome.org).
-# /analysis-graphdb-setup installs its own tooling via uv — see that SKILL.md.
+# /analysis-reactome-mcp's helper is stdlib-only; it installs the MCP servers
+# themselves with uv at pinned versions — see that SKILL.md.

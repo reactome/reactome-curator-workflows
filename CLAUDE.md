@@ -33,7 +33,7 @@ reactome-curator-workflows/
         ├── release-doi-batch/                         ← /release-doi-batch
         ├── admin-drive-readme/                       ← /admin-drive-readme
         ├── release-qa-tracker/                        ← /release-qa-tracker
-        ├── analysis-graphdb-setup/                   ← /analysis-graphdb-setup
+        ├── analysis-reactome-mcp/                    ← /analysis-reactome-mcp
         ├── curation-build-illustration/                ← /curation-build-illustration
         └── spotlight-article-drafter/                ← /spotlight-article-drafter
 ```
@@ -130,9 +130,14 @@ inputs, and options.
   per-row Status dropdowns and Comments, after a curator-approval review gate.
   Needs Python 3 + `openpyxl`.
 
-- **`/analysis-graphdb-setup`** — One-time setup guide + quarterly update SOP for a
-  local Reactome Neo4j database connected to Claude Desktop via `neo4j-mcp`, plus the
-  EBI OLS MCP server for ontology lookups. A setup guide, not a curation command.
+- **`/analysis-reactome-mcp`** — Two read-only MCP servers for Claude Code and
+  Desktop: `gk-central` (nightly copy of gk_central on the curator server) and `ols` (EBI OLS).
+  Opens with a menu of three functions: install (explains how the servers work and
+  what changes locally), enable/disable, and curator-initiated update. Runs through
+  the stdlib helper `reactome_mcp.py`. Passwords live in the macOS Keychain, entered
+  by the curator in their own terminal — never in the repo, a Claude config file,
+  or the chat; gk_central host/ports are private too (the repo is public). Other
+  skills use these servers optionally.
 
 - **`/curation-build-illustration`** — Builds/extends an EHLD-style pathway
   illustration (1366×768 SVG). **Preferred mode: modify an existing published EHLD
@@ -190,7 +195,9 @@ Open it on a fresh Google Sheet. Four tabs:
 ## Claude Code Configuration
 
 `.claude/settings.json` holds the host allowlist Claude Code reads on launch from the
-repo root. It allows `WebFetch` to `eutils.ncbi.nlm.nih.gov` and `reactome.org`.
+repo root. It allows `WebFetch` to `eutils.ncbi.nlm.nih.gov` and `reactome.org`,
+and pre-approves the read-only MCP tools of the `gk-central` and `ols` servers
+(tool names only — no credentials; the write tool is not listed).
 
 Note which mechanism each skill actually uses. `/extract-reactions` resolves PMIDs via
 `WebFetch`, so the eutils entry is what skips its permission prompt.

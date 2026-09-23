@@ -33,8 +33,7 @@ add a skill.
   API Keys → Create Key**. Copy it immediately — it is shown only once.
 - **Repository access.** The maintainer must add you as a collaborator; accept the
   emailed invitation before cloning.
-- Node.js is **not** needed for the base install — only for
-  `/analysis-graphdb-setup`.
+- Node.js is **not** needed for any skill.
 
 Install Claude Code:
 
@@ -231,14 +230,26 @@ formatting is a separate step, after a curator approves the wording and publish 
 /spotlight-article-drafter
 ```
 
-### `/analysis-graphdb-setup`
+### `/analysis-reactome-mcp`
 
-A one-time setup guide and quarterly update SOP, not a command you invoke during
-curation. Walks through running a local Reactome Neo4j database connected to Claude
-Desktop via `neo4j-mcp`, plus the EBI OLS MCP server for ontology lookups. Once
-configured, you query the Reactome graph in plain English and get live GO/HP/ChEBI/EFO
-lookups instead of hallucinated accessions. Follow it once, then use Claude Desktop
-directly.
+Sets up two read-only MCP servers for Claude Code and Claude Desktop: `gk-central`
+(a nightly-refreshed copy of gk_central on the curator server) and `ols` (EBI
+ontology lookups). It opens with a menu of three functions: **install** both servers
+(with an explanation of how they work and a list of what changes on your computer),
+**enable or disable** them, and **update** the setup when you choose to (new
+password, new server address, new software versions, or checking that the nightly
+gk_central refresh has run). Passwords go into the macOS Keychain from your own
+terminal — never into the repo, a Claude config file, or the chat — and gk_central
+connection details come from the team's connection card, not this public repo. Once
+a server is on, `/review-internal` and `/release-doi-batch` use it for optional
+database cross-checks.
+
+```
+/analysis-reactome-mcp            # opens the menu
+/analysis-reactome-mcp install
+/analysis-reactome-mcp disable gk-central
+/analysis-reactome-mcp update
+```
 
 ---
 
@@ -254,7 +265,7 @@ directly.
 | `/curation-build-illustration` | Python 3 (stdlib only); network access to `reactome.org` for name search and icon/EHLD download (accession lookup works offline); a base-EHLD ST_ID for Mode A, or a sample image for Mode C |
 | `/admin-drive-readme` | Python 3; Google API client libraries (in `requirements.txt`); OAuth credentials at `~/.config/reactome/credentials.json` |
 | `/spotlight-article-drafter` | The candidate paper (PDF, DOI, or URL) |
-| `/analysis-graphdb-setup` | Claude Desktop (Pro plan); Docker Desktop; Node.js; `neo4j-mcp` binary; `uv` package manager |
+| `/analysis-reactome-mcp` | Python 3 (stdlib only); `uv`; Claude Code and/or Claude Desktop; the gk_central connection card and password from the curation team (for `gk-central`) |
 
 > **Host allowlisting.** In Claude Code launched from the repo root,
 > `.claude/settings.json` allows `WebFetch` to `eutils.ncbi.nlm.nih.gov` and
@@ -326,7 +337,7 @@ reactome-curator-workflows/
 ├── .gitignore
 ├── illustrations/                 ← generated illustration outputs (git-ignored)
 └── .claude/
-    ├── settings.json              ← host allowlist (eutils.ncbi.nlm.nih.gov, reactome.org)
+    ├── settings.json              ← host allowlist + read-only MCP tool permissions
     └── skills/
         ├── review-internal/                             ← + Curator Guide V94, Data Model
         │                                                  Glossary V95, naming-rule files
@@ -338,7 +349,7 @@ reactome-curator-workflows/
         │                                                  icon_mappings/, reactome_icons.py
         ├── admin-drive-readme/                           ← + update_drive_readme.py
         ├── spotlight-article-drafter/
-        └── analysis-graphdb-setup/                       ← + update_reactome.sh
+        └── analysis-reactome-mcp/                        ← + reactome_mcp.py
 ```
 
 Each skill directory holds its own `SKILL.md` plus the scripts, templates, and

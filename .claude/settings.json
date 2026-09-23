@@ -3,7 +3,10 @@
   "permissions": {
     "allow": [
       "WebFetch(domain:eutils.ncbi.nlm.nih.gov)",
-      "WebFetch(domain:reactome.org)"
+      "WebFetch(domain:reactome.org)",
+      "mcp__gk-central__read_neo4j_cypher",
+      "mcp__gk-central__get_neo4j_schema",
+      "mcp__ols"
     ]
   }
 }

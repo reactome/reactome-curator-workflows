@@ -134,13 +134,42 @@ The output XML conforms to CrossRef schema 5.3.1. Key construction details:
   - Confirm contributor names and ORCIDs are correct
   - Confirm the release date in <update_date> matches the intended release
 
-2. Submit to CrossRef via the deposit interface:
+2. Cross-check against the database, if a Reactome MCP server is available (see
+  below). Resolve anything it flags before submitting.
+
+3. Submit to CrossRef via the deposit interface:
     https://doi.crossref.org/servlet/deposit
   Log in with the Reactome depositor credentials. Do not POST the file
   programmatically — use the web interface.
 
-3. Save the output XML to the Reactome Team Drive in the DOI batch archive
+4. Save the output XML to the Reactome Team Drive in the DOI batch archive
   folder for the release.
+
+## Optional — database cross-check
+
+A DOI minted for a mistyped or retired StableID resolves to nothing. If the
+session has the `gk-central` MCP tools (`mcp__gk-central__read_neo4j_cypher`),
+check the batch against the editing database before submitting. If it doesn't,
+say "Database cross-check not run — gk-central not available (see
+/analysis-reactome-mcp)" and continue; this step is never required.
+
+Take every StableID and title from the generated XML (`<doi>` values minus the
+`10.3180/` prefix, and each dataset's `<title>`), then in one read-only query
+matching on `stId`:
+
+- **StableID not found in gk_central** → flag, and don't submit that dataset
+  until the curator confirms the ID. Usually a typo in DOIs.xlsx or a retired
+  event.
+- **Not a Pathway** → flag. DOIs are issued for pathways.
+- **Title differs from `displayName`** → flag for the curator to decide which is
+  right. The XML title comes from the DOIs.xlsx `Project` column.
+- **DOI property** — if the Pathway nodes carry a DOI property (confirm the
+  property name with `get_neo4j_schema` or `keys(p)` first; don't assume it),
+  compare it with `10.3180/<StableID>` and flag mismatches.
+
+Report findings as a short table (StableID | Issue | Suggested action). Never
+edit the XML or DOIs.xlsx to fix a finding; the curator corrects DOIs.xlsx and
+reruns the script.
 
 ## Notes
 
