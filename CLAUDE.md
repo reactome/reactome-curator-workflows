@@ -118,8 +118,12 @@ inputs, and options.
   resolution via NCBI E-utilities (`eutils.ncbi.nlm.nih.gov`); never from training
   data. Pre-curation draft.
 
-- **`/release-doi-batch`** — Runs `generate_crossref_xml.py` to produce a CrossRef
-  DOI batch XML for a release. Requires DOIs.xlsx locally and Python 3 + pandas.
+- **`/release-doi-batch`** — Two stages: `format_release_sheet.py` converts a
+  release's curation tracking sheet (e.g. `Release 97.xlsx`) into the canonical
+  DOIs.xlsx worksheet layout used by prior releases, validating StableIDs, DOIs,
+  curator/contributor ORCIDs and per-project consistency; `generate_crossref_xml.py`
+  then produces the CrossRef DOI batch XML. Requires DOIs.xlsx locally and
+  Python 3 + pandas + openpyxl.
 
 - **`/admin-drive-readme`** — Regenerates the Team Drive README as a formatted
   Google Doc from the live folder inventory. Python 3 + Google API client libraries;
