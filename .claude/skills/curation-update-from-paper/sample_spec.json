@@ -1,0 +1,178 @@
+{
+  "output_basename": "sample_curation_update",
+  "title": "Curation update: cGAS-STING activation by mitochondrial DNA release",
+  "subtitle": "Proposed additions to an existing Reactome pathway from a single primary paper - pre-curation draft for curator review",
+  "topic": "cGAS-STING innate immune signalling",
+  "date": "2026-10-15",
+  "author": "Marc Gillespie (St. John's University)",
+
+  "target_pathway": {
+    "name": "STING mediated induction of host immune responses",
+    "st_id": "R-HSA-1834949",
+    "db_id": "1834949",
+    "url": "https://reactome.org/content/detail/R-HSA-1834949"
+  },
+
+  "source_paper": {
+    "citation": "Doe J, Roe A, Mbeki T, et al. Mitochondrial DNA release licenses cGAS-dependent interferon induction. Nature. 2026;640(8012):221-229.",
+    "pmid": "40123456",
+    "pmid_url": "https://pubmed.ncbi.nlm.nih.gov/40123456/",
+    "doi": "10.1038/s41586-026-09876-5",
+    "doi_url": "https://doi.org/10.1038/s41586-026-09876-5",
+    "pmid_source": "esearch:doi"
+  },
+
+  "summary": [
+    "The target pathway currently models cGAS sensing of cytosolic double-stranded DNA, STING trafficking from the ER to the ERGIC, TBK1 recruitment, and IRF3 phosphorylation, but it treats the source of the cytosolic DNA as an unspecified input.",
+    "This paper provides direct experimental evidence that VDAC1/VDAC3 oligomerisation forms a mitochondrial outer-membrane pore through which mitochondrial DNA (mtDNA) fragments reach the cytosol, and that this released mtDNA is sufficient to activate cGAS in the absence of any exogenous DNA.",
+    "Two new reaction-like events and two new physical entities are proposed. No existing event needs to be retired; one existing reaction gains a defined input and a new preceding event."
+  ],
+
+  "rationale": [
+    "Reactome curates at the reaction level, so an upstream source of a previously unspecified input is best represented as explicit new events rather than as a note on the existing reaction. Adding the VDAC pore formation step and the mtDNA translocation step gives the existing cGAS activation reaction a proper precedingEvent chain.",
+    "The VDAC1:VDAC3 oligomer is represented as a new Complex rather than as a DefinedSet because the paper demonstrates a specific heteromeric stoichiometry by native PAGE and crosslinking, not functional interchangeability of the two subunits.",
+    "Both proposed events are human (HEK293T, THP-1, and primary human fibroblasts), so neither is chimeric and neither requires an inferred-from annotation."
+  ],
+
+  "gap_analysis": [
+    {
+      "existing_event": "cGAS binds cytosolic double-stranded DNA",
+      "st_id": "R-HSA-3249367",
+      "what_the_paper_changes": "Input dsDNA is currently a generic cytosolic DNA entity with no defined origin. The paper identifies released mtDNA as a physiological source; add the new mtDNA entity as an additional input candidate and set the new translocation reaction as a preceding event."
+    },
+    {
+      "existing_event": "STING translocates from the ER to the ERGIC",
+      "st_id": "R-HSA-1834943",
+      "what_the_paper_changes": "No change to the reaction itself. The paper supplies additional human evidence (Fig. 3c) that could be added as a second literature reference on the existing event."
+    }
+  ],
+
+  "new_entities": [
+    {
+      "proposed_name": "VDAC1:VDAC3 oligomer",
+      "class": "Complex",
+      "compartment": "mitochondrial outer membrane",
+      "notes": "Heteromeric pore; paper reports a predominant hexameric species by BN-PAGE (Fig. 2a). Component UniProt accessions pending curator verification.",
+      "reuses": null,
+      "status": "NEW - needs creation in the Curator Tool"
+    },
+    {
+      "proposed_name": "mitochondrial DNA fragment (500-700 bp)",
+      "class": "OtherEntity",
+      "compartment": "cytosol",
+      "notes": "Represented as a single OtherEntity rather than a GenomeEncodedEntity because the paper characterises a heterogeneous fragment population, not a defined locus.",
+      "reuses": "Possible reuse of an existing cytosolic mtDNA entity - check gk_central before creating",
+      "status": "PENDING CURATOR VERIFICATION"
+    }
+  ],
+
+  "new_events": [
+    {
+      "label": "RXN-1",
+      "name": "VDAC1 and VDAC3 oligomerise in the mitochondrial outer membrane",
+      "type": "BlackBoxEvent",
+      "compartment": "mitochondrial outer membrane",
+      "species": "Homo sapiens",
+      "is_chimeric": false,
+      "inputs": ["VDAC1", "VDAC3"],
+      "outputs": ["VDAC1:VDAC3 oligomer"],
+      "catalyst": null,
+      "regulators": [
+        "negatively regulated by VBIT-4 (small-molecule VDAC oligomerisation inhibitor)"
+      ],
+      "preceding_event": null,
+      "go_bp": "GO:0097191 extrinsic apoptotic signaling pathway (candidate - curator to confirm)",
+      "go_mf": null,
+      "summation": "Oxidative stress induced by rotenone or by mitochondrial transcription factor A (TFAM) depletion promotes the oligomerisation of VDAC1 and VDAC3 within the mitochondrial outer membrane. The resulting hetero-oligomeric pore is detected by blue native PAGE and by chemical crosslinking in human fibroblasts, and its formation is blocked by the VDAC oligomerisation inhibitor VBIT-4.",
+      "evidence_type": "direct experimental evidence (human cells)",
+      "evidence_sentence": "Blue native PAGE of digitonin-solubilised mitochondria from rotenone-treated human fibroblasts resolved a VDAC1- and VDAC3-containing species of approximately 190 kDa that was absent from VBIT-4-treated cells.",
+      "figure": "Fig. 2a-c",
+      "pmid": "40123456",
+      "pmid_url": "https://pubmed.ncbi.nlm.nih.gov/40123456/",
+      "pmid_source": "esearch:doi",
+      "pmc_url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11223344/",
+      "authors_year": "Doe et al. 2026",
+      "flags": [
+        "Modelled as a BlackBoxEvent because the oligomer stoichiometry is not fully resolved.",
+        "GO BP term is a candidate only - needs OLS confirmation."
+      ],
+      "status": "PROPOSED"
+    },
+    {
+      "label": "RXN-2",
+      "name": "Mitochondrial DNA fragments translocate to the cytosol through the VDAC1:VDAC3 pore",
+      "type": "Transition",
+      "compartment": "mitochondrial matrix -> cytosol",
+      "species": "Homo sapiens",
+      "is_chimeric": false,
+      "inputs": ["mitochondrial DNA fragment (500-700 bp) [mitochondrial matrix]"],
+      "outputs": ["mitochondrial DNA fragment (500-700 bp) [cytosol]"],
+      "catalyst": "VDAC1:VDAC3 oligomer (GO:0015267 channel activity - pending verification)",
+      "regulators": [],
+      "preceding_event": "RXN-1 - VDAC1 and VDAC3 oligomerise in the mitochondrial outer membrane",
+      "go_bp": null,
+      "go_mf": "GO:0015267 channel activity (pending curator verification)",
+      "summation": "Mitochondrial DNA fragments of 500-700 bp pass from the mitochondrial matrix into the cytosol through the VDAC1:VDAC3 hetero-oligomeric pore. Cytosolic mtDNA is quantified by subcellular fractionation followed by qPCR against mitochondrial loci, and its appearance requires VDAC oligomerisation.",
+      "evidence_type": "direct experimental evidence (human cells)",
+      "evidence_sentence": "Cytosolic fractions from rotenone-treated THP-1 cells contained a 14-fold enrichment of mtDNA relative to untreated controls, an effect abolished by VBIT-4 and by combined VDAC1/VDAC3 knockdown.",
+      "figure": "Fig. 2e, Extended Data Fig. 4",
+      "pmid": "40123456",
+      "pmid_url": "https://pubmed.ncbi.nlm.nih.gov/40123456/",
+      "pmid_source": "esearch:doi",
+      "pmc_url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11223344/",
+      "authors_year": "Doe et al. 2026",
+      "flags": [],
+      "status": "PROPOSED - depends on RXN-1"
+    }
+  ],
+
+  "ontology_terms": [
+    {
+      "term_label": "channel activity",
+      "ontology": "GO (molecular function)",
+      "accession_status": "GO:0015267 - PENDING CURATOR VERIFICATION in OLS4",
+      "used_by": ["RXN-2 (catalyst activity)"]
+    },
+    {
+      "term_label": "mitochondrial outer membrane",
+      "ontology": "GO (cellular component)",
+      "accession_status": "GO:0005741 - PENDING CURATOR VERIFICATION in OLS4",
+      "used_by": ["RXN-1", "VDAC1:VDAC3 oligomer"]
+    }
+  ],
+
+  "references": [
+    {
+      "n": 1,
+      "citation": "Doe J, Roe A, Mbeki T, et al. Mitochondrial DNA release licenses cGAS-dependent interferon induction. Nature. 2026;640(8012):221-229.",
+      "pmid": "40123456",
+      "pmid_url": "https://pubmed.ncbi.nlm.nih.gov/40123456/",
+      "pmid_source": "esearch:doi",
+      "note": "Source paper for this update; supports RXN-1 and RXN-2."
+    },
+    {
+      "n": 2,
+      "citation": "Kim S, Alvarez P, Nakamura H. VDAC oligomerisation and the mitochondrial permeability pore. Mol Cell. 2024;84(3):455-470.",
+      "pmid": "38554411",
+      "pmid_url": "https://pubmed.ncbi.nlm.nih.gov/38554411/",
+      "pmid_source": "esummary:pmid",
+      "note": "Background on VDAC pore architecture; cited in the RXN-1 summation rationale, not as the primary evidence."
+    }
+  ],
+
+  "open_questions": [
+    "Should the cytosolic mtDNA fragment reuse an existing Reactome entity, or is a new OtherEntity warranted? Check gk_central for a cytosolic mtDNA entity before creating one.",
+    "Is BlackBoxEvent the right class for RXN-1, or should the oligomer be built as a defined Complex with explicit stoichiometry once the hexameric assignment is confirmed?",
+    "Does the existing cGAS binding reaction (R-HSA-3249367) need a second literature reference, or is the new preceding event sufficient to capture this paper's contribution?"
+  ],
+
+  "checklist": [
+    "Every PMID in this document resolved against NCBI E-utilities, not from training data.",
+    "gk_central checked for pre-existing VDAC1:VDAC3 and cytosolic mtDNA entities.",
+    "All GO accessions confirmed in OLS4 and recorded with their current labels.",
+    "UniProt accessions for VDAC1 and VDAC3 confirmed (human, reviewed).",
+    "Compartment assignments match Curator Guide V94 conventions.",
+    "Summations reviewed for Reactome house style (present tense, no citation markers in body text).",
+    "Preceding-event chain verified end to end against the existing pathway."
+  ]
+}

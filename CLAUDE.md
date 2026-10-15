@@ -35,6 +35,7 @@ reactome-curator-workflows/
         ├── release-qa-tracker/                        ← /release-qa-tracker
         ├── analysis-reactome-mcp/                    ← /analysis-reactome-mcp
         ├── curation-build-illustration/                ← /curation-build-illustration
+        ├── curation-update-from-paper/                 ← /curation-update-from-paper
         └── spotlight-article-drafter/                ← /spotlight-article-drafter
 ```
 
@@ -157,6 +158,19 @@ inputs, and options.
   embedding) and `validate` (spec check — run on every output). Ships an optional
   **Figma plugin** (`figma-plugin/`) as an alternative to Illustrator for the
   hand-tuning step; not for Mode A. See the skill's `SKILL.md`.
+
+- **`/curation-update-from-paper`** — Turns a newly published primary paper into a
+  curation update proposal for an **existing** pathway. Takes the paper (PDF/PMID/DOI)
+  plus the curator's exported event report, works out the delta, and writes one
+  formatted DOCX: logic, gap analysis (ADDS/REFINES/CONTRADICTS/CONFIRMS per affected
+  event), proposed entities and events with full anatomy and draft summations,
+  ontology terms, verified references, open questions, pre-submission checklist.
+  Queries `gk-central` (via `/analysis-reactome-mcp`) so proposals reuse existing
+  entities and follow the pathway's own species convention rather than the generic
+  rule; degrades gracefully when the server is off. PMIDs resolved via NCBI
+  E-utilities, never from training data. Reuses the Curator Guide and RLE reference
+  bundled in sibling skills. Renders through `build_update_doc.py` (needs
+  `python-docx`). Proposes only — never writes to the database.
 
 - **`/spotlight-article-drafter`** — Drafts a candidate Reactome "Research Spotlight"
   article from a paper that used Reactome data or tools, producing both forms at once:
