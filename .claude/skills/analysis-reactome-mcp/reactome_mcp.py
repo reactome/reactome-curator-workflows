@@ -35,9 +35,11 @@ import hashlib
 import json
 import os
 import shutil
+import socket
 import subprocess
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -472,8 +474,17 @@ def cmd_test(args):
             die(f"cannot reach EBI OLS: {e}")
         return
     c = load_config()[args.server]
-    if not c.get("http"):
+    if not c.get("http") or not c.get("bolt"):
         die(f"{args.server} is not configured — run configure")
+    # The MCP server talks bolt; the queries below go over http. Check bolt
+    # first, or a bad bolt port passes here and only fails inside Claude.
+    bolt = urllib.parse.urlsplit(c["bolt"])
+    try:
+        socket.create_connection((bolt.hostname, bolt.port or 7687), timeout=10).close()
+    except OSError as e:
+        die(f"bolt port not reachable ({type(e).__name__}) — the MCP server connects "
+            "over bolt. Check the bolt URL and port on the connection card.")
+    print(f"{args.server}: bolt port reachable.")
     password = None
     if c.get("auth") == "password":
         password = get_secret(args.server)

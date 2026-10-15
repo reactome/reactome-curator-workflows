@@ -65,7 +65,7 @@ Every function runs through one standard-library Python script, from the repo ro
 | `install-ols` | Installs the pinned OLS MCP server with `uv` | 1 |
 | `configure gk-central --bolt URL --http URL` | Saves the connection details (owner-only file) | 1, 3 |
 | `set-password gk-central` | **Curator runs this in their own terminal.** Stores the password in the Keychain | 1, 3 |
-| `test <server>` | Live read-only check: Pathway count, newest edit in the copy, APOC | 1, 3 |
+| `test <server>` | Live read-only check: bolt port reachable, Pathway count, newest edit in the copy, APOC | 1, 3 |
 | `enable <server>` | Registers the server with Claude Code (user scope) and Claude Desktop | 1, 2 |
 | `disable <server>` | Removes the registration; keeps password and settings | 2 |
 | `update-server` | Reinstalls the pinned server versions and refreshes the launcher | 3 |
@@ -186,7 +186,7 @@ for the curator to say it's done.
     python3 .claude/skills/analysis-reactome-mcp/reactome_mcp.py test gk-central
     python3 .claude/skills/analysis-reactome-mcp/reactome_mcp.py test ols
 
-Expect `connected. Pathway count = ...` (5,821 in September 2026, about 3,900 of
+Expect `bolt port reachable`, `connected. Pathway count = ...` (5,821 in September 2026, about 3,900 of
 them human; gk_central has no computationally inferred events), the date of the newest edit, `APOC schema
 procedure: present`, and `OLS reachable`.
 
@@ -313,7 +313,7 @@ database-check section written to these rules.
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| Connection refused / timeout to gk-central | Using the server's internal bolt port (what its discovery endpoint and the browser prefill advertise) | Use the bolt port on the card; `configure` again |
+| `test` says `bolt port not reachable`, or connection refused / timeout to gk-central | Using the server's internal bolt port (what its discovery endpoint and the browser prefill advertise) | Use the bolt port on the card; `configure` again |
 | Browser won't load gk-central | `https://` | Use `http://` — no TLS on this port. In the browser's connect dialog, type the card's bolt port yourself |
 | `authentication failed` | Password rotated | Function 3 |
 | `Database 'graph.db' is unavailable` | gk_central's Neo4j needs a restart | Email Guanming; nothing to fix locally |
