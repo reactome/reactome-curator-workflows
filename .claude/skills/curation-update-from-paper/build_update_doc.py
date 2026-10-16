@@ -1013,6 +1013,8 @@ def event_attribute_rows(event: Dict[str, Any], in_diagram: bool = False
     rest: List[Tuple[str, Any, Optional[str]]] = [
         ("Type", get(event, "type"), None),
         ("Species", get(event, "species"), None),
+        # Host-pathogen RLEs carry the pathogen here; see the Guide extract 3.2.
+        ("relatedSpecies", get(event, "related_species"), None),
         ("GO BP", get(event, "go_bp"), None),
         ("GO MF", get(event, "go_mf"), None),
         ("Evidence type", get(event, "evidence_type"), None),

@@ -27,28 +27,27 @@ claim a server that is not there.
 ```
 /curation-update-from-paper — reference material for this run
 
-Reference documents (borrowed from sibling skills; this skill bundles none).
-Paths are relative to this skill directory:
-  ../annotate-pathway-from-reviews-or-topic_name/
+Reference documents — all bundled in this skill directory, nothing to upload:
   Reactome_RLE_Annotation_Reference_V94.md   START HERE. Condensed V94 RLE
       rules — naming, compartments, evidence classes, catalyst/regulation,
-      species and chimeric handling. The only one that fits in context whole.
-
-  ../review-internal/
-  Curator_Guide_V94.pdf                      The authoritative standard, 283pp.
-      Open for a specific question (disease, drug, infection, orthology),
-      not to read through.
-  Claude_ReactomeDataModelGlossary_V95.pdf   43pp. Class semantics and the
-      relationship inventory, when the RLE reference's §13 is not enough.
+      species and chimeric handling.
+  Curator_Guide_V94_Extract.md               The Guide sections the RLE
+      reference does NOT cover: updating existing content, evidence and
+      inference, host-pathogen species/relatedSpecies/compartment rules, and
+      retiring released events. Read §3 before any infection pathway.
   ptm_prefixes.md                            PSI-MOD -> EWAS name prefix, 70
       rows. Needed for any modified-protein entity.
-  bau060.pdf                                 Jupe et al. 2014, the published
-      controlled vocabulary. The citable source for naming decisions.
-  Small_molecule_renaming.xlsx               Preferred small-molecule names.
-      Use the 'small molecules' sheet.
-  EWAS_name_rules.docx                       For naming a MUTANT EWAS only
-      ('Names for EWASes with Mutations'). Its other sections are already in
-      the RLE reference.
+
+In the full repo only (too large to bundle; absent from a zipped copy):
+  ../review-internal/Curator_Guide_V94.pdf   283pp, 17MB. The authority. Open
+      for a question the extract does not answer — disease pathway structure
+      (pp.148-218), drug curation (pp.226-236), orthology.
+  ../review-internal/bau060.pdf              Jupe et al. 2014, the published
+      controlled vocabulary. Cite this, not the extract.
+  ../review-internal/Small_molecule_renaming.xlsx   Preferred small-molecule
+      names — the 'small molecules' sheet.
+  ../review-internal/Claude_ReactomeDataModelGlossary_V95_Final.docx.pdf
+  ../review-internal/EWAS_name_rules.docx    Mutant EWAS naming only.
 
 Live servers:
   gk-central   <present/absent>  Existing entities, compartments, the branch's
@@ -59,12 +58,18 @@ Live servers:
 Not bundled: the pathway's event export and the paper. Supply both.
 ```
 
-> **Reading order matters — these documents overlap by generation.** The RLE
-> reference was derived from the Curator Guide and the Glossary, and both of
-> those restate `bau060.pdf`. Reaction-class naming appears in four places and
-> EWAS/PTM naming in four. Read the RLE reference first and stop there unless
-> it is silent or you need something citable; opening all of them wastes
-> context re-reading the same rules in three vintages.
+> **The three bundled files are the working set.** They are sized to be read,
+> and between them they cover everything this skill routinely needs. The
+> repo-only documents overlap them heavily by generation — the RLE reference
+> was derived from the Curator Guide and the Glossary, and both restate
+> `bau060.pdf`, so reaction-class naming appears in four places and EWAS/PTM
+> naming in four. Open a repo-only document for a specific question or for a
+> citation, not to read through.
+>
+> **A zipped copy of this skill has only the three bundled files.** That is by
+> design — the Guide alone is 17 MB. If you are running from a zip and need
+> something the extract does not cover, say so rather than guessing; the
+> curator can supply the page.
 >
 > **One trap.** `Small_molecule_renaming.xlsx` has a `PSI_MOD Mapping` sheet
 > that shares 36 MOD IDs with `ptm_prefixes.md` but gives different strings —
@@ -179,15 +184,33 @@ What to take from this, and why each matters:
   creates a separate entity per compartment. The chain of instances already
   curated for a process tells you exactly which compartment labels the curator
   used, and therefore which ones your new events must match.
-- **The species convention actually in use.** Do not assume. Viral-infection
-  pathways in particular often annotate events as `Homo sapiens` while the
-  supporting experiments are in a non-human strain and a non-human cell line,
-  naming the strain and cell line in the summation instead of creating an
-  inferred-from pair. **Follow the convention the pathway already uses**, and
-  flag the divergence between evidence species and annotated species explicitly
-  rather than silently applying the generic species/chimeric rules from
-  `/annotate-pathway-from-reviews-or-topic_name`. If the pathway's convention
-  and the V94 rule disagree, say so in open questions and let the curator rule.
+- **The species convention actually in use — and `relatedSpecies`.** Query both
+  slots, not just `species`:
+
+  ```cypher
+  MATCH (p:Pathway {stId:$stId})-[:hasEvent*]->(e:ReactionLikeEvent)
+  OPTIONAL MATCH (e)-[:species]->(s)
+  OPTIONAL MATCH (e)-[:relatedSpecies]->(rs)
+  RETURN e.stId, e.displayName,
+         collect(DISTINCT s.displayName)  AS species,
+         collect(DISTINCT rs.displayName) AS relatedSpecies
+  ```
+
+  For a **host-pathogen pathway this is settled by the Guide, not a local
+  convention**: `species` is the host (Homo sapiens for human curation, because
+  the slot records the environment the reaction happens in) and `relatedSpecies`
+  is the pathogen. See `Curator_Guide_V94_Extract.md` §3.2. An infection-pathway
+  event annotated `Homo sapiens` while the experiments are in a non-human strain
+  and cell line is therefore **correct and complete only if `relatedSpecies`
+  carries the pathogen** — omitting it is an incomplete annotation, not a stylistic
+  choice, and it is the error this skill is most likely to make. Do not flag the
+  host/evidence species difference as a departure from V94; it is V94.
+
+  The generic species/chimeric decision table in
+  `/annotate-pathway-from-reviews-or-topic_name` applies to ordinary
+  cross-species inference, **not** to host-pathogen events. If the branch's
+  practice genuinely contradicts the Guide, say so in open questions and let the
+  curator rule — but check the Guide extract before calling it a contradiction.
 - **ST_IDs and DB_IDs for everything you propose reusing**, so the curator can
   paste them straight in.
 
