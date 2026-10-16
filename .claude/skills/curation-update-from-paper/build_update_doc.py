@@ -452,6 +452,78 @@ def add_labelled_block(doc, label: str, text: str, italic_body: bool = False,
 # ──────────────────────────────────────────────────────────────────────────────
 
 
+# Vocabulary that signals a reaction whose only change is shape. Reactome has
+# no slot for conformation, so such a reaction has identical participants on
+# both sides and cannot be curated as written.
+_CONFORMATION_TITLE = re.compile(
+    r"\bconformation(al)?\b|\btransition(s|ed)?\s+(from|to|between)\b"
+    r"|\brefold|\brearrange|\bchanges?\s+shape\b|\bflips?\b"
+    r"|\bupright\b|\breversed\b|\bopen(s)?\s+(up|to)\b",
+    re.IGNORECASE,
+)
+# Qualifiers that describe a state rather than a different set of components.
+_STATE_WORD = re.compile(
+    r"\b(reversed|upright|open|closed|extended|compact|primed|bent|folded|"
+    r"unfolded|membrane-inserted|inserted|activated|active|inactive|"
+    r"conformation\w*|form|state)\b",
+    re.IGNORECASE,
+)
+
+
+def _entity_core(name: str) -> str:
+    """A name reduced to its components, with state words and bracketing gone."""
+    text = re.sub(r"\([^)]*\)", " ", name or "")
+    text = _STATE_WORD.sub(" ", text)
+    text = re.sub(r"[^a-z0-9]+", "", text.lower())
+    return text
+
+
+def conformation_advisories(spec: Dict[str, Any]) -> List[str]:
+    """Flag proposed events that Reactome's data model cannot represent.
+
+    A ReactionLikeEvent records a change in the set of participants or their
+    compartments. If both sides carry the same components in the same
+    compartments, there is no reaction to store - however real the physical
+    change. This catches the common case: a pure conformational step.
+    """
+    notes: List[str] = []
+    for idx, event in enumerate(as_list(spec.get("new_events")), start=1):
+        if not isinstance(event, dict):
+            continue
+        label = as_text(get(event, "label")) or "event %d" % idx
+        name = as_text(get(event, "name"))
+
+        if not GRAPHICS_AVAILABLE:
+            continue
+        inputs = reaction_graphic.parse_entities(raw(event, "inputs"))
+        outputs = reaction_graphic.parse_entities(raw(event, "outputs"))
+        if not inputs or not outputs:
+            continue
+
+        in_set = {(_entity_core(e["name"]), e["compartment"].lower())
+                  for e in inputs}
+        out_set = {(_entity_core(e["name"]), e["compartment"].lower())
+                   for e in outputs}
+
+        if in_set == out_set:
+            notes.append(
+                "%s (%s): inputs and outputs carry the same components in the "
+                "same compartment, so there is no change for Reactome to "
+                "store. Fold the state into the entity name of the step that "
+                "does change something, or curate the binding/translocation "
+                "it enables." % (label, name)
+            )
+        elif _CONFORMATION_TITLE.search(name) and (
+            {c for _, c in in_set} == {c for _, c in out_set}
+        ):
+            notes.append(
+                "%s (%s): reads as a conformational change within one "
+                "compartment. Check that the participants really differ; "
+                "Reactome cannot represent shape alone." % (label, name)
+            )
+    return notes
+
+
 def collect_st_ids(spec: Dict[str, Any]) -> List[str]:
     """Every ST_ID the document will try to link, deduplicated."""
     found: List[str] = []
@@ -928,8 +1000,6 @@ def event_attribute_rows(event: Dict[str, Any], in_diagram: bool = False
         match = re.search(r"(PMC\d+)", pmc_url, re.IGNORECASE)
         pmc_label = match.group(1).upper() if match else pmc_url
 
-    is_chimeric = raw(event, "is_chimeric")
-
     # Participants, compartment and chain position are drawn in the diagram;
     # repeating them as table rows is what made this section 400 lines long.
     participants: List[Tuple[str, Any, Optional[str]]] = [
@@ -943,7 +1013,6 @@ def event_attribute_rows(event: Dict[str, Any], in_diagram: bool = False
     rest: List[Tuple[str, Any, Optional[str]]] = [
         ("Type", get(event, "type"), None),
         ("Species", get(event, "species"), None),
-        ("isChimeric", None if is_chimeric is None else as_text(is_chimeric), None),
         ("GO BP", get(event, "go_bp"), None),
         ("GO MF", get(event, "go_mf"), None),
         ("Evidence type", get(event, "evidence_type"), None),
@@ -1375,6 +1444,20 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 % len(result["errors"])
             )
             return 1
+
+    # ── events the data model cannot hold ───────────────────────────────────
+    advisories = conformation_advisories(spec)
+    if advisories:
+        sys.stderr.write(
+            "\nData model check — %d event(s) may not be representable:\n"
+            % len(advisories)
+        )
+        for note in advisories:
+            sys.stderr.write("  - %s\n" % note)
+        sys.stderr.write(
+            "These are advisory, not blocking. Resolve them before creating "
+            "instances.\n\n"
+        )
 
     # ── ST_ID links: only link what reactome.org actually serves ────────────
     released: Optional[Dict[str, bool]] = None

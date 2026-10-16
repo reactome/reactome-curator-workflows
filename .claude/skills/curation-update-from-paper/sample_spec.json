@@ -66,7 +66,6 @@
       "type": "BlackBoxEvent",
       "compartment": "mitochondrial outer membrane",
       "species": "Homo sapiens",
-      "is_chimeric": false,
       "inputs": [
         "VDAC1",
         "VDAC3"
@@ -102,7 +101,6 @@
       "type": "Transition",
       "compartment": "mitochondrial matrix -> cytosol",
       "species": "Homo sapiens",
-      "is_chimeric": false,
       "inputs": [
         "mitochondrial DNA fragment (500-700 bp) [mitochondrial matrix]"
       ],

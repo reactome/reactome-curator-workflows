@@ -184,9 +184,9 @@ UniProt, ChEBI, GO, or MONDO accessions — name the term and mark the accession
 PENDING CURATOR VERIFICATION via OLS.
 
 **Events.** One entry per proposed event, each carrying the full anatomy:
-type, compartment, species, isChimeric, inputs, outputs, catalyst (with GO MF
-label), regulators, precedingEvent, GO BP label, a **draft summation written in
-the voice of the existing summations in the export** (match their register and
+type, compartment, species, inputs, outputs, catalyst (with GO MF label),
+regulators, precedingEvent, GO BP label, a **draft summation written in the
+voice of the existing summations in the export** (match their register and
 their habit of naming strain and cell line), evidence type, the verbatim
 evidence sentence with its figure number, and the verified PMID fields.
 
@@ -195,6 +195,47 @@ biophysical/biochemical demonstration gives a Reaction; knockdown, inhibitor,
 or phenotype-level evidence gives a BlackBoxEvent. A step the paper proposes as
 a model but does not directly demonstrate is a BlackBoxEvent at best, and the
 flag must say so.
+
+### What the data model cannot hold — check this before proposing an event
+
+**A ReactionLikeEvent records a change in the set of participants or in their
+compartments. Nothing else.** If the inputs and the outputs carry the same
+components in the same compartments, there is no reaction to store, however
+real and well-evidenced the physical change is.
+
+Reactome has **no slot for conformation**. A step whose only product is a
+differently-shaped version of the same entity in the same place cannot be
+curated. "Transitions from the upright to the reversed conformation",
+"refolds", "opens", "becomes membrane-inserted" — written as standalone events,
+all of these are unrepresentable. A paper that resolves a mechanism into
+physical sub-steps will hand you several of them; they are good science and
+still not events.
+
+What to do instead, in order of preference:
+
+1. **Fold the state into the entity name of the step that does change
+   something.** The conformational state travels as part of the name of the
+   input to the next real event, so nothing is lost.
+2. **Curate what the conformational change enables.** If the new shape exposes
+   a binding site, the event is the binding. If it drives insertion into a
+   membrane, the event is the compartment change. If it permeabilises a
+   membrane, the event is the ion translocation.
+3. **Say it in the summation.** The mechanism belongs in the prose of the
+   event it explains, with its own literatureReference.
+
+Never merge two such steps just to manufacture a difference between the sides.
+If the paper's sub-steps collapse to one curatable event, propose one event and
+say in the open questions which physical steps it covers.
+
+`build_update_doc.py` checks this and prints a **data model check** listing any
+event whose sides match, or whose name reads as a conformational change within
+a single compartment. It is advisory rather than blocking, because a legitimate
+event can share a compartment, but every flagged event needs an answer before
+instances are created.
+
+The same rule retires `isChimeric` from the event anatomy: it is not part of
+what this skill proposes. Species and chimeric handling follow the pathway's
+own convention as established in step 2.
 
 ---
 
