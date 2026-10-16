@@ -280,14 +280,6 @@ def _entity_box(ax, entity, x, y, w, h, role, *, name_width=26, fontsize=8.0):
         )
 
 
-def _polyline(ax, points, *, lw=1.0, color=ARROW_COLOR):
-    """Draw an elbowed connector, arrowhead on the final segment only."""
-    for i in range(len(points) - 1):
-        last = i == len(points) - 2
-        _arrow(ax, points[i], points[i + 1],
-               style="-|>" if last else "-", lw=lw, color=color, shrink=0.0)
-
-
 def _arrow(ax, start, end, *, style="-|>", color=ARROW_COLOR, lw=1.3,
            dashed=False, shrink=2.0):
     arrow = FancyArrowPatch(
@@ -328,18 +320,14 @@ def _event_chip(ax, text, x, y, w, h, *, fontsize=7.6, label=""):
 
 W = 100.0          # drawing units across
 GAP = 2.0
+COL_W = 32.0       # participant column width
 
 # The reaction is a small node, as in a Reactome diagram - not a box, which
-# reads as just another entity. Its name is already in the header.
-RXN_MIN_W = 7.0
-RXN_H = 7.5
-
-# Empty strip down the left edge. The preceding/following chain arrows run in
-# it, so they never cross an entity box or appear to point at one. Everything
-# else starts to the right of it.
-LEFT_GUTTER = 7.0
-CHAIN_LANE = 3.0
-COL_W = 30.0       # participant column width
+# reads as just another entity. Its name is already in the header, so the node
+# only carries the short label.
+RXN_MIN_W = 3.5
+RXN_H = 3.75
+RXN_FONT = 5.2
 
 LINE_H = 3.3       # one wrapped line of entity name
 COMP_H = 3.2       # the "[compartment]" strip
@@ -354,6 +342,7 @@ def render_event_graphic(
     out_path: str,
     following: Optional[Sequence[str]] = None,
     dpi: int = 220,
+    preceding: Optional[str] = None,
 ) -> Optional[str]:
     """Render one event to `out_path`. Returns the path, or None if there is
     nothing worth drawing (no inputs and no outputs)."""
@@ -365,7 +354,8 @@ def render_event_graphic(
     if not inputs and not outputs:
         return None
 
-    preceding = event_ref_label(event.get("preceding_event"))
+    preceding = (preceding if preceding is not None
+                 else event_ref_label(event.get("preceding_event")))
     following_label = ", ".join([f for f in (following or []) if f])
 
     label = str(event.get("label") or "").strip()
@@ -443,23 +433,21 @@ def render_event_graphic(
             ha="left", va="top", fontsize=7.4, color=COMPARTMENT_COLOR,
         )
 
-    x_in = LEFT_GUTTER
+    x_in = 0.0
     node_label = label or "●"
-    rxn_w = max(RXN_MIN_W, min(14.0, 3.0 + len(node_label) * 2.0))
+    rxn_w = max(RXN_MIN_W, min(7.0, 1.5 + len(node_label) * 1.0))
     x_out = W - COL_W
-    # Centre the node in the space between the two columns, not on the page,
-    # so the left gutter does not drag it off-centre visually.
-    x_rxn = (x_in + COL_W + x_out) / 2.0 - rxn_w / 2.0
+    x_rxn = W / 2.0 - rxn_w / 2.0
 
     # ── reaction node ────────────────────────────────────────────────────────
     rxn_h = RXN_H
     rxn_y = y_core + (core_h - rxn_h) / 2.0
     _box(ax, x_rxn, rxn_y, rxn_w, rxn_h,
-         fill=REACTION_FILL, edge=REACTION_EDGE, lw=1.8, radius=0.35)
+         fill=REACTION_FILL, edge=REACTION_EDGE, lw=1.3, radius=0.25)
     ax.text(
         x_rxn + rxn_w / 2.0, rxn_y + rxn_h / 2.0,
         node_label,
-        ha="center", va="center", fontsize=7.6, fontweight="bold",
+        ha="center", va="center", fontsize=RXN_FONT, fontweight="bold",
         color=REACTION_EDGE, zorder=3,
     )
 
@@ -493,25 +481,19 @@ def render_event_graphic(
     cx_rxn = x_rxn + rxn_w / 2.0
 
     def centred_row(entities, y0, role, h):
-        """Centre a row on the node, keeping clear of the left gutter."""
+        """Centre a row on the node."""
         n = len(entities)
         if not n:
             return
-        left_limit = LEFT_GUTTER + 1.0
-        # Widest row that still centres on the node without entering the gutter.
-        max_w = min(2 * (cx_rxn - left_limit), 2 * (W - cx_rxn))
-        total_w = min(max_w, n * COL_W + (n - 1) * GAP)
-        x0 = cx_rxn - total_w / 2.0
+        total_w = min(W, n * COL_W + (n - 1) * GAP)
+        x0 = max(0.0, min(cx_rxn - total_w / 2.0, W - total_w))
         each = (total_w - (n - 1) * GAP) / n
         for i, ent in enumerate(entities):
             bx = x0 + i * (each + GAP)
             _entity_box(ax, ent, bx, y0, each, h, role,
                         name_width=max(16, int(each * 1.05)))
 
-    # Catalyst and regulator connectors meet the node right of centre; the
-    # event-chain arrows meet it left of centre, so the two never overlap on
-    # the short run above and below the node.
-    effector_x = x_rxn + rxn_w * 0.75
+    effector_x = cx_rxn
 
     if catalysts:
         centred_row(catalysts, y_catalyst, "catalyst", cat_h)
@@ -534,36 +516,16 @@ def render_event_graphic(
         )
 
     # ── preceding / following chips ──────────────────────────────────────────
-    # A preceding or following event relates to the *reaction*, not to one of
-    # its participants, so the chain arrows terminate on the node. They drop
-    # down a clear lane to the left of it and elbow in, which keeps them off
-    # the entity boxes and off the catalyst/regulator arrows on the centre line.
-    # Turn in across the empty band between the core row and whatever is above
-    # or below it, then drop straight onto the node: the strip directly over
-    # and under the node is free, since participants sit left and right of it.
-    entry_x = x_rxn + rxn_w * 0.25
-
+    # No connectors: the chips are captioned PRECEDED BY / FOLLOWED BY, which
+    # says what they are. Arrows in this diagram belong to the reaction being
+    # detailed and nothing else.
     if preceding:
         _event_chip(ax, preceding, 0, y_preceding, W, chip_h,
                     label="PRECEDED BY")
-        turn_y = y_core + core_h + band * 0.45
-        _polyline(ax, [
-            (CHAIN_LANE, y_preceding),
-            (CHAIN_LANE, turn_y),
-            (entry_x, turn_y),
-            (entry_x, rxn_y + rxn_h),
-        ])
 
     if following_label:
         _event_chip(ax, following_label, 0, y_following, W, chip_h,
                     label="FOLLOWED BY")
-        turn_y = y_core - band * 0.45
-        _polyline(ax, [
-            (entry_x, rxn_y),
-            (entry_x, turn_y),
-            (CHAIN_LANE, turn_y),
-            (CHAIN_LANE, y_following + chip_h),
-        ])
 
     os.makedirs(os.path.dirname(os.path.abspath(out_path)) or ".", exist_ok=True)
     fig.savefig(out_path, dpi=dpi, facecolor="white", bbox_inches="tight",
@@ -587,6 +549,23 @@ def render_all(spec: Dict[str, Any], out_dir: str, dpi: int = 220
         name = names.get(label, "")
         return "%s — %s" % (label, name) if name else label
 
+    def describe_preceding(value: Any) -> str:
+        """Expand a bare label reference ("E5") to "E5 - <name>".
+
+        A preceding_event naming an existing database event is already written
+        out in full, so it is passed through untouched.
+        """
+        text = event_ref_label(value)
+        if not text:
+            return ""
+        for other, name in names.items():
+            if other and name and (
+                text == other or re.match(r"^" + re.escape(other) + r"\b", text)
+            ):
+                rest = text[len(other):].lstrip(" —-:")
+                return describe(other) if not rest else text
+        return text
+
     made: Dict[str, str] = {}
     for idx, event in enumerate(events, start=1):
         label = str(event.get("label") or "event%d" % idx).strip()
@@ -595,6 +574,7 @@ def render_all(spec: Dict[str, Any], out_dir: str, dpi: int = 220
         result = render_event_graphic(
             event, path,
             following=[describe(f) for f in following_map.get(label, [])],
+            preceding=describe_preceding(event.get("preceding_event")),
             dpi=dpi,
         )
         if result:
