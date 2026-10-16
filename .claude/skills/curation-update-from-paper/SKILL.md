@@ -329,13 +329,15 @@ budget:
   not a review: name the branch, the relevant events and the gap, then stop.
   Do not retell the paper's mechanism step by step — that is section 5's job,
   and every step is already a row there.
-- **`rationale` — four paragraphs, ~200 words total.** Standard curation logic
-  is *not* restated here. Naming, evidence classes, compartments and the rule
+- **`rationale` — three paragraphs, ~200 words total.** Open on the first real
+  decision. Do not restate standard curation logic, and do not announce that
+  you are not restating it: naming, evidence classes, compartments and the rule
   that annotation species should match the experimental support are all in
-  Curator Guide V94; open the section by saying so and cite it. Spend the words
-  only on decisions specific to this paper: where the new subpathway hangs and
-  why, how event typing follows this paper's evidence, and any deliberate
-  departure from the Guide — which must stay, and must also appear in section 8.
+  Curator Guide V94, the reader is a curator, and a paragraph saying "the Guide
+  applies" tells them nothing. Spend the words only on decisions specific to
+  this paper: where the new subpathway hangs and why, how event typing follows
+  this paper's evidence, and any deliberate departure from the Guide — which
+  must stay, and must also appear in section 8.
 
 ### Structure the open questions
 
