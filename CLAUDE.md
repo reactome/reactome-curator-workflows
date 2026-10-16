@@ -102,7 +102,11 @@ inputs, and options.
   modifiers — disease and drug standards apply automatically where the report
   carries that annotation. Takes an optional release version (e.g. `V95`) that
   labels the review and names the shared-Drive subfolder the curator uploads to;
-  the skill writes locally and does not upload.
+  the skill writes locally and does not upload. When the `gk-central` and `ols`
+  MCP servers are on, it also runs verified read-only checks against the live
+  gk_central copy and OLS (`gk_central_checks.md`): entity-chain breaks, GO terms
+  in use and obsolete terms, literature per event, credits, name and coordinate
+  problems, disease/drug annotation. It runs without them.
 
 - **`/annotate-pathway-from-reviews-or-topic_name`** — AI-assisted pre-curation
   (v1.5). From a topic (Mode B) or supplied references/PMIDs/DOIs/PDFs (Mode A),

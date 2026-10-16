@@ -61,40 +61,78 @@ Before invoking this skill, upload both of the following to the conversation:
 
 If either file is missing, stop and ask the user to upload it before proceeding.
 
-## Optional — live database cross-check
+## Live database checks (gk-central, ols)
 
-The report is what's being reviewed. The live database, if you can reach it,
-catches what a report can't show: a report exported before a rename, events
-dropped when a multi-part report was merged, a GO ID that doesn't exist.
+The report is what's being reviewed. It is an export from gk_central, read here as
+text and diagram images. When the Reactome MCP servers are on (set up with
+/analysis-reactome-mcp), several checks become exact lookups instead of readings:
 
-**Detect, don't require.** Check whether the session has the `gk-central` MCP
-tools (`mcp__gk-central__read_neo4j_cypher`) and the `ols` tools. Use whichever
-are present. If neither is, add one line to Overall Notes — "Live database
-cross-check not run (no Reactome MCP server available; see
-/analysis-reactome-mcp)" — and review from the documents alone. Never stop the
-review to set a server up.
+- **gk-central** — read-only access to a copy of gk_central, refreshed nightly.
+  It gives the stored structure of the pathway: every event, its inputs, outputs,
+  catalysts, regulators, preceding events, GO terms, literature, credits and
+  disease/drug annotation. Because it reflects last night's curation, it can also
+  show changes made after the report was exported.
+- **ols** — the EBI Ontology Lookup Service, for checking GO IDs are real,
+  current and correctly labelled.
 
-With **gk-central**, read-only queries matching on the report's ST_ID (confirm
-unfamiliar property or relationship names with `get_neo4j_schema` first):
+The verified queries, the schema facts they rely on, and how to read each result
+are in @gk_central_checks.md. Run them as written.
 
-- The pathway ST_ID exists and its `displayName` matches the report → if not,
-  MEDIUM, in Overall Notes.
-- Events under the pathway in gk_central versus events in the report → events
-  missing from the report go in Overall Notes, MEDIUM: the report may be an
-  unmerged multi-part export, or stale.
-- PMIDs attached to each event in gk_central versus the report's reference lists
-  → differences go in Section 3.
-- GO biological process terms on the pathway and its reactions in gk_central
-  versus the report → differences go in Section 2.
+### Step 1 — Detect
 
-With **ols**: resolve every GO ID you recommend in Section 2 and confirm its label
-before writing it down. Don't recommend an ID that OLS doesn't return.
+Check which tools the session has: `mcp__gk-central__read_neo4j_cypher` and
+`mcp__ols__get_term_info`. Use whichever are present. If neither is, write
+"Live database checks: not run (no Reactome MCP server available; see
+/analysis-reactome-mcp)" in the metadata header and Overall Notes, and review from
+the documents alone. Never stop the review to set a server up.
 
-Label every database-derived finding "(gk_central)" or "(OLS)", and note in the
-metadata header whether the cross-check ran. gk_central may be newer than the
-exported report, so a report-versus-database difference is something for the
-curator to reconcile. It is not proof the report is wrong: rate it MEDIUM unless
-it also breaks a Curator Guide rule on its own.
+### Step 2 — Run the checks
+
+After reading both documents, and before writing any section:
+
+1. Run Q0–Q10 from @gk_central_checks.md with `params: {"stId": "<report ST_ID>"}`
+   (Q8 also takes `"all": false`).
+2. If Q1 returns no row, the ST_ID isn't in gk_central. Say so in Overall Notes,
+   skip the remaining gk-central queries, and continue.
+3. Run the OLS checks at the end of that file on every GO term in use, and on
+   every GO term you recommend as you write Section 2.
+4. On large pathways (Q2 returns more than ~150 events), run Q3 and Q4 one
+   subpathway at a time while writing the sections that use them. Q5–Q10 return
+   only problem rows and can run on the whole pathway.
+
+### Step 3 — Fold the results into the review
+
+| Where | From | What it adds |
+|---|---|---|
+| Metadata header | Q0 | "Live database checks: gk_central (copy with newest edit <date>), OLS" — or which ran |
+| Executive Summary / Overall Notes | Q1, Q2 | Pathway name matches the report; events in gk_central but not in the report (unmerged multi-part export, or report older than the database) and the reverse; events modified after the report's export date |
+| Section 1 | Q4, Q5, Q6 | Q5 rows become candidate 1.3 entity-chain findings, checked against the 1.3 rules; Q6 lists reactions with no preceding or following event |
+| Section 2 | Q1, Q2, OLS | The GO BP terms actually attached (rather than read from the report); obsolete terms; reaction terms redundant with the pathway term (via ancestors); every recommended ID confirmed in OLS |
+| Section 3 | Q2, Q3 | Non-inferred events with no literature reference; PMIDs attached in gk_central but missing from the report's lists, and the reverse |
+| Section 5 | Q1, Q2 | Events with no author credit; inferred events and their source species (apply the inferredFrom evidence rules) |
+| Section 7 | Q4, Q7, Q8, Q9 | Stored names (authoritative); stray or doubled spaces; residue ranges in names that disagree with stored coordinates; proteins without a UniProt reference; small molecule names against their ChEBI names |
+| Disease and drug standards | Q10 | FailedReactions missing normalReaction, entityFunctionalStatus or disease; drugs without a Guide to Pharmacology reference |
+
+Rules:
+
+- **Label the source.** Tag every database-derived finding "(gk_central)" or
+  "(OLS)", and locate it by event name and ST_ID alongside the §-reference.
+- **Two kinds of finding, rated differently.**
+  - *A fact about the curation* — something the database shows and the report
+    doesn't contradict (no GO BP term on the pathway, an obsolete GO term, a
+    chain break, a coordinate mismatch). Rate it by the normal standards for that
+    section, exactly as if you had read it in the report. Obsolete GO terms are
+    HIGH.
+  - *A difference between report and database* (a name, a reference list, an
+    event present in one and not the other). gk_central is usually newer, so
+    this is for the curator to reconcile. It isn't proof the report is wrong:
+    rate it MEDIUM unless it also breaks a Curator Guide rule on its own.
+- **Not findings:** `doRelease` false or unset (normal for work in progress), and
+  no reviewer credit before external review.
+- **Summarise, don't dump.** Report counts and the specific items that need
+  action. Don't paste raw query output into the review.
+- **Read-only.** Never suggest editing the database from Claude. Every fix is
+  made by the curator in the Curator Tool.
 
 ## Invocation
 
@@ -109,8 +147,8 @@ $ARGUMENTS should specify:
    Drive upload subfolder. If omitted, ask for it at the opening gate.
 
 Examples:
- /review-internal "HHV8 Infection" R-HSA-9521541 "Marc Gillespie" 2026-06-16 V95
- /review-internal "TP53 Regulation of DNA Repair" R-HSA-6796648 "Lisa Matthews" 2026-04-15
+ /review-internal "HHV8 Infection" R-HSA-9973849 "Marc Gillespie" 2026-06-16 V95
+ /review-internal "TP53 Regulates Transcription of DNA Repair Genes" R-HSA-6796648 "Lisa Matthews" 2026-04-15
 
 There are no pathway-type modifiers. Every review applies the same standards and
 covers the full report; disease and drug standards apply automatically wherever
@@ -497,6 +535,8 @@ ordering or cosmetic issues.
    Release:   <release version, e.g. V95>
    Upload to: https://drive.google.com/drive/folders/1J_T0-Ihx8hdsNv75pvrsJqjYwJo3gYpP
               (the <release> subfolder — create it if it does not exist)
+   Live database checks: <gk_central (copy with newest edit <date>), OLS — or
+              whichever ran, or "not run">
 - Priority labels: HIGH in red, MEDIUM in amber, LOW in green
 - Reference reactions using §-notation matching the report's structure
 - Reference curator comments by number (Comment #N)
@@ -561,12 +601,14 @@ directory and release version are the exception and must still be asked.
 - Claude Sonnet 4.x can handle large pathway reports (200+ pages) in a
  single session. If output is truncated, append "Continue the review
  from Section [N]" in a follow-up message.
-- The entity chain analysis in Section 1.3 is based on reading summation
- text and reaction diagram images. All flagged mismatches should be
- verified by the curator in the Curator Tool before correction.
+- Without gk-central, the entity chain analysis in Section 1.3 is based on
+ reading summation text and reaction diagram images. With it, Q5 checks the
+ stored inputs and outputs directly; the text reading still covers whether
+ names carry the right PTM prefix. All flagged mismatches should be verified
+ by the curator in the Curator Tool before correction.
 - Claude will suggest GO BP terms based on training data. When the `ols`
  MCP server is available, every suggested GO ID is resolved through it (see
- Optional — live database cross-check). Otherwise, always cross-check
+ Live database checks). Otherwise, always cross-check
  suggested GO IDs against OLS4 (https://www.ebi.ac.uk/ols4/) or AmiGO before
  committing terms.
 - PMID verification runs through verify_pmids.py against NCBI E-utilities

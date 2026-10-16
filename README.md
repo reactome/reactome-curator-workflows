@@ -141,7 +141,7 @@ the DOCX locally, then tells you to upload it to that release's subfolder of the
 top of the report, so the file carries its own filing instructions.
 
 ```
-/review-internal "HHV8 Infection" R-HSA-9521541 "Lisa Matthews" 2026-06-16 V95
+/review-internal "HHV8 Infection" R-HSA-9973849 "Lisa Matthews" 2026-06-16 V95
 ```
 
 ### `/annotate-pathway-from-reviews-or-topic_name`
