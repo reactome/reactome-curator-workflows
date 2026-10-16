@@ -47,6 +47,15 @@ python-docx==1.2.0      # REQUIRED to run /curation-update-from-paper — its
                         # is NOT needed to run that skill — Claude writes the
                         # review DOCX itself.
 
+# ── Diagrams ──────────────────────────────────────────────────────────────────
+matplotlib==3.9.4       # /curation-update-from-paper — reaction_graphic.py draws
+                        # the per-reaction anatomy diagrams and the open-questions
+                        # decision flowchart embedded in the DOCX. 3.9.4 is the
+                        # last release supporting Python 3.9 (the system Python on
+                        # current macOS); newer Pythons may take a later pin.
+                        # Optional at runtime: without it the document still
+                        # builds, with full attribute tables instead of diagrams.
+
 # ── No third-party packages needed ─────────────────────────────────────────────
 # /extract-reactions and /curation-build-illustration use the standard library
 # only (urllib against eutils.ncbi.nlm.nih.gov and reactome.org).

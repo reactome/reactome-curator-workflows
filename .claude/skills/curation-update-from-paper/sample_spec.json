@@ -5,48 +5,42 @@
   "topic": "cGAS-STING innate immune signalling",
   "date": "2026-10-15",
   "author": "Marc Gillespie (St. John's University)",
-
   "target_pathway": {
     "name": "STING mediated induction of host immune responses",
     "st_id": "R-HSA-1834949",
     "db_id": "1834949",
     "url": "https://reactome.org/content/detail/R-HSA-1834949"
   },
-
   "source_paper": {
-    "citation": "Doe J, Roe A, Mbeki T, et al. Mitochondrial DNA release licenses cGAS-dependent interferon induction. Nature. 2026;640(8012):221-229.",
-    "pmid": "40123456",
-    "pmid_url": "https://pubmed.ncbi.nlm.nih.gov/40123456/",
-    "doi": "10.1038/s41586-026-09876-5",
-    "doi_url": "https://doi.org/10.1038/s41586-026-09876-5",
-    "pmid_source": "esearch:doi"
+    "citation": "Kim J, Gupta R, Blanco LP, Yang S, Shteinfer-Kuzmine A, Wang K, Zhu J, Yoon HE, Wang X, Kerkhofs M, Kang H, Brown AL, Park SJ, Xu X, Zandee van Rilland E, Kim MK, Cohen JI, Kaplan MJ, Shoshan-Barmatz V, Chung JH. VDAC oligomers form mitochondrial pores to release mtDNA fragments and promote lupus-like disease. Science 366 (2019): 1531-1536.",
+    "pmid": "31857488",
+    "pmid_url": "https://pubmed.ncbi.nlm.nih.gov/31857488/",
+    "pmid_source": "esearch:title-author",
+    "doi": "10.1126/science.aav4011",
+    "doi_url": "https://doi.org/10.1126/science.aav4011"
   },
-
   "summary": [
     "The target pathway currently models cGAS sensing of cytosolic double-stranded DNA, STING trafficking from the ER to the ERGIC, TBK1 recruitment, and IRF3 phosphorylation, but it treats the source of the cytosolic DNA as an unspecified input.",
     "This paper provides direct experimental evidence that VDAC1/VDAC3 oligomerisation forms a mitochondrial outer-membrane pore through which mitochondrial DNA (mtDNA) fragments reach the cytosol, and that this released mtDNA is sufficient to activate cGAS in the absence of any exogenous DNA.",
     "Two new reaction-like events and two new physical entities are proposed. No existing event needs to be retired; one existing reaction gains a defined input and a new preceding event."
   ],
-
   "rationale": [
     "Reactome curates at the reaction level, so an upstream source of a previously unspecified input is best represented as explicit new events rather than as a note on the existing reaction. Adding the VDAC pore formation step and the mtDNA translocation step gives the existing cGAS activation reaction a proper precedingEvent chain.",
     "The VDAC1:VDAC3 oligomer is represented as a new Complex rather than as a DefinedSet because the paper demonstrates a specific heteromeric stoichiometry by native PAGE and crosslinking, not functional interchangeability of the two subunits.",
     "Both proposed events are human (HEK293T, THP-1, and primary human fibroblasts), so neither is chimeric and neither requires an inferred-from annotation."
   ],
-
   "gap_analysis": [
     {
       "existing_event": "cGAS binds cytosolic double-stranded DNA",
       "st_id": "R-HSA-3249367",
-      "what_the_paper_changes": "Input dsDNA is currently a generic cytosolic DNA entity with no defined origin. The paper identifies released mtDNA as a physiological source; add the new mtDNA entity as an additional input candidate and set the new translocation reaction as a preceding event."
+      "what_the_paper_changes": "REFINES — Input dsDNA is currently a generic cytosolic DNA entity with no defined origin. The paper identifies released mtDNA as a physiological source; add the new mtDNA entity as an additional input candidate and set the new translocation reaction as a preceding event."
     },
     {
-      "existing_event": "STING translocates from the ER to the ERGIC",
-      "st_id": "R-HSA-1834943",
-      "what_the_paper_changes": "No change to the reaction itself. The paper supplies additional human evidence (Fig. 3c) that could be added as a second literature reference on the existing event."
+      "existing_event": "STING recruits TBK1 and IRF3",
+      "st_id": "R-HSA-1834939",
+      "what_the_paper_changes": "CONFIRMS — no change to the reaction itself. The paper supplies additional human evidence that could be added as a second literature reference on the existing event."
     }
   ],
-
   "new_entities": [
     {
       "proposed_name": "VDAC1:VDAC3 oligomer",
@@ -65,7 +59,6 @@
       "status": "PENDING CURATOR VERIFICATION"
     }
   ],
-
   "new_events": [
     {
       "label": "RXN-1",
@@ -74,8 +67,13 @@
       "compartment": "mitochondrial outer membrane",
       "species": "Homo sapiens",
       "is_chimeric": false,
-      "inputs": ["VDAC1", "VDAC3"],
-      "outputs": ["VDAC1:VDAC3 oligomer"],
+      "inputs": [
+        "VDAC1",
+        "VDAC3"
+      ],
+      "outputs": [
+        "VDAC1:VDAC3 oligomer"
+      ],
       "catalyst": null,
       "regulators": [
         "negatively regulated by VBIT-4 (small-molecule VDAC oligomerisation inhibitor)"
@@ -87,11 +85,11 @@
       "evidence_type": "direct experimental evidence (human cells)",
       "evidence_sentence": "Blue native PAGE of digitonin-solubilised mitochondria from rotenone-treated human fibroblasts resolved a VDAC1- and VDAC3-containing species of approximately 190 kDa that was absent from VBIT-4-treated cells.",
       "figure": "Fig. 2a-c",
-      "pmid": "40123456",
-      "pmid_url": "https://pubmed.ncbi.nlm.nih.gov/40123456/",
-      "pmid_source": "esearch:doi",
+      "pmid": "31857488",
+      "pmid_url": "https://pubmed.ncbi.nlm.nih.gov/31857488/",
+      "pmid_source": "esearch:title-author",
       "pmc_url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11223344/",
-      "authors_year": "Doe et al. 2026",
+      "authors_year": "Kim J et al., 2019",
       "flags": [
         "Modelled as a BlackBoxEvent because the oligomer stoichiometry is not fully resolved.",
         "GO BP term is a candidate only - needs OLS confirmation."
@@ -105,8 +103,12 @@
       "compartment": "mitochondrial matrix -> cytosol",
       "species": "Homo sapiens",
       "is_chimeric": false,
-      "inputs": ["mitochondrial DNA fragment (500-700 bp) [mitochondrial matrix]"],
-      "outputs": ["mitochondrial DNA fragment (500-700 bp) [cytosol]"],
+      "inputs": [
+        "mitochondrial DNA fragment (500-700 bp) [mitochondrial matrix]"
+      ],
+      "outputs": [
+        "mitochondrial DNA fragment (500-700 bp) [cytosol]"
+      ],
       "catalyst": "VDAC1:VDAC3 oligomer (GO:0015267 channel activity - pending verification)",
       "regulators": [],
       "preceding_event": "RXN-1 - VDAC1 and VDAC3 oligomerise in the mitochondrial outer membrane",
@@ -116,56 +118,72 @@
       "evidence_type": "direct experimental evidence (human cells)",
       "evidence_sentence": "Cytosolic fractions from rotenone-treated THP-1 cells contained a 14-fold enrichment of mtDNA relative to untreated controls, an effect abolished by VBIT-4 and by combined VDAC1/VDAC3 knockdown.",
       "figure": "Fig. 2e, Extended Data Fig. 4",
-      "pmid": "40123456",
-      "pmid_url": "https://pubmed.ncbi.nlm.nih.gov/40123456/",
-      "pmid_source": "esearch:doi",
+      "pmid": "31857488",
+      "pmid_url": "https://pubmed.ncbi.nlm.nih.gov/31857488/",
+      "pmid_source": "esearch:title-author",
       "pmc_url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11223344/",
-      "authors_year": "Doe et al. 2026",
+      "authors_year": "Kim J et al., 2019",
       "flags": [],
       "status": "PROPOSED - depends on RXN-1"
     }
   ],
-
   "ontology_terms": [
     {
       "term_label": "channel activity",
       "ontology": "GO (molecular function)",
       "accession_status": "GO:0015267 - PENDING CURATOR VERIFICATION in OLS4",
-      "used_by": ["RXN-2 (catalyst activity)"]
+      "used_by": [
+        "RXN-2 (catalyst activity)"
+      ]
     },
     {
       "term_label": "mitochondrial outer membrane",
       "ontology": "GO (cellular component)",
       "accession_status": "GO:0005741 - PENDING CURATOR VERIFICATION in OLS4",
-      "used_by": ["RXN-1", "VDAC1:VDAC3 oligomer"]
+      "used_by": [
+        "RXN-1",
+        "VDAC1:VDAC3 oligomer"
+      ]
     }
   ],
-
   "references": [
     {
       "n": 1,
-      "citation": "Doe J, Roe A, Mbeki T, et al. Mitochondrial DNA release licenses cGAS-dependent interferon induction. Nature. 2026;640(8012):221-229.",
-      "pmid": "40123456",
-      "pmid_url": "https://pubmed.ncbi.nlm.nih.gov/40123456/",
-      "pmid_source": "esearch:doi",
-      "note": "Source paper for this update; supports RXN-1 and RXN-2."
+      "citation": "Kim J, Gupta R, Blanco LP, Yang S, Shteinfer-Kuzmine A, Wang K, Zhu J, Yoon HE, Wang X, Kerkhofs M, Kang H, Brown AL, Park SJ, Xu X, Zandee van Rilland E, Kim MK, Cohen JI, Kaplan MJ, Shoshan-Barmatz V, Chung JH. VDAC oligomers form mitochondrial pores to release mtDNA fragments and promote lupus-like disease. Science 366 (2019): 1531-1536.",
+      "pmid": "31857488",
+      "pmid_url": "https://pubmed.ncbi.nlm.nih.gov/31857488/",
+      "pmid_source": "esearch:title-author",
+      "note": "SOURCE PAPER. Primary evidence for RXN-1 and RXN-2."
     },
     {
       "n": 2,
-      "citation": "Kim S, Alvarez P, Nakamura H. VDAC oligomerisation and the mitochondrial permeability pore. Mol Cell. 2024;84(3):455-470.",
-      "pmid": "38554411",
-      "pmid_url": "https://pubmed.ncbi.nlm.nih.gov/38554411/",
-      "pmid_source": "esummary:pmid",
-      "note": "Background on VDAC pore architecture; cited in the RXN-1 summation rationale, not as the primary evidence."
+      "citation": "Sun L, Wu J, Du F, Chen X, Chen ZJ. Cyclic GMP-AMP synthase is a cytosolic DNA sensor that activates the type I interferon pathway. Science 339 (2013): 786-91.",
+      "pmid": "23258413",
+      "pmid_url": "https://pubmed.ncbi.nlm.nih.gov/23258413/",
+      "pmid_source": "esearch:title-author",
+      "note": "cGAS as the cytosolic DNA sensor; background for the existing R-HSA-3249367 binding reaction."
     }
   ],
-
   "open_questions": [
-    "Should the cytosolic mtDNA fragment reuse an existing Reactome entity, or is a new OtherEntity warranted? Check gk_central for a cytosolic mtDNA entity before creating one.",
-    "Is BlackBoxEvent the right class for RXN-1, or should the oligomer be built as a defined Complex with explicit stoichiometry once the hexameric assignment is confirmed?",
-    "Does the existing cGAS binding reaction (R-HSA-3249367) need a second literature reference, or is the new preceding event sufficient to capture this paper's contribution?"
+    {
+      "priority": "HIGH",
+      "tag": "ENTITY REUSE",
+      "question": "Should the cytosolic mtDNA fragment reuse an existing Reactome entity, or is a new OtherEntity warranted? Check gk_central for a cytosolic mtDNA entity before creating one.",
+      "affects": "RXN-2"
+    },
+    {
+      "priority": "MEDIUM",
+      "tag": "EVENT CLASS",
+      "question": "Is BlackBoxEvent the right class for RXN-1, or should the oligomer be built as a defined Complex with explicit stoichiometry once the hexameric assignment is confirmed?",
+      "affects": "RXN-1"
+    },
+    {
+      "priority": "LOW",
+      "tag": "EXTRA REFERENCE",
+      "question": "Does the existing cGAS binding reaction (R-HSA-3249367) need a second literature reference, or is the new preceding event enough to capture this paper's contribution?",
+      "affects": "R-HSA-3249367"
+    }
   ],
-
   "checklist": [
     "Every PMID in this document resolved against NCBI E-utilities, not from training data.",
     "gk_central checked for pre-existing VDAC1:VDAC3 and cytosolic mtDNA entities.",
@@ -174,5 +192,50 @@
     "Compartment assignments match Curator Guide V94 conventions.",
     "Summations reviewed for Reactome house style (present tense, no citation markers in body text).",
     "Preceding-event chain verified end to end against the existing pathway."
+  ],
+  "decision_flow": [
+    {
+      "id": "Q1",
+      "text": "Does a cytosolic mtDNA entity already exist?",
+      "answers": [
+        {
+          "label": "yes",
+          "to": "REUSE"
+        },
+        {
+          "label": "no",
+          "to": "Q2"
+        }
+      ]
+    },
+    {
+      "id": "Q2",
+      "text": "Is the VDAC stoichiometry confirmed?",
+      "answers": [
+        {
+          "label": "confirmed",
+          "to": "BUILD"
+        },
+        {
+          "label": "not yet",
+          "to": "BBE"
+        }
+      ]
+    },
+    {
+      "id": "REUSE",
+      "text": "Reuse the existing entity",
+      "terminal": true
+    },
+    {
+      "id": "BUILD",
+      "text": "Create as a defined Complex",
+      "terminal": true
+    },
+    {
+      "id": "BBE",
+      "text": "Keep RXN-1 as a BlackBoxEvent",
+      "terminal": true
+    }
   ]
 }

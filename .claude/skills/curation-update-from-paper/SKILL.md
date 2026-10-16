@@ -150,8 +150,10 @@ What to take from this, and why each matters:
 ## STEP 3 — GAP ANALYSIS
 
 For every existing event the paper bears on, record one row: the existing event,
-its ST_ID, and precisely what the paper changes. Use these four verbs and no
-others, so the curator can triage at a glance:
+its ST_ID, and precisely what the paper changes. **Start the
+`what_the_paper_changes` text with the verb** — "ADDS — …" — because the
+renderer lifts that leading verb into its own colour-coded column. Use these
+four verbs and no others, so the curator can triage at a glance:
 
 - **ADDS** — a step with no existing event at all.
 - **REFINES** — an existing event is right but under-specified; the paper gives
@@ -229,6 +231,34 @@ Report any correction you made in the open-questions section, in the form
 A newly published paper may have no PMC record yet; that is normal. Set the PMC
 field to a short note rather than a broken link.
 
+### The five-field check is enforced, not trusted
+
+Doing step 3 by hand and believing the result is how a wrong PMID ships. Run it
+mechanically before rendering:
+
+```
+python3 verify_references.py <spec>.json
+```
+
+It resolves every reference (and `source_paper`) against ESummary and compares
+the record with the citation the spec claims on **first author surname,
+initials, year, journal and title**. A title that does not overlap, or a
+different first author, is an `ERROR` and exits non-zero; a year off by one
+(epub ahead of print) is a `WARN`. Anything it cannot resolve is reported as
+`UNCHECKED` — never as correct.
+
+`build_update_doc.py` runs this automatically and **refuses to render** if any
+reference fails. Do not reach for `--skip-ref-check` to get past a failure: it
+is for working offline, and it stamps "NOT verified against PubMed" into the
+document's metadata table in red.
+
+This check exists because of a real near-miss. A DOI reconstructed from a
+reference list (rather than read verbatim off the paper) resolved through
+ESearch `[AID]` to PMID 24796500 — a Cav1.4 night-blindness paper — in place of
+Elaid et al. 2014 on VP7 membrane permeabilisation. It was caught only by a
+human comparing fields. Feed that PMID to `verify_references.py` and it fails
+on both title and first author.
+
 ---
 
 ## STEP 6 — WRITE THE DOCUMENT
@@ -247,9 +277,96 @@ Pre-submission checklist. Run it with `--validate` first; it refuses a spec in
 which any event carries a bare PMID without a `pmid_source`, which is the
 mechanical guard against step 5 being skipped.
 
-Requires `python-docx` (pinned in the repo's `requirements.txt`). Invoke it as
-plain `python3 build_update_doc.py …` — **not** `python3 -I`, which suppresses
-the user site-packages directory where `python-docx` is typically installed.
+Sections 3–5 are rendered **landscape** and the rest portrait; the script
+inserts the section breaks itself.
+
+Requires `python-docx` and `matplotlib` (both pinned in the repo's
+`requirements.txt`). Invoke it as plain `python3 build_update_doc.py …` —
+**not** `python3 -I`, which suppresses the user site-packages directory where
+these are typically installed. Without matplotlib the document still builds,
+with full attribute tables in place of the diagrams.
+
+### What the script checks and draws for you
+
+| Flag | Default | Effect |
+|---|---|---|
+| *(none)* | on | Verifies every reference against PubMed; **refuses to render on a mismatch** |
+| *(none)* | on | Asks reactome.org which ST_IDs are released, and links only those |
+| `--skip-ref-check` | off | Offline only. Stamps "NOT verified against PubMed" into the metadata table |
+| `--skip-link-check` | off | Skips the release probe; unreleased ST_IDs then render as links that 404 |
+| `--no-graphics` | off | Omits diagrams and restores the full per-event attribute tables |
+| `--keep-figures DIR` | temp | Also writes the generated PNGs to `DIR` |
+
+**ST_IDs and links.** reactome.org serves released content only. A pathway still
+being curated has `doRelease=false` in gk_central, so `/content/detail/<id>`
+404s — which made every ST_ID in the first rotavirus draft a dead link. The
+script probes ContentService and renders an unreleased ID as plain text marked
+"(not yet released)" rather than as a link that cannot work. Expect most or all
+ST_IDs in an in-progress branch to come back unreleased; that is correct.
+
+**Reaction diagrams.** One per event in section 5, drawn by
+`reaction_graphic.py`: inputs left, reaction centre, outputs right, catalyst
+above, regulators below, and the preceding/following events as chips top and
+bottom. Participants with an ST_ID are drawn solid and tagged with it; those
+without are dashed and tagged NEW, so what the paper adds is visible against
+what is reused. Because the diagram carries the participants, compartment and
+chain position, those rows are dropped from the table beneath it and the rest
+is laid out two pairs per row.
+
+Keep entity strings in the shape `Name [compartment] (R-HSA-123)` — the renderer
+parses all three parts. Put any rationale after an em dash
+(`ARP2/3 complex — positive regulator, inferred`); the diagram shows the entity
+and a `+`/`−` sign, and the prose stays in the table.
+
+### Keep sections 1 and 2 short
+
+These two are read first and are the easiest to overwrite. Hold them to a
+budget:
+
+- **`summary` — three paragraphs, ~200 words total.** One on what the pathway
+  already curates and where the gap is, one on what the paper shows, one on the
+  verdict in gap-analysis verbs. The recap of existing curation is orientation,
+  not a review: name the branch, the relevant events and the gap, then stop.
+  Do not retell the paper's mechanism step by step — that is section 5's job,
+  and every step is already a row there.
+- **`rationale` — four paragraphs, ~200 words total.** Standard curation logic
+  is *not* restated here. Naming, evidence classes, compartments and the rule
+  that annotation species should match the experimental support are all in
+  Curator Guide V94; open the section by saying so and cite it. Spend the words
+  only on decisions specific to this paper: where the new subpathway hangs and
+  why, how event typing follows this paper's evidence, and any deliberate
+  departure from the Guide — which must stay, and must also appear in section 8.
+
+### Structure the open questions
+
+`open_questions` takes objects, not bare strings:
+
+```json
+{"priority": "HIGH", "tag": "STRUCTURAL DECISION",
+ "question": "How should E6-E8 relate to the existing release events?",
+ "affects": "E6-E8"}
+```
+
+`priority` is HIGH / MEDIUM / LOW / INFO and drives the colour and the sort
+order; the section renders as a tickable checklist. Plain strings still work —
+they are parsed for a leading ALL-CAPS tag and scored by keyword — but say the
+priority rather than leaving it to be guessed.
+
+Optionally add a `decision_flow` and the section opens with a flowchart:
+
+```json
+"decision_flow": [
+  {"id": "Q1", "text": "How do E6-E8 relate to existing release events?",
+   "answers": [{"label": "parallel", "to": "Q2"},
+               {"label": "reference only", "to": "REF"}]},
+  {"id": "REF", "text": "Add as a literatureReference only", "terminal": true}
+]
+```
+
+Declare it only when the questions genuinely gate one another. Nothing is
+inferred: with no `decision_flow` there is no chart, which is the right outcome
+for a set of independent questions. An invented decision order is worse than
+none.
 
 A worked example of a complete spec ships alongside it as `sample_spec.json`.
 
