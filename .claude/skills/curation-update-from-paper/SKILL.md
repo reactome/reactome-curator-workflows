@@ -27,10 +27,14 @@ claim a server that is not there.
 ```
 /curation-update-from-paper — reference material for this run
 
-Reference documents (borrowed from sibling skills; this skill bundles none):
+Reference documents (borrowed from sibling skills; this skill bundles none).
+Paths are relative to this skill directory:
+  ../annotate-pathway-from-reviews-or-topic_name/
   Reactome_RLE_Annotation_Reference_V94.md   START HERE. Condensed V94 RLE
       rules — naming, compartments, evidence classes, catalyst/regulation,
       species and chimeric handling. The only one that fits in context whole.
+
+  ../review-internal/
   Curator_Guide_V94.pdf                      The authoritative standard, 283pp.
       Open for a specific question (disease, drug, infection, orthology),
       not to read through.
