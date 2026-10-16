@@ -18,20 +18,62 @@ description: >
   the database.
 ---
 
-> Companion references, reused from sibling skills in this repo — read the ones
-> relevant to what you are proposing rather than all of them:
-> - `../annotate-pathway-from-reviews-or-topic_name/Reactome_RLE_Annotation_Reference_V94.md`
->   — condensed V94 ReactionLikeEvent rules: naming, compartments, evidence
->   classes, catalyst/regulation, species and chimeric handling.
-> - `../review-internal/Curator_Guide_V94.pdf` — the authoritative standard.
-> - `../review-internal/Claude_ReactomeDataModelGlossary_V95_Final.docx.pdf` —
->   data model terms and entity-class semantics.
-> - `../review-internal/EWAS_name_rules.docx` and `../review-internal/ptm_prefixes.md`
->   — EWAS naming and PTM prefix conventions, for any modified-protein entity.
-> - `../review-internal/Small_molecule_renaming.xlsx` — preferred small-molecule
->   names, for any SimpleEntity you propose.
-> - `../review-internal/Rules_for_automatic_reaction_typing.docx` — consult when
->   deciding Reaction vs BlackBoxEvent vs Polymerisation.
+## ON INVOCATION — PRINT THIS FIRST
+
+Before asking for inputs, show the curator what this run has to work with, as a
+short block. Check which MCP tools are actually present and say so; do not
+claim a server that is not there.
+
+```
+/curation-update-from-paper — reference material for this run
+
+Reference documents (borrowed from sibling skills; this skill bundles none):
+  Reactome_RLE_Annotation_Reference_V94.md   START HERE. Condensed V94 RLE
+      rules — naming, compartments, evidence classes, catalyst/regulation,
+      species and chimeric handling. The only one that fits in context whole.
+  Curator_Guide_V94.pdf                      The authoritative standard, 283pp.
+      Open for a specific question (disease, drug, infection, orthology),
+      not to read through.
+  Claude_ReactomeDataModelGlossary_V95.pdf   43pp. Class semantics and the
+      relationship inventory, when the RLE reference's §13 is not enough.
+  ptm_prefixes.md                            PSI-MOD -> EWAS name prefix, 70
+      rows. Needed for any modified-protein entity.
+  bau060.pdf                                 Jupe et al. 2014, the published
+      controlled vocabulary. The citable source for naming decisions.
+  Small_molecule_renaming.xlsx               Preferred small-molecule names.
+      Use the 'small molecules' sheet.
+  EWAS_name_rules.docx                       For naming a MUTANT EWAS only
+      ('Names for EWASes with Mutations'). Its other sections are already in
+      the RLE reference.
+
+Live servers:
+  gk-central   <present/absent>  Existing entities, compartments, the branch's
+      species convention, and release status. Not knowable from the export.
+  ols          <present/absent>  Confirms every GO/ChEBI term is real, current
+      and correctly labelled before it is written down.
+
+Not bundled: the pathway's event export and the paper. Supply both.
+```
+
+> **Reading order matters — these documents overlap by generation.** The RLE
+> reference was derived from the Curator Guide and the Glossary, and both of
+> those restate `bau060.pdf`. Reaction-class naming appears in four places and
+> EWAS/PTM naming in four. Read the RLE reference first and stop there unless
+> it is silent or you need something citable; opening all of them wastes
+> context re-reading the same rules in three vintages.
+>
+> **One trap.** `Small_molecule_renaming.xlsx` has a `PSI_MOD Mapping` sheet
+> that shares 36 MOD IDs with `ptm_prefixes.md` but gives different strings —
+> `MOD:00046` is `P` there and `p-` here. They are different vocabularies
+> (diagram labels vs EWAS name prefixes) and neither file says so. For entity
+> names always use `ptm_prefixes.md`. That sheet's `Nature_abbreviations` tab
+> is *Leishmania* metabolic-model identifiers, not Reactome content — ignore it.
+>
+> **Deliberately not listed:** `Rules_for_automatic_reaction_typing.docx` is a
+> near-verbatim extract of `bau060.pdf` and says of its own transferase
+> look-up that it "requires updating"; `ptm_lookup.xlsx` is a row-for-row
+> duplicate of `ptm_prefixes.md` (same 70 MOD IDs, nothing either way). Neither
+> adds anything this skill needs — use the sources above instead.
 
 # Curation Update From Paper
 Version: 1.0 | Input: one primary paper + one existing-pathway event export |
