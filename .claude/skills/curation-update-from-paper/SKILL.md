@@ -35,6 +35,10 @@ Reference documents — all bundled in this skill directory, nothing to upload:
       reference does NOT cover: updating existing content, evidence and
       inference, host-pathogen species/relatedSpecies/compartment rules, and
       retiring released events. Read §3 before any infection pathway.
+  data_model_slots.md                        Which slots real events actually
+      carry, measured across released gk_central content. Settles "does an RLE
+      normally have this?" with a number. GO BP is a pathway slot, not a
+      reaction slot.
   ptm_prefixes.md                            PSI-MOD -> EWAS name prefix, 70
       rows. Needed for any modified-protein entity.
 
@@ -264,6 +268,31 @@ biophysical/biochemical demonstration gives a Reaction; knockdown, inhibitor,
 or phenotype-level evidence gives a BlackBoxEvent. A step the paper proposes as
 a model but does not directly demonstrate is a BlackBoxEvent at best, and the
 flag must say so.
+
+**Propose the container, not just the contents.** New events almost always need
+a new subpathway to sit in. Give it as `proposed_subpathway` — name, parent,
+GO BP, species, relatedSpecies, which events it holds, and a summation.
+
+### Put each value in the slot curators actually use
+
+Check `data_model_slots.md` before filling a slot you are unsure about; it
+reports measured occupancy across released content rather than what a slot
+means in principle. Three rules that follow from it, and that the renderer
+checks:
+
+- **GO BP goes on the subpathway, not on the reactions.** 48% of released
+  pathways carry `goBiologicalProcess`; 5% of released reactions do. A
+  reaction's molecular function belongs on `catalystActivity` → GO MF. Do not
+  invent a GO BP label per reaction — that is how three non-existent GO terms
+  entered the first rotavirus draft.
+- **`relatedSpecies` on every event of a host-pathogen branch, or none.**
+  `species` is the host, `relatedSpecies` the pathogen. Verify against the
+  branch with the query in STEP 2.
+- **`SimpleEntity` takes no species.** It does not appear on SimpleEntity in
+  released content at any threshold.
+
+Every ontology term you name must be confirmed in OLS before it is written
+down — label *and* accession. A plausible-sounding GO label is not a GO label.
 
 ### What the data model cannot hold — check this before proposing an event
 

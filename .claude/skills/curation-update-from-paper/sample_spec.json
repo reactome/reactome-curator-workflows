@@ -78,7 +78,6 @@
         "negatively regulated by VBIT-4 (small-molecule VDAC oligomerisation inhibitor)"
       ],
       "preceding_event": null,
-      "go_bp": "GO:0097191 extrinsic apoptotic signaling pathway (candidate - curator to confirm)",
       "go_mf": null,
       "summation": "Oxidative stress induced by rotenone or by mitochondrial transcription factor A (TFAM) depletion promotes the oligomerisation of VDAC1 and VDAC3 within the mitochondrial outer membrane. The resulting hetero-oligomeric pore is detected by blue native PAGE and by chemical crosslinking in human fibroblasts, and its formation is blocked by the VDAC oligomerisation inhibitor VBIT-4.",
       "evidence_type": "direct experimental evidence (human cells)",
@@ -235,5 +234,13 @@
       "text": "Keep RXN-1 as a BlackBoxEvent",
       "terminal": true
     }
-  ]
+  ],
+  "proposed_subpathway": {
+    "name": "Mitochondrial DNA release and cGAS activation",
+    "parent": "STING mediated induction of host immune responses (R-HSA-1834949)",
+    "go_bp": "PENDING CURATOR VERIFICATION via OLS — candidate: 'cGAS/STING signaling pathway'",
+    "species": "Homo sapiens",
+    "events": "RXN-1, RXN-2",
+    "summation": "VDAC1/VDAC3 oligomerisation forms a mitochondrial outer-membrane pore through which mtDNA fragments reach the cytosol, where they activate cGAS."
+  }
 }

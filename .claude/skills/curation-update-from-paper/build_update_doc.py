@@ -524,6 +524,86 @@ def conformation_advisories(spec: Dict[str, Any]) -> List[str]:
     return notes
 
 
+# Infection vocabulary, used only to decide whether to ask about
+# relatedSpecies. Deliberately broad: the check is advisory.
+_INFECTION = re.compile(
+    r"\b(virus|viral|virion|bacteri\w*|pathogen\w*|infect\w*|host[- ]pathogen|"
+    r"capsid|phage|parasit\w*|microb\w*)\b", re.IGNORECASE
+)
+
+
+def slot_advisories(spec: Dict[str, Any]) -> List[str]:
+    """Check proposed events against measured slot usage.
+
+    The numbers quoted come from data_model_slots.md, taken across released
+    gk_central content. These are advisory: each rule has real exceptions.
+    """
+    notes: List[str] = []
+    events = [e for e in as_list(spec.get("new_events")) if isinstance(e, dict)]
+    if not events:
+        return notes
+
+    def label_of(event, idx):
+        return as_text(get(event, "label")) or "event %d" % idx
+
+    # 1. GO BP is a pathway-level slot: 48% of pathways, 5% of reactions.
+    with_go = [label_of(e, i) for i, e in enumerate(events, 1)
+               if not is_blank(raw(e, "go_bp"))]
+    if with_go:
+        notes.append(
+            "goBiologicalProcess is proposed on %d of %d reactions (%s). It is "
+            "a pathway-level slot — 48%% of released pathways carry one, but "
+            "only 5%% of released reactions. Propose a GO BP term for the new "
+            "subpathway instead, and drop it from the reactions unless there "
+            "is a specific reason. A reaction's molecular function belongs on "
+            "catalystActivity." % (len(with_go), len(events),
+                                   ", ".join(with_go[:6])
+                                   + (" …" if len(with_go) > 6 else ""))
+        )
+
+    # 2. relatedSpecies: a branch is host-pathogen or it is not.
+    with_rs = [label_of(e, i) for i, e in enumerate(events, 1)
+               if not is_blank(raw(e, "related_species"))]
+    without_rs = [label_of(e, i) for i, e in enumerate(events, 1)
+                  if is_blank(raw(e, "related_species"))]
+
+    if with_rs and without_rs:
+        notes.append(
+            "relatedSpecies is set on %d event(s) but missing from %s. A branch "
+            "is either host-pathogen or it is not; make it consistent."
+            % (len(with_rs), ", ".join(without_rs[:6])
+               + (" …" if len(without_rs) > 6 else ""))
+        )
+    elif not with_rs:
+        haystack = " ".join([
+            as_text(spec.get("topic")), as_text(spec.get("title")),
+            " ".join(as_text(p) for p in as_list(spec.get("summary"))),
+        ])
+        if _INFECTION.search(haystack):
+            notes.append(
+                "This reads as an infection pathway, and no event carries "
+                "relatedSpecies. For a host-pathogen event the species slot is "
+                "the host and the pathogen goes in relatedSpecies (Curator "
+                "Guide pp.221-222); 82% of released RLEs carrying "
+                "relatedSpecies are disease events. Check the branch in "
+                "gk_central — if its events carry it, omitting it here is an "
+                "incomplete annotation, not a style choice."
+            )
+
+    # 3. SimpleEntity takes no species.
+    for idx, ent in enumerate(as_list(spec.get("new_entities")), start=1):
+        if not isinstance(ent, dict):
+            continue
+        if re.search(r"simple\s*entity", as_text(get(ent, "class")), re.I) \
+                and not is_blank(raw(ent, "species")):
+            notes.append(
+                "%s is a SimpleEntity with a species. SimpleEntity carries no "
+                "species in released content, at any threshold."
+                % (as_text(get(ent, "proposed_name")) or "entity %d" % idx)
+            )
+    return notes
+
+
 def collect_st_ids(spec: Dict[str, Any]) -> List[str]:
     """Every ST_ID the document will try to link, deduplicated."""
     found: List[str] = []
@@ -1107,6 +1187,38 @@ def render_event(doc, event: Dict[str, Any], index: int,
             doc.add_paragraph(flag, style="List Bullet")
 
 
+def render_subpathway(doc, sub: Any, released: Optional[Dict[str, bool]]) -> None:
+    """The container the new events go into.
+
+    GO BP lives here, not on the reactions: 48% of released pathways carry one
+    against 5% of reactions (see data_model_slots.md).
+    """
+    if not isinstance(sub, dict):
+        return
+    rows = [
+        ("Proposed name", get(sub, "name"), None),
+        ("Parent pathway", get(sub, "parent"), None),
+        ("GO BP", get(sub, "go_bp"), None),
+        ("Species", get(sub, "species"), None),
+        ("relatedSpecies", get(sub, "related_species"), None),
+        ("Events", get(sub, "events"), None),
+    ]
+    rows = [(l, v, u) for (l, v, u) in rows if not is_blank(v)]
+    if not rows:
+        return
+
+    heading_p = doc.add_paragraph()
+    heading_p.paragraph_format.space_after = Pt(2)
+    run = heading_p.add_run("Proposed containing subpathway")
+    run.bold = True
+    render_attribute_grid(doc, rows, pairs_per_row=2)
+
+    summation = get(sub, "summation")
+    if not is_blank(summation):
+        add_labelled_block(doc, "Summation", summation)
+    doc.add_paragraph()
+
+
 def render_new_events(doc, events: Any,
                       graphics: Optional[Dict[str, str]] = None) -> None:
     items = [e for e in as_list(events) if isinstance(e, dict)]
@@ -1318,6 +1430,7 @@ def build_document(spec: Dict[str, Any], output_path: str,
         elif number == "4":
             render_new_entities(doc, spec.get("new_entities"))
         elif number == "5":
+            render_subpathway(doc, spec.get("proposed_subpathway"), released)
             render_new_events(doc, spec.get("new_events"), graphics)
         elif number == "6":
             render_ontology_terms(doc, spec.get("ontology_terms"))
@@ -1447,12 +1560,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             )
             return 1
 
-    # ── events the data model cannot hold ───────────────────────────────────
-    advisories = conformation_advisories(spec)
+    # ── events the data model cannot hold, and slots used against practice ──
+    advisories = conformation_advisories(spec) + slot_advisories(spec)
     if advisories:
         sys.stderr.write(
-            "\nData model check — %d event(s) may not be representable:\n"
-            % len(advisories)
+            "\nData model check — %d finding%s:\n"
+            % (len(advisories), "" if len(advisories) == 1 else "s")
         )
         for note in advisories:
             sys.stderr.write("  - %s\n" % note)
