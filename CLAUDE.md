@@ -172,9 +172,20 @@ inputs, and options.
   Queries `gk-central` (via `/analysis-reactome-mcp`) so proposals reuse existing
   entities and follow the pathway's own species convention rather than the generic
   rule; degrades gracefully when the server is off. PMIDs resolved via NCBI
-  E-utilities, never from training data. Reuses the Curator Guide and RLE reference
-  bundled in sibling skills. Renders through `build_update_doc.py` (needs
-  `python-docx`). Proposes only — never writes to the database.
+  E-utilities, never from training data, then checked mechanically by
+  `verify_references.py`: every citation is matched against its PubMed record on
+  first author, initials, year, journal and title, and a mismatch **refuses the
+  render** — the guard against a reconstructed DOI resolving to a confidently wrong
+  paper. Reuses the Curator Guide and RLE reference bundled in sibling skills.
+  Renders through `build_update_doc.py` (needs `python-docx`; `matplotlib` for the
+  diagrams, optional). Sections 3–5 are landscape; each proposed event carries a
+  drawn reaction diagram from `reaction_graphic.py` (inputs/outputs/catalyst/
+  regulators, preceding and following events, reused entities tagged with their
+  ST_ID and new ones dashed and tagged NEW), and the open questions render as a
+  colour-coded priority checklist under an optional decision flowchart. ST_IDs are
+  probed against reactome.org and only released ones are linked, since an
+  in-progress branch is not public and would otherwise 404. Proposes only — never
+  writes to the database.
 
 - **`/spotlight-article-drafter`** — Drafts a candidate Reactome "Research Spotlight"
   article from a paper that used Reactome data or tools, producing both forms at once:

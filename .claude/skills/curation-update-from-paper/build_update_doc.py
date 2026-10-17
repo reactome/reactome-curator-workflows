@@ -24,12 +24,16 @@ import argparse
 import json
 import os
 import re
+import shutil
+import struct
 import sys
+import tempfile
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 try:
     import docx  # noqa: F401
     from docx import Document
+    from docx.enum.section import WD_ORIENT, WD_SECTION
     from docx.enum.table import WD_TABLE_ALIGNMENT
     from docx.enum.text import WD_ALIGN_PARAGRAPH
     from docx.opc.constants import RELATIONSHIP_TYPE as RT
@@ -42,6 +46,20 @@ except ImportError:  # pragma: no cover - environment problem, not a spec proble
         "    pip3 install --user python-docx\n"
     )
     raise SystemExit(2)
+
+# Diagrams need matplotlib; the document is still worth producing without it,
+# so this import is soft and its absence is reported once, not fatally.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+try:
+    import reaction_graphic
+    GRAPHICS_AVAILABLE = True
+    GRAPHICS_ERROR = ""
+except (ImportError, SystemExit) as _exc:  # matplotlib missing
+    reaction_graphic = None
+    GRAPHICS_AVAILABLE = False
+    GRAPHICS_ERROR = str(_exc) or "matplotlib not installed"
+
+import verify_references
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -58,6 +76,37 @@ LABEL_SHADE = "F2F2F2"
 
 REACTOME_DETAIL = "https://reactome.org/content/detail/"
 PUBMED_BASE = "https://pubmed.ncbi.nlm.nih.gov/"
+
+# Sections whose tables need the width. Word supports per-section orientation,
+# so the rest of the document stays portrait.
+LANDSCAPE_SECTIONS = frozenset(("3", "4", "5"))
+
+# Gap analysis vocabulary. The verb leads the text in the spec ("ADDS - ...");
+# it is lifted into its own colour-coded column.
+GAP_VERBS = ("ADDS", "REFINES", "CONTRADICTS", "CONFIRMS")
+VERB_SHADE = {
+    "ADDS":        "DDEBF7",
+    "REFINES":     "FFF2CC",
+    "CONTRADICTS": "FBE5D6",
+    "CONFIRMS":    "E2EFDA",
+}
+VERB_COLOR = {
+    "ADDS":        RGBColor(0x1F, 0x4E, 0x79),
+    "REFINES":     RGBColor(0x80, 0x60, 0x00),
+    "CONTRADICTS": RGBColor(0xC0, 0x00, 0x00),
+    "CONFIRMS":    RGBColor(0x37, 0x60, 0x23),
+}
+
+PRIORITY_COLOR = {
+    "HIGH":   RGBColor(0xC0, 0x00, 0x00),
+    "MEDIUM": RGBColor(0xBF, 0x8F, 0x00),
+    "LOW":    RGBColor(0x37, 0x60, 0x23),
+    "INFO":   RGBColor(0x59, 0x59, 0x59),
+}
+PRIORITY_SHADE = {
+    "HIGH": "FBE5D6", "MEDIUM": "FFF2CC", "LOW": "E2EFDA", "INFO": "F2F2F2",
+}
+PRIORITY_ORDER = {"HIGH": 0, "MEDIUM": 1, "LOW": 2, "INFO": 3}
 
 SECTIONS: Sequence[Tuple[str, str]] = (
     ("1", "Summary"),
@@ -195,6 +244,37 @@ def add_hyperlink(paragraph, url: str, text: str, color: str = LINK_BLUE,
     return hyperlink
 
 
+def add_event_reference(paragraph, st_id: str, released: Optional[Dict[str, bool]],
+                        size: Optional[Pt] = None) -> None:
+    """Render an ST_ID, linking it only when the event is actually public.
+
+    reactome.org serves released content only. A pathway still being curated
+    has doRelease=false in gk_central, so a link to /content/detail/<id> 404s -
+    which is exactly what made every ST_ID in the first rotavirus draft a dead
+    link. When release state is known and the event is unreleased, print the
+    ID as plain text with a marker instead of a link that cannot work.
+    """
+    st_id = (st_id or "").strip()
+    if not st_id:
+        return
+
+    is_released = None if released is None else released.get(st_id)
+
+    if is_released is False:
+        run = paragraph.add_run(st_id)
+        if size is not None:
+            run.font.size = size
+        # Covers both cases the probe cannot tell apart: an event still being
+        # curated, and an ST_ID that is simply wrong.
+        note = paragraph.add_run("  (not on reactome.org)")
+        note.italic = True
+        note.font.color.rgb = GREY
+        note.font.size = Pt(8) if size is None else Pt(size.pt - 0.5)
+        return
+
+    add_hyperlink(paragraph, REACTOME_DETAIL + st_id, st_id, size=size)
+
+
 def set_cell_shading(cell, hex_fill: str) -> None:
     """Apply a solid background fill to a table cell via <w:shd>."""
     tcPr = cell._tc.get_or_add_tcPr()
@@ -217,14 +297,18 @@ def repeat_header_row(row) -> None:
     trPr.append(tblHeader)
 
 
-def set_table_autofit(table) -> None:
-    """Force the autofit (content-sized) layout algorithm on a table."""
-    table.autofit = True
+def set_table_autofit(table, fixed: bool = False) -> None:
+    """Pick a layout algorithm: content-sized (default) or fixed.
+
+    `fixed=True` is what makes explicit column widths stick - under the autofit
+    algorithm Word recomputes them from content and ignores the widths set.
+    """
+    table.autofit = not fixed
     tblPr = table._tbl.tblPr
     for existing in tblPr.findall(qn("w:tblLayout")):
         tblPr.remove(existing)
     layout = OxmlElement("w:tblLayout")
-    layout.set(qn("w:type"), "autofit")
+    layout.set(qn("w:type"), "fixed" if fixed else "autofit")
     tblPr.append(layout)
 
     for existing in tblPr.findall(qn("w:tblW")):
@@ -366,6 +450,128 @@ def add_labelled_block(doc, label: str, text: str, italic_body: bool = False,
 # ──────────────────────────────────────────────────────────────────────────────
 # Validation
 # ──────────────────────────────────────────────────────────────────────────────
+
+
+# Vocabulary that signals a reaction whose only change is shape. Reactome has
+# no slot for conformation, so such a reaction has identical participants on
+# both sides and cannot be curated as written.
+_CONFORMATION_TITLE = re.compile(
+    r"\bconformation(al)?\b|\btransition(s|ed)?\s+(from|to|between)\b"
+    r"|\brefold|\brearrange|\bchanges?\s+shape\b|\bflips?\b"
+    r"|\bupright\b|\breversed\b|\bopen(s)?\s+(up|to)\b",
+    re.IGNORECASE,
+)
+# Qualifiers that describe a state rather than a different set of components.
+_STATE_WORD = re.compile(
+    r"\b(reversed|upright|open|closed|extended|compact|primed|bent|folded|"
+    r"unfolded|membrane-inserted|inserted|activated|active|inactive|"
+    r"conformation\w*|form|state)\b",
+    re.IGNORECASE,
+)
+
+
+def _entity_core(name: str) -> str:
+    """A name reduced to its components, with state words and bracketing gone."""
+    text = re.sub(r"\([^)]*\)", " ", name or "")
+    text = _STATE_WORD.sub(" ", text)
+    text = re.sub(r"[^a-z0-9]+", "", text.lower())
+    return text
+
+
+def conformation_advisories(spec: Dict[str, Any]) -> List[str]:
+    """Flag proposed events that Reactome's data model cannot represent.
+
+    A ReactionLikeEvent records a change in the set of participants or their
+    compartments. If both sides carry the same components in the same
+    compartments, there is no reaction to store - however real the physical
+    change. This catches the common case: a pure conformational step.
+    """
+    notes: List[str] = []
+    for idx, event in enumerate(as_list(spec.get("new_events")), start=1):
+        if not isinstance(event, dict):
+            continue
+        label = as_text(get(event, "label")) or "event %d" % idx
+        name = as_text(get(event, "name"))
+
+        if not GRAPHICS_AVAILABLE:
+            continue
+        inputs = reaction_graphic.parse_entities(raw(event, "inputs"))
+        outputs = reaction_graphic.parse_entities(raw(event, "outputs"))
+        if not inputs or not outputs:
+            continue
+
+        in_set = {(_entity_core(e["name"]), e["compartment"].lower())
+                  for e in inputs}
+        out_set = {(_entity_core(e["name"]), e["compartment"].lower())
+                   for e in outputs}
+
+        if in_set == out_set:
+            notes.append(
+                "%s (%s): inputs and outputs carry the same components in the "
+                "same compartment, so there is no change for Reactome to "
+                "store. Fold the state into the entity name of the step that "
+                "does change something, or curate the binding/translocation "
+                "it enables." % (label, name)
+            )
+        elif _CONFORMATION_TITLE.search(name) and (
+            {c for _, c in in_set} == {c for _, c in out_set}
+        ):
+            notes.append(
+                "%s (%s): reads as a conformational change within one "
+                "compartment. Check that the participants really differ; "
+                "Reactome cannot represent shape alone." % (label, name)
+            )
+    return notes
+
+
+def collect_st_ids(spec: Dict[str, Any]) -> List[str]:
+    """Every ST_ID the document will try to link, deduplicated."""
+    found: List[str] = []
+    pattern = re.compile(r"\b(R-[A-Z]{3}-\d+)\b")
+
+    def walk(node: Any) -> None:
+        if isinstance(node, dict):
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, (list, tuple)):
+            for value in node:
+                walk(value)
+        elif isinstance(node, str):
+            found.extend(pattern.findall(node))
+
+    walk(spec)
+    return list(dict.fromkeys(found))
+
+
+def check_released(st_ids: Sequence[str], timeout: int = 15
+                   ) -> Dict[str, bool]:
+    """Ask reactome.org which of these ST_IDs are public.
+
+    ContentService answers 200 for released content and 404 otherwise, which is
+    exactly the released/unreleased split that decides whether a link works.
+    A network failure returns {} - unknown, not "all fine".
+    """
+    import urllib.error
+    import urllib.parse
+    import urllib.request
+
+    base = "https://reactome.org/ContentService/data/query/"
+    state: Dict[str, bool] = {}
+    for st_id in st_ids:
+        request = urllib.request.Request(
+            base + urllib.parse.quote(st_id),
+            method="GET",
+            headers={"User-Agent": "reactome-curation-update/1.1",
+                     "Accept": "application/json"},
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=timeout) as response:
+                state[st_id] = response.status == 200
+        except urllib.error.HTTPError as exc:
+            state[st_id] = exc.code == 200
+        except (urllib.error.URLError, OSError):
+            return {}   # network down: say nothing rather than something wrong
+    return state
 
 
 def pmid_source_ok(value: Any) -> bool:
@@ -573,6 +779,15 @@ def add_title_block(doc, spec: Dict[str, Any]) -> None:
     if author:
         rows.append(("Prepared by", author, None))
 
+    rows.append((
+        "References",
+        "NOT verified against PubMed — do not treat citations as checked"
+        if spec.get("_refs_unverified")
+        else "Every PMID resolved against PubMed and matched on first author, "
+             "year, journal and title",
+        None,
+    ))
+
     if not rows:
         return
 
@@ -590,6 +805,12 @@ def add_title_block(doc, spec: Dict[str, Any]) -> None:
         else:
             run = paragraph.add_run(as_text(value))
             run.font.size = Pt(9.5)
+            if label == "References":
+                unverified = bool(spec.get("_refs_unverified"))
+                run.bold = unverified
+                run.font.color.rgb = (
+                    PRIORITY_COLOR["HIGH"] if unverified else PRIORITY_COLOR["LOW"]
+                )
     doc.add_paragraph()
 
 
@@ -597,20 +818,89 @@ def heading(doc, number: str, title: str):
     return doc.add_heading("%s  %s" % (number, title), level=1)
 
 
-def render_gap_analysis(doc, rows: Any) -> None:
+def set_orientation(section, landscape: bool) -> None:
+    """Letter, rotated or not. Word needs page_width/height swapped as well as
+    the orientation flag; setting only the flag leaves a portrait text block."""
+    if landscape:
+        section.orientation = WD_ORIENT.LANDSCAPE
+        section.page_width, section.page_height = Inches(11), Inches(8.5)
+    else:
+        section.orientation = WD_ORIENT.PORTRAIT
+        section.page_width, section.page_height = Inches(8.5), Inches(11)
+    section.left_margin = section.right_margin = Cm(1.8)
+    section.top_margin = section.bottom_margin = Cm(1.8)
+
+
+def content_width(doc) -> float:
+    """Usable width of the current section, in cm."""
+    section = doc.sections[-1]
+    return (section.page_width - section.left_margin
+            - section.right_margin) / 360000.0
+
+
+def set_column_widths(table, widths_cm: Sequence[float]) -> None:
+    """Pin column widths. Word honours this only when autofit is off and the
+    width is repeated on every cell, so do both."""
+    set_table_autofit(table, fixed=True)
+    for row in table.rows:
+        for idx, width in enumerate(widths_cm):
+            if idx < len(row.cells):
+                row.cells[idx].width = Cm(width)
+
+
+def split_verb(text: str) -> Tuple[str, str]:
+    """Separate a leading "ADDS - " style verb from the body text."""
+    stripped = (text or "").lstrip()
+    for verb in GAP_VERBS:
+        match = re.match(
+            r"^" + verb + r"\b\s*[—–:-]*\s*", stripped, re.IGNORECASE
+        )
+        if match:
+            return verb, stripped[match.end():].lstrip()
+    return "", text or ""
+
+
+def render_gap_analysis(doc, rows: Any, released: Optional[Dict[str, bool]] = None
+                        ) -> None:
+    """Existing event (name over ST_ID) | verb | what changes.
+
+    The old three-column layout gave a whole column to a bare ST_ID while the
+    prose column did all the work. Folding the ST_ID under the event name and
+    promoting the verb buys most of the width back.
+    """
     items = [r for r in as_list(rows) if isinstance(r, dict)]
     if not items:
         add_placeholder(doc)
         return
-    table = new_table(doc, ["Existing event", "ST_ID", "What this paper changes"])
+
+    table = new_table(doc, ["Existing event", "Change", "What this paper changes"])
     for item in items:
         cells = table.add_row().cells
-        write_cell_lines(cells[0], [as_text(get(item, "existing_event"))])
+
+        name_p = cell_paragraph(cells[0])
+        name_run = name_p.add_run(as_text(get(item, "existing_event")))
+        name_run.bold = True
         st_id = as_text(get(item, "st_id"))
-        paragraph = cell_paragraph(cells[1])
         if st_id:
-            add_hyperlink(paragraph, REACTOME_DETAIL + st_id, st_id)
-        write_cell_lines(cells[2], [as_text(get(item, "what_the_paper_changes"))])
+            id_p = cells[0].add_paragraph()
+            tidy_cell_paragraph(id_p)
+            add_event_reference(id_p, st_id, released, size=Pt(8.5))
+
+        verb, body = split_verb(as_text(get(item, "what_the_paper_changes")))
+        verb_p = cell_paragraph(cells[1])
+        if verb:
+            verb_run = verb_p.add_run(verb)
+            verb_run.bold = True
+            verb_run.font.size = Pt(9)
+            verb_run.font.color.rgb = VERB_COLOR.get(verb, GREY)
+            set_cell_shading(cells[1], VERB_SHADE.get(verb, LABEL_SHADE))
+        else:
+            verb_p.add_run("—")
+
+        write_cell_lines(cells[2], [body])
+
+    total = content_width(doc)
+    set_column_widths(table, [total * 0.26, total * 0.10, total * 0.64])
 
 
 def render_new_entities(doc, rows: Any) -> None:
@@ -624,20 +914,81 @@ def render_new_entities(doc, rows: Any) -> None:
     )
     for item in items:
         cells = table.add_row().cells
-        write_cell_lines(cells[0], [as_text(get(item, "proposed_name"))])
+        write_cell_lines(cells[0], [as_text(get(item, "proposed_name"))], bold=True)
         write_cell_lines(cells[1], [as_text(get(item, "class"))])
         write_cell_lines(cells[2], [as_text(get(item, "compartment"))])
         reuses = raw(item, "reuses")
         write_cell_lines(cells[3], [as_text(reuses) if not is_blank(reuses) else "—"])
-        write_cell_lines(cells[4], [as_text(get(item, "status"))])
-        write_cell_lines(cells[5], [as_text(get(item, "notes"))])
+
+        status = as_text(get(item, "status"))
+        status_p = cell_paragraph(cells[4])
+        status_run = status_p.add_run(status)
+        status_run.font.size = Pt(9)
+        # "NEW" vs "reuse" is the thing a curator scans this column for.
+        if re.search(r"\bnew\b", status, re.IGNORECASE):
+            status_run.bold = True
+            status_run.font.color.rgb = PRIORITY_COLOR["HIGH"]
+            set_cell_shading(cells[4], PRIORITY_SHADE["HIGH"])
+        elif re.search(r"\breus", status, re.IGNORECASE):
+            status_run.font.color.rgb = PRIORITY_COLOR["LOW"]
+            set_cell_shading(cells[4], PRIORITY_SHADE["LOW"])
+
+        write_cell_lines(cells[5], [as_text(get(item, "notes"))], size=Pt(9))
+
+    total = content_width(doc)
+    # Notes carries the prose, so give it the slack; Class/Status are short.
+    set_column_widths(table, [
+        total * 0.22, total * 0.10, total * 0.12,
+        total * 0.14, total * 0.09, total * 0.33,
+    ])
 
 
-def event_attribute_rows(event: Dict[str, Any]) -> List[Tuple[str, Any, Optional[str]]]:
+def png_size(path: str) -> Optional[Tuple[int, int]]:
+    """(width, height) in pixels, read from the PNG IHDR chunk."""
+    try:
+        with open(path, "rb") as handle:
+            header = handle.read(24)
+        if len(header) < 24 or header[:8] != b"\x89PNG\r\n\x1a\n":
+            return None
+        return struct.unpack(">II", header[16:24])
+    except OSError:
+        return None
+
+
+def add_scaled_picture(doc, path: str, max_w_cm: float, max_h_cm: float) -> bool:
+    """Insert a picture scaled to fit inside the given box, preserving ratio.
+
+    Without the height cap a tall reaction (several outputs plus a regulator)
+    runs off the bottom of a landscape page.
+    """
+    size = png_size(path)
+    if not size:
+        return False
+    width_px, height_px = size
+    if not width_px or not height_px:
+        return False
+
+    width_cm = max_w_cm
+    height_cm = width_cm * (height_px / float(width_px))
+    if height_cm > max_h_cm:
+        height_cm = max_h_cm
+        width_cm = height_cm * (width_px / float(height_px))
+
+    paragraph = doc.add_paragraph()
+    paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    paragraph.paragraph_format.space_before = Pt(4)
+    paragraph.paragraph_format.space_after = Pt(4)
+    paragraph.add_run().add_picture(path, width=Cm(width_cm))
+    return True
+
+
+def event_attribute_rows(event: Dict[str, Any], in_diagram: bool = False
+                         ) -> List[Tuple[str, Any, Optional[str]]]:
     """Ordered (label, value, url) triples for one event's attribute table.
 
     `value` is either a string or a list of strings. Rows whose value is blank
-    are dropped by the caller.
+    are dropped by the caller. With `in_diagram` set, the participant rows are
+    omitted because the reaction graphic above already shows them.
     """
     pmid = as_text(get(event, "pmid"))
     pmid_url = as_text(get(event, "pmid_url")) or (
@@ -649,18 +1000,21 @@ def event_attribute_rows(event: Dict[str, Any]) -> List[Tuple[str, Any, Optional
         match = re.search(r"(PMC\d+)", pmc_url, re.IGNORECASE)
         pmc_label = match.group(1).upper() if match else pmc_url
 
-    is_chimeric = raw(event, "is_chimeric")
-
-    rows: List[Tuple[str, Any, Optional[str]]] = [
-        ("Type", get(event, "type"), None),
+    # Participants, compartment and chain position are drawn in the diagram;
+    # repeating them as table rows is what made this section 400 lines long.
+    participants: List[Tuple[str, Any, Optional[str]]] = [
         ("Compartment", get(event, "compartment"), None),
-        ("Species", get(event, "species"), None),
-        ("isChimeric", None if is_chimeric is None else as_text(is_chimeric), None),
         ("Inputs", as_list(raw(event, "inputs")), None),
         ("Outputs", as_list(raw(event, "outputs")), None),
         ("Catalyst", get(event, "catalyst"), None),
         ("Regulators", as_list(raw(event, "regulators")), None),
         ("Preceding event", get(event, "preceding_event"), None),
+    ]
+    rest: List[Tuple[str, Any, Optional[str]]] = [
+        ("Type", get(event, "type"), None),
+        ("Species", get(event, "species"), None),
+        # Host-pathogen RLEs carry the pathogen here; see the Guide extract 3.2.
+        ("relatedSpecies", get(event, "related_species"), None),
         ("GO BP", get(event, "go_bp"), None),
         ("GO MF", get(event, "go_mf"), None),
         ("Evidence type", get(event, "evidence_type"), None),
@@ -671,10 +1025,48 @@ def event_attribute_rows(event: Dict[str, Any]) -> List[Tuple[str, Any, Optional
         ("PMC", pmc_label, pmc_url),
         ("Status", get(event, "status"), None),
     ]
-    return rows
+    if in_diagram:
+        return rest
+    return participants[:1] + rest[:1] + participants[1:] + rest[1:]
 
 
-def render_event(doc, event: Dict[str, Any], index: int) -> None:
+def render_attribute_grid(doc, rows, pairs_per_row: int = 2) -> None:
+    """Lay label/value pairs out in columns rather than one tall stack."""
+    if not rows:
+        return
+    table = doc.add_table(rows=0, cols=pairs_per_row * 2)
+    table.style = "Table Grid"
+    table.alignment = WD_TABLE_ALIGNMENT.LEFT
+
+    for start in range(0, len(rows), pairs_per_row):
+        chunk = rows[start:start + pairs_per_row]
+        cells = table.add_row().cells
+        for slot in range(pairs_per_row):
+            label_cell = cells[slot * 2]
+            value_cell = cells[slot * 2 + 1]
+            if slot >= len(chunk):
+                set_cell_shading(label_cell, "FFFFFF")
+                continue
+            lbl, value, url = chunk[slot]
+            write_cell_lines(label_cell, [lbl], bold=True, size=Pt(9))
+            set_cell_shading(label_cell, LABEL_SHADE)
+            if url:
+                paragraph = cell_paragraph(value_cell)
+                add_hyperlink(paragraph, url, as_text(value), size=Pt(9))
+            elif isinstance(value, (list, tuple)):
+                write_cell_lines(value_cell, [as_text(v) for v in value],
+                                 size=Pt(9))
+            else:
+                write_cell_lines(value_cell, [as_text(value)], size=Pt(9))
+
+    total = content_width(doc)
+    label_w = total * (0.13 if pairs_per_row == 2 else 0.20)
+    value_w = (total - label_w * pairs_per_row) / pairs_per_row
+    set_column_widths(table, [label_w, value_w] * pairs_per_row)
+
+
+def render_event(doc, event: Dict[str, Any], index: int,
+                 graphic_path: Optional[str] = None) -> None:
     label = as_text(get(event, "label"))
     name = as_text(get(event, "name"))
     if label and name:
@@ -683,31 +1075,20 @@ def render_event(doc, event: Dict[str, Any], index: int) -> None:
         head = label or name or "Event %d" % index
     doc.add_heading(head, level=2)
 
+    embedded = False
+    if graphic_path and os.path.isfile(graphic_path):
+        section = doc.sections[-1]
+        max_w = content_width(doc)
+        max_h = ((section.page_height - section.top_margin
+                  - section.bottom_margin) / 360000.0) * 0.62
+        embedded = add_scaled_picture(doc, graphic_path, max_w, max_h)
+
     rows = [
         (lbl, val, url)
-        for (lbl, val, url) in event_attribute_rows(event)
+        for (lbl, val, url) in event_attribute_rows(event, in_diagram=embedded)
         if not is_blank(val)
     ]
-
-    if rows:
-        table = doc.add_table(rows=0, cols=2)
-        table.style = "Table Grid"
-        table.alignment = WD_TABLE_ALIGNMENT.LEFT
-        set_table_autofit(table)
-        for lbl, value, url in rows:
-            cells = table.add_row().cells
-            write_cell_lines(cells[0], [lbl], bold=True)
-            set_cell_shading(cells[0], LABEL_SHADE)
-            if url:
-                paragraph = cell_paragraph(cells[1])
-                add_hyperlink(paragraph, url, as_text(value))
-            elif isinstance(value, (list, tuple)):
-                write_cell_lines(cells[1], [as_text(v) for v in value])
-            else:
-                write_cell_lines(cells[1], [as_text(value)])
-        # Keep the label column narrow; autofit handles the rest.
-        for row in table.rows:
-            row.cells[0].width = Cm(3.6)
+    render_attribute_grid(doc, rows, pairs_per_row=2 if embedded else 1)
 
     add_labelled_block(doc, "Summation", get(event, "summation"))
     add_labelled_block(
@@ -726,13 +1107,124 @@ def render_event(doc, event: Dict[str, Any], index: int) -> None:
             doc.add_paragraph(flag, style="List Bullet")
 
 
-def render_new_events(doc, events: Any) -> None:
+def render_new_events(doc, events: Any,
+                      graphics: Optional[Dict[str, str]] = None) -> None:
     items = [e for e in as_list(events) if isinstance(e, dict)]
     if not items:
         add_placeholder(doc)
         return
+    graphics = graphics or {}
     for idx, event in enumerate(items, start=1):
-        render_event(doc, event, idx)
+        label = as_text(get(event, "label"))
+        render_event(doc, event, idx, graphic_path=graphics.get(label))
+
+
+_PRIORITY_HINTS = (
+    (re.compile(r"highest priority|structural decision|contradiction",
+                re.IGNORECASE), "HIGH"),
+    (re.compile(r"\bcorrected\b|species convention|needs? a decision|"
+                r"warrant merging|cannot serve", re.IGNORECASE), "MEDIUM"),
+    (re.compile(r"pending curator verification|no ehld change|"
+                r"was not performed|may reasonably be declined",
+                re.IGNORECASE), "LOW"),
+)
+
+
+def normalise_question(item: Any, index: int) -> Dict[str, str]:
+    """Accept either a structured question or the older plain string.
+
+    Structured form (preferred):
+        {"priority": "HIGH", "tag": "STRUCTURAL DECISION", "question": "...",
+         "affects": "E6-E8"}
+    A plain string is parsed for a leading ALL-CAPS tag and scored against the
+    hints above, so older specs keep rendering.
+    """
+    if isinstance(item, dict):
+        text = as_text(get(item, "question")) or as_text(get(item, "text"))
+        priority = (as_text(get(item, "priority")) or "").upper()
+        tag = as_text(get(item, "tag"))
+        affects = as_text(get(item, "affects"))
+    else:
+        text = as_text(item)
+        priority, tag, affects = "", "", ""
+
+    if not tag:
+        match = re.match(r"^\s*([A-Z][A-Z /_-]{3,40}?)\s*[:,]\s*", text)
+        if match:
+            tag = match.group(1).strip()
+            text = text[match.end():].strip()
+    elif text.upper().startswith(tag.upper()):
+        text = text[len(tag):].lstrip(" :,-")
+
+    if priority not in PRIORITY_COLOR:
+        priority = ""
+        haystack = "%s %s" % (tag, text)
+        for pattern, level in _PRIORITY_HINTS:
+            if pattern.search(haystack):
+                priority = level
+                break
+        priority = priority or "MEDIUM"
+
+    return {"priority": priority, "tag": tag, "question": text,
+            "affects": affects, "n": str(index)}
+
+
+def render_open_questions(doc, items: Any,
+                          flow_image: Optional[str] = None) -> None:
+    """A prioritised, tickable table, optionally under a decision flowchart."""
+    questions = [normalise_question(q, i)
+                 for i, q in enumerate(as_list(items), start=1)]
+    questions = [q for q in questions if q["question"]]
+    if not questions:
+        add_placeholder(doc)
+        return
+
+    if flow_image and os.path.isfile(flow_image):
+        section = doc.sections[-1]
+        max_h = ((section.page_height - section.top_margin
+                  - section.bottom_margin) / 360000.0) * 0.42
+        if add_scaled_picture(doc, flow_image, content_width(doc), max_h):
+            caption = doc.add_paragraph()
+            caption.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            cap_run = caption.add_run(
+                "Decision flow — the order these questions need answering in."
+            )
+            cap_run.italic = True
+            cap_run.font.size = Pt(8.5)
+            cap_run.font.color.rgb = GREY
+
+    questions.sort(key=lambda q: PRIORITY_ORDER.get(q["priority"], 9))
+
+    table = new_table(doc, ["", "Priority", "Question", "Affects"])
+    for item in questions:
+        cells = table.add_row().cells
+
+        box_p = cell_paragraph(cells[0])
+        box_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        box_p.add_run("☐").font.size = Pt(12)
+
+        priority = item["priority"]
+        pr_p = cell_paragraph(cells[1])
+        pr_run = pr_p.add_run(priority)
+        pr_run.bold = True
+        pr_run.font.size = Pt(9)
+        pr_run.font.color.rgb = PRIORITY_COLOR.get(priority, GREY)
+        set_cell_shading(cells[1], PRIORITY_SHADE.get(priority, LABEL_SHADE))
+
+        q_cell = cells[2]
+        q_p = cell_paragraph(q_cell)
+        if item["tag"]:
+            tag_run = q_p.add_run(item["tag"] + "  ")
+            tag_run.bold = True
+            tag_run.font.size = Pt(9)
+            tag_run.font.color.rgb = PRIORITY_COLOR.get(priority, GREY)
+        q_p.add_run(item["question"])
+
+        write_cell_lines(cells[3], [item["affects"] or "—"], size=Pt(9))
+
+    total = content_width(doc)
+    set_column_widths(table, [total * 0.05, total * 0.11,
+                              total * 0.70, total * 0.14])
 
 
 def render_ontology_terms(doc, rows: Any) -> None:
@@ -798,30 +1290,41 @@ def render_references(doc, refs: Any) -> None:
             meta_run.font.color.rgb = GREY
 
 
-def build_document(spec: Dict[str, Any], output_path: str) -> str:
+def build_document(spec: Dict[str, Any], output_path: str,
+                   graphics: Optional[Dict[str, str]] = None,
+                   flow_image: Optional[str] = None,
+                   released: Optional[Dict[str, bool]] = None) -> str:
     doc = Document()
     configure_document(doc)
     add_footer_page_number(doc)
     add_title_block(doc, spec)
 
+    landscape_now = False
     for number, title in SECTIONS:
+        want_landscape = number in LANDSCAPE_SECTIONS
+        if want_landscape != landscape_now:
+            # Orientation is a section property, so each flip needs a break.
+            section = doc.add_section(WD_SECTION.NEW_PAGE)
+            set_orientation(section, want_landscape)
+            landscape_now = want_landscape
+
         heading(doc, number, title)
         if number == "1":
             add_body_paragraphs(doc, spec.get("summary"))
         elif number == "2":
             add_body_paragraphs(doc, spec.get("rationale"))
         elif number == "3":
-            render_gap_analysis(doc, spec.get("gap_analysis"))
+            render_gap_analysis(doc, spec.get("gap_analysis"), released)
         elif number == "4":
             render_new_entities(doc, spec.get("new_entities"))
         elif number == "5":
-            render_new_events(doc, spec.get("new_events"))
+            render_new_events(doc, spec.get("new_events"), graphics)
         elif number == "6":
             render_ontology_terms(doc, spec.get("ontology_terms"))
         elif number == "7":
             render_references(doc, spec.get("references"))
         elif number == "8":
-            add_bullets(doc, spec.get("open_questions"))
+            render_open_questions(doc, spec.get("open_questions"), flow_image)
         elif number == "9":
             add_bullets(doc, spec.get("checklist"), prefix="☐  ")
 
@@ -857,6 +1360,25 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser.add_argument(
         "--validate", action="store_true",
         help="validate the spec and exit without writing a document",
+    )
+    parser.add_argument(
+        "--skip-ref-check", action="store_true",
+        help="do not resolve references against PubMed. The document is then "
+             "stamped as unverified - use only when offline.",
+    )
+    parser.add_argument(
+        "--skip-link-check", action="store_true",
+        help="do not ask reactome.org which ST_IDs are released. Unreleased "
+             "IDs will then be rendered as links that 404.",
+    )
+    parser.add_argument(
+        "--no-graphics", action="store_true",
+        help="skip the reaction diagrams and render the full attribute tables",
+    )
+    parser.add_argument(
+        "--keep-figures", metavar="DIR", default=None,
+        help="also write the generated PNGs to DIR (default: a temp dir, "
+             "removed after the document is written)",
     )
     args = parser.parse_args(argv)
 
@@ -896,13 +1418,113 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         sys.stderr.write("error: output directory does not exist: %s\n" % out_dir)
         return 1
 
+    # ── references: a wrong PMID must stop the build, not be discovered later
+    if args.skip_ref_check:
+        spec = dict(spec)
+        spec["_refs_unverified"] = True
+        sys.stderr.write(
+            "warning: --skip-ref-check set; references were NOT resolved "
+            "against PubMed and the document says so.\n"
+        )
+    else:
+        try:
+            result = verify_references.verify_spec(spec)
+        except Exception as exc:  # network, parse, anything
+            sys.stderr.write(
+                "error: could not verify references against PubMed: %s\n"
+                "Nothing was verified. Re-run with network access, or pass "
+                "--skip-ref-check to render an explicitly unverified draft.\n"
+                % exc
+            )
+            return 1
+        print(verify_references.format_report(result))
+        if result["errors"]:
+            sys.stderr.write(
+                "\nerror: %d reference(s) do not match the PMID recorded for "
+                "them. Refusing to render.\nFix the spec, or pass "
+                "--skip-ref-check if you know better than PubMed.\n"
+                % len(result["errors"])
+            )
+            return 1
+
+    # ── events the data model cannot hold ───────────────────────────────────
+    advisories = conformation_advisories(spec)
+    if advisories:
+        sys.stderr.write(
+            "\nData model check — %d event(s) may not be representable:\n"
+            % len(advisories)
+        )
+        for note in advisories:
+            sys.stderr.write("  - %s\n" % note)
+        sys.stderr.write(
+            "These are advisory, not blocking. Resolve them before creating "
+            "instances.\n\n"
+        )
+
+    # ── ST_ID links: only link what reactome.org actually serves ────────────
+    released: Optional[Dict[str, bool]] = None
+    if not args.skip_link_check:
+        st_ids = collect_st_ids(spec)
+        if st_ids:
+            released = check_released(st_ids) or None
+            if released is None:
+                sys.stderr.write(
+                    "warning: could not reach reactome.org; ST_IDs will be "
+                    "linked without checking whether they are released.\n"
+                )
+            else:
+                unreleased = sorted(k for k, v in released.items() if not v)
+                if unreleased:
+                    print("Unreleased ST_IDs (rendered as plain text, not "
+                          "links): %s" % ", ".join(unreleased))
+
+    # ── figures ─────────────────────────────────────────────────────────────
+    graphics: Dict[str, str] = {}
+    flow_image: Optional[str] = None
+    fig_dir = args.keep_figures
+    temp_dir: Optional[str] = None
+    if not args.no_graphics:
+        if not GRAPHICS_AVAILABLE:
+            sys.stderr.write(
+                "warning: reaction diagrams skipped (%s). Install matplotlib "
+                "to enable them.\n" % GRAPHICS_ERROR
+            )
+        else:
+            if fig_dir:
+                fig_dir = os.path.abspath(os.path.expanduser(fig_dir))
+                os.makedirs(fig_dir, exist_ok=True)
+            else:
+                temp_dir = tempfile.mkdtemp(prefix="curation-update-figs-")
+                fig_dir = temp_dir
+            try:
+                graphics = reaction_graphic.render_all(spec, fig_dir)
+                flow = spec.get("decision_flow")
+                if flow:
+                    flow_image = reaction_graphic.render_decision_flow(
+                        flow, os.path.join(fig_dir, "decision_flow.png")
+                    )
+            except Exception as exc:
+                sys.stderr.write(
+                    "warning: diagram rendering failed (%s); falling back to "
+                    "tables.\n" % exc
+                )
+                graphics = {}
+
     try:
-        build_document(spec, output_path)
+        build_document(spec, output_path, graphics=graphics,
+                       flow_image=flow_image, released=released)
     except OSError as exc:
         sys.stderr.write("error: could not write %s: %s\n" % (output_path, exc))
         return 1
+    finally:
+        if temp_dir:
+            shutil.rmtree(temp_dir, ignore_errors=True)
 
     print("Wrote %s" % output_path)
+    if graphics:
+        print("Embedded %d reaction diagram%s%s"
+              % (len(graphics), "" if len(graphics) == 1 else "s",
+                 " + decision flow" if flow_image else ""))
     return 0
 
 

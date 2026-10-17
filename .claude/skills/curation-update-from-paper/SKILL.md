@@ -18,20 +18,71 @@ description: >
   the database.
 ---
 
-> Companion references, reused from sibling skills in this repo — read the ones
-> relevant to what you are proposing rather than all of them:
-> - `../annotate-pathway-from-reviews-or-topic_name/Reactome_RLE_Annotation_Reference_V94.md`
->   — condensed V94 ReactionLikeEvent rules: naming, compartments, evidence
->   classes, catalyst/regulation, species and chimeric handling.
-> - `../review-internal/Curator_Guide_V94.pdf` — the authoritative standard.
-> - `../review-internal/Claude_ReactomeDataModelGlossary_V95_Final.docx.pdf` —
->   data model terms and entity-class semantics.
-> - `../review-internal/EWAS_name_rules.docx` and `../review-internal/ptm_prefixes.md`
->   — EWAS naming and PTM prefix conventions, for any modified-protein entity.
-> - `../review-internal/Small_molecule_renaming.xlsx` — preferred small-molecule
->   names, for any SimpleEntity you propose.
-> - `../review-internal/Rules_for_automatic_reaction_typing.docx` — consult when
->   deciding Reaction vs BlackBoxEvent vs Polymerisation.
+## ON INVOCATION — PRINT THIS FIRST
+
+Before asking for inputs, show the curator what this run has to work with, as a
+short block. Check which MCP tools are actually present and say so; do not
+claim a server that is not there.
+
+```
+/curation-update-from-paper — reference material for this run
+
+Reference documents — all bundled in this skill directory, nothing to upload:
+  Reactome_RLE_Annotation_Reference_V94.md   START HERE. Condensed V94 RLE
+      rules — naming, compartments, evidence classes, catalyst/regulation,
+      species and chimeric handling.
+  Curator_Guide_V94_Extract.md               The Guide sections the RLE
+      reference does NOT cover: updating existing content, evidence and
+      inference, host-pathogen species/relatedSpecies/compartment rules, and
+      retiring released events. Read §3 before any infection pathway.
+  ptm_prefixes.md                            PSI-MOD -> EWAS name prefix, 70
+      rows. Needed for any modified-protein entity.
+
+In the full repo only (too large to bundle; absent from a zipped copy):
+  ../review-internal/Curator_Guide_V94.pdf   283pp, 17MB. The authority. Open
+      for a question the extract does not answer — disease pathway structure
+      (pp.148-218), drug curation (pp.226-236), orthology.
+  ../review-internal/bau060.pdf              Jupe et al. 2014, the published
+      controlled vocabulary. Cite this, not the extract.
+  ../review-internal/Small_molecule_renaming.xlsx   Preferred small-molecule
+      names — the 'small molecules' sheet.
+  ../review-internal/Claude_ReactomeDataModelGlossary_V95_Final.docx.pdf
+  ../review-internal/EWAS_name_rules.docx    Mutant EWAS naming only.
+
+Live servers:
+  gk-central   <present/absent>  Existing entities, compartments, the branch's
+      species convention, and release status. Not knowable from the export.
+  ols          <present/absent>  Confirms every GO/ChEBI term is real, current
+      and correctly labelled before it is written down.
+
+Not bundled: the pathway's event export and the paper. Supply both.
+```
+
+> **The three bundled files are the working set.** They are sized to be read,
+> and between them they cover everything this skill routinely needs. The
+> repo-only documents overlap them heavily by generation — the RLE reference
+> was derived from the Curator Guide and the Glossary, and both restate
+> `bau060.pdf`, so reaction-class naming appears in four places and EWAS/PTM
+> naming in four. Open a repo-only document for a specific question or for a
+> citation, not to read through.
+>
+> **A zipped copy of this skill has only the three bundled files.** That is by
+> design — the Guide alone is 17 MB. If you are running from a zip and need
+> something the extract does not cover, say so rather than guessing; the
+> curator can supply the page.
+>
+> **One trap.** `Small_molecule_renaming.xlsx` has a `PSI_MOD Mapping` sheet
+> that shares 36 MOD IDs with `ptm_prefixes.md` but gives different strings —
+> `MOD:00046` is `P` there and `p-` here. They are different vocabularies
+> (diagram labels vs EWAS name prefixes) and neither file says so. For entity
+> names always use `ptm_prefixes.md`. That sheet's `Nature_abbreviations` tab
+> is *Leishmania* metabolic-model identifiers, not Reactome content — ignore it.
+>
+> **Deliberately not listed:** `Rules_for_automatic_reaction_typing.docx` is a
+> near-verbatim extract of `bau060.pdf` and says of its own transferase
+> look-up that it "requires updating"; `ptm_lookup.xlsx` is a row-for-row
+> duplicate of `ptm_prefixes.md` (same 70 MOD IDs, nothing either way). Neither
+> adds anything this skill needs — use the sources above instead.
 
 # Curation Update From Paper
 Version: 1.0 | Input: one primary paper + one existing-pathway event export |
@@ -133,15 +184,33 @@ What to take from this, and why each matters:
   creates a separate entity per compartment. The chain of instances already
   curated for a process tells you exactly which compartment labels the curator
   used, and therefore which ones your new events must match.
-- **The species convention actually in use.** Do not assume. Viral-infection
-  pathways in particular often annotate events as `Homo sapiens` while the
-  supporting experiments are in a non-human strain and a non-human cell line,
-  naming the strain and cell line in the summation instead of creating an
-  inferred-from pair. **Follow the convention the pathway already uses**, and
-  flag the divergence between evidence species and annotated species explicitly
-  rather than silently applying the generic species/chimeric rules from
-  `/annotate-pathway-from-reviews-or-topic_name`. If the pathway's convention
-  and the V94 rule disagree, say so in open questions and let the curator rule.
+- **The species convention actually in use — and `relatedSpecies`.** Query both
+  slots, not just `species`:
+
+  ```cypher
+  MATCH (p:Pathway {stId:$stId})-[:hasEvent*]->(e:ReactionLikeEvent)
+  OPTIONAL MATCH (e)-[:species]->(s)
+  OPTIONAL MATCH (e)-[:relatedSpecies]->(rs)
+  RETURN e.stId, e.displayName,
+         collect(DISTINCT s.displayName)  AS species,
+         collect(DISTINCT rs.displayName) AS relatedSpecies
+  ```
+
+  For a **host-pathogen pathway this is settled by the Guide, not a local
+  convention**: `species` is the host (Homo sapiens for human curation, because
+  the slot records the environment the reaction happens in) and `relatedSpecies`
+  is the pathogen. See `Curator_Guide_V94_Extract.md` §3.2. An infection-pathway
+  event annotated `Homo sapiens` while the experiments are in a non-human strain
+  and cell line is therefore **correct and complete only if `relatedSpecies`
+  carries the pathogen** — omitting it is an incomplete annotation, not a stylistic
+  choice, and it is the error this skill is most likely to make. Do not flag the
+  host/evidence species difference as a departure from V94; it is V94.
+
+  The generic species/chimeric decision table in
+  `/annotate-pathway-from-reviews-or-topic_name` applies to ordinary
+  cross-species inference, **not** to host-pathogen events. If the branch's
+  practice genuinely contradicts the Guide, say so in open questions and let the
+  curator rule — but check the Guide extract before calling it a contradiction.
 - **ST_IDs and DB_IDs for everything you propose reusing**, so the curator can
   paste them straight in.
 
@@ -150,8 +219,10 @@ What to take from this, and why each matters:
 ## STEP 3 — GAP ANALYSIS
 
 For every existing event the paper bears on, record one row: the existing event,
-its ST_ID, and precisely what the paper changes. Use these four verbs and no
-others, so the curator can triage at a glance:
+its ST_ID, and precisely what the paper changes. **Start the
+`what_the_paper_changes` text with the verb** — "ADDS — …" — because the
+renderer lifts that leading verb into its own colour-coded column. Use these
+four verbs and no others, so the curator can triage at a glance:
 
 - **ADDS** — a step with no existing event at all.
 - **REFINES** — an existing event is right but under-specified; the paper gives
@@ -182,9 +253,9 @@ UniProt, ChEBI, GO, or MONDO accessions — name the term and mark the accession
 PENDING CURATOR VERIFICATION via OLS.
 
 **Events.** One entry per proposed event, each carrying the full anatomy:
-type, compartment, species, isChimeric, inputs, outputs, catalyst (with GO MF
-label), regulators, precedingEvent, GO BP label, a **draft summation written in
-the voice of the existing summations in the export** (match their register and
+type, compartment, species, inputs, outputs, catalyst (with GO MF label),
+regulators, precedingEvent, GO BP label, a **draft summation written in the
+voice of the existing summations in the export** (match their register and
 their habit of naming strain and cell line), evidence type, the verbatim
 evidence sentence with its figure number, and the verified PMID fields.
 
@@ -193,6 +264,47 @@ biophysical/biochemical demonstration gives a Reaction; knockdown, inhibitor,
 or phenotype-level evidence gives a BlackBoxEvent. A step the paper proposes as
 a model but does not directly demonstrate is a BlackBoxEvent at best, and the
 flag must say so.
+
+### What the data model cannot hold — check this before proposing an event
+
+**A ReactionLikeEvent records a change in the set of participants or in their
+compartments. Nothing else.** If the inputs and the outputs carry the same
+components in the same compartments, there is no reaction to store, however
+real and well-evidenced the physical change is.
+
+Reactome has **no slot for conformation**. A step whose only product is a
+differently-shaped version of the same entity in the same place cannot be
+curated. "Transitions from the upright to the reversed conformation",
+"refolds", "opens", "becomes membrane-inserted" — written as standalone events,
+all of these are unrepresentable. A paper that resolves a mechanism into
+physical sub-steps will hand you several of them; they are good science and
+still not events.
+
+What to do instead, in order of preference:
+
+1. **Fold the state into the entity name of the step that does change
+   something.** The conformational state travels as part of the name of the
+   input to the next real event, so nothing is lost.
+2. **Curate what the conformational change enables.** If the new shape exposes
+   a binding site, the event is the binding. If it drives insertion into a
+   membrane, the event is the compartment change. If it permeabilises a
+   membrane, the event is the ion translocation.
+3. **Say it in the summation.** The mechanism belongs in the prose of the
+   event it explains, with its own literatureReference.
+
+Never merge two such steps just to manufacture a difference between the sides.
+If the paper's sub-steps collapse to one curatable event, propose one event and
+say in the open questions which physical steps it covers.
+
+`build_update_doc.py` checks this and prints a **data model check** listing any
+event whose sides match, or whose name reads as a conformational change within
+a single compartment. It is advisory rather than blocking, because a legitimate
+event can share a compartment, but every flagged event needs an answer before
+instances are created.
+
+The same rule retires `isChimeric` from the event anatomy: it is not part of
+what this skill proposes. Species and chimeric handling follow the pathway's
+own convention as established in step 2.
 
 ---
 
@@ -229,6 +341,34 @@ Report any correction you made in the open-questions section, in the form
 A newly published paper may have no PMC record yet; that is normal. Set the PMC
 field to a short note rather than a broken link.
 
+### The five-field check is enforced, not trusted
+
+Doing step 3 by hand and believing the result is how a wrong PMID ships. Run it
+mechanically before rendering:
+
+```
+python3 verify_references.py <spec>.json
+```
+
+It resolves every reference (and `source_paper`) against ESummary and compares
+the record with the citation the spec claims on **first author surname,
+initials, year, journal and title**. A title that does not overlap, or a
+different first author, is an `ERROR` and exits non-zero; a year off by one
+(epub ahead of print) is a `WARN`. Anything it cannot resolve is reported as
+`UNCHECKED` — never as correct.
+
+`build_update_doc.py` runs this automatically and **refuses to render** if any
+reference fails. Do not reach for `--skip-ref-check` to get past a failure: it
+is for working offline, and it stamps "NOT verified against PubMed" into the
+document's metadata table in red.
+
+This check exists because of a real near-miss. A DOI reconstructed from a
+reference list (rather than read verbatim off the paper) resolved through
+ESearch `[AID]` to PMID 24796500 — a Cav1.4 night-blindness paper — in place of
+Elaid et al. 2014 on VP7 membrane permeabilisation. It was caught only by a
+human comparing fields. Feed that PMID to `verify_references.py` and it fails
+on both title and first author.
+
 ---
 
 ## STEP 6 — WRITE THE DOCUMENT
@@ -247,9 +387,98 @@ Pre-submission checklist. Run it with `--validate` first; it refuses a spec in
 which any event carries a bare PMID without a `pmid_source`, which is the
 mechanical guard against step 5 being skipped.
 
-Requires `python-docx` (pinned in the repo's `requirements.txt`). Invoke it as
-plain `python3 build_update_doc.py …` — **not** `python3 -I`, which suppresses
-the user site-packages directory where `python-docx` is typically installed.
+Sections 3–5 are rendered **landscape** and the rest portrait; the script
+inserts the section breaks itself.
+
+Requires `python-docx` and `matplotlib` (both pinned in the repo's
+`requirements.txt`). Invoke it as plain `python3 build_update_doc.py …` —
+**not** `python3 -I`, which suppresses the user site-packages directory where
+these are typically installed. Without matplotlib the document still builds,
+with full attribute tables in place of the diagrams.
+
+### What the script checks and draws for you
+
+| Flag | Default | Effect |
+|---|---|---|
+| *(none)* | on | Verifies every reference against PubMed; **refuses to render on a mismatch** |
+| *(none)* | on | Asks reactome.org which ST_IDs are released, and links only those |
+| `--skip-ref-check` | off | Offline only. Stamps "NOT verified against PubMed" into the metadata table |
+| `--skip-link-check` | off | Skips the release probe; unreleased ST_IDs then render as links that 404 |
+| `--no-graphics` | off | Omits diagrams and restores the full per-event attribute tables |
+| `--keep-figures DIR` | temp | Also writes the generated PNGs to `DIR` |
+
+**ST_IDs and links.** reactome.org serves released content only. A pathway still
+being curated has `doRelease=false` in gk_central, so `/content/detail/<id>`
+404s — which made every ST_ID in the first rotavirus draft a dead link. The
+script probes ContentService and renders an unreleased ID as plain text marked
+"(not yet released)" rather than as a link that cannot work. Expect most or all
+ST_IDs in an in-progress branch to come back unreleased; that is correct.
+
+**Reaction diagrams.** One per event in section 5, drawn by
+`reaction_graphic.py`: inputs left, reaction centre, outputs right, catalyst
+above, regulators below, and the preceding/following events as chips top and
+bottom. Participants with an ST_ID are drawn solid and tagged with it; those
+without are dashed and tagged NEW, so what the paper adds is visible against
+what is reused. Because the diagram carries the participants, compartment and
+chain position, those rows are dropped from the table beneath it and the rest
+is laid out two pairs per row.
+
+Keep entity strings in the shape `Name [compartment] (R-HSA-123)` — the renderer
+parses all three parts. Put any rationale after an em dash
+(`ARP2/3 complex — positive regulator, inferred`); the diagram shows the entity
+and a `+`/`−` sign, and the prose stays in the table.
+
+### Keep sections 1 and 2 short
+
+These two are read first and are the easiest to overwrite. Hold them to a
+budget:
+
+- **`summary` — three paragraphs, ~200 words total.** One on what the pathway
+  already curates and where the gap is, one on what the paper shows, one on the
+  verdict in gap-analysis verbs. The recap of existing curation is orientation,
+  not a review: name the branch, the relevant events and the gap, then stop.
+  Do not retell the paper's mechanism step by step — that is section 5's job,
+  and every step is already a row there.
+- **`rationale` — three paragraphs, ~200 words total.** Open on the first real
+  decision. Do not restate standard curation logic, and do not announce that
+  you are not restating it: naming, evidence classes, compartments and the rule
+  that annotation species should match the experimental support are all in
+  Curator Guide V94, the reader is a curator, and a paragraph saying "the Guide
+  applies" tells them nothing. Spend the words only on decisions specific to
+  this paper: where the new subpathway hangs and why, how event typing follows
+  this paper's evidence, and any deliberate departure from the Guide — which
+  must stay, and must also appear in section 8.
+
+### Structure the open questions
+
+`open_questions` takes objects, not bare strings:
+
+```json
+{"priority": "HIGH", "tag": "STRUCTURAL DECISION",
+ "question": "How should E6-E8 relate to the existing release events?",
+ "affects": "E6-E8"}
+```
+
+`priority` is HIGH / MEDIUM / LOW / INFO and drives the colour and the sort
+order; the section renders as a tickable checklist. Plain strings still work —
+they are parsed for a leading ALL-CAPS tag and scored by keyword — but say the
+priority rather than leaving it to be guessed.
+
+Optionally add a `decision_flow` and the section opens with a flowchart:
+
+```json
+"decision_flow": [
+  {"id": "Q1", "text": "How do E6-E8 relate to existing release events?",
+   "answers": [{"label": "parallel", "to": "Q2"},
+               {"label": "reference only", "to": "REF"}]},
+  {"id": "REF", "text": "Add as a literatureReference only", "terminal": true}
+]
+```
+
+Declare it only when the questions genuinely gate one another. Nothing is
+inferred: with no `decision_flow` there is no chart, which is the right outcome
+for a set of independent questions. An invented decision order is worse than
+none.
 
 A worked example of a complete spec ships alongside it as `sample_spec.json`.
 
