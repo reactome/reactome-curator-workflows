@@ -315,8 +315,19 @@ as a fact:
 | State | When | Record |
 |---|---|---|
 | `RESOLVED` | one match | the identifier, and what made it unique |
-| `AMBIGUOUS` | several | all candidates with their identifiers |
+| `RESOLVED (branch usage)` | several, one already used in the branch | the identifier, the usage count, and the candidates it beat |
+| `AMBIGUOUS` | several, none used in the branch | all candidates with their identifiers |
 | `JUDGEMENT` | identity fine, fit is the question | what the query found, and why it doesn't settle it |
+
+**When several candidates match, pick the one already in use in the target
+branch and say so** — with the usage count and what it beat. The tiebreak query
+is in `resolution_queries.md`. Introducing a second term for something the
+branch already expresses creates a duplicate, not an annotation.
+
+Two cases where the tiebreak must not fire: when *no* candidate is used in the
+branch (that is `AMBIGUOUS`, not licence to take the first hit), and when the
+branch's term does not actually cover the new biology — existing usage is
+evidence of convention, not of correctness.
 
 Worked examples, all from the rotavirus run:
 

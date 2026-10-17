@@ -17,11 +17,57 @@ to be *earned*:
 | State | Meaning | How it is earned |
 |---|---|---|
 | `RESOLVED` | identity confirmed | a query returned exactly one match; record the identifier |
-| `AMBIGUOUS` | query ran, several candidates | record all of them, let the curator pick |
+| `RESOLVED (branch usage)` | several candidates, one already used here | the tiebreak query below; record the identifier **and** the count |
+| `AMBIGUOUS` | several candidates, none used in the branch | record all of them, let the curator pick |
 | `JUDGEMENT` | identity fine, fit is the question | say what the query found and why it does not settle it |
 
 `PENDING CURATOR VERIFICATION` with no query behind it is none of these. It
 means the work was not done.
+
+### The tiebreak: what the branch already uses
+
+**When a query returns several candidates, pick the one already in use in the
+target branch, and say so.** This is still a query deciding, not a preference —
+and it is the right default, because a proposal that introduces a second term
+for something the branch already expresses creates a duplicate rather than an
+annotation.
+
+Never silently pick. Record the basis: *"GO:0071682 — RESOLVED (branch usage):
+already on 1 entity under R-HSA-9819341; GO:0097708 also matched the label but
+is unused here."*
+
+```cypher
+// Compartments in use under the target pathway, commonest first.
+MATCH (p:Pathway {stId:$stId})-[:hasEvent*]->(e:ReactionLikeEvent)
+OPTIONAL MATCH (e)-[:input|output]->(pe:PhysicalEntity)-[:compartment]->(c)
+WITH c.displayName AS compartment, 'GO:' + c.identifier AS go_cc,
+     count(DISTINCT pe) AS entities
+WHERE compartment IS NOT NULL
+RETURN compartment, go_cc, entities ORDER BY entities DESC
+```
+
+Note `identifier` holds the GO ID **without** the `GO:` prefix, so prepend it.
+
+```cypher
+// Which of a set of candidate entities does the branch already use?
+MATCH (p:Pathway {stId:$stId})-[:hasEvent*]->(e:ReactionLikeEvent)
+MATCH (e)-[:input|output]->(pe:PhysicalEntity)
+WHERE pe.stId IN $candidates
+RETURN pe.stId, pe.displayName, count(DISTINCT e) AS usedByEvents
+ORDER BY usedByEvents DESC
+```
+
+**Two cases where the tiebreak must not fire:**
+
+- **Nothing matched.** If no candidate is used in the branch, that is
+  `AMBIGUOUS`, not a licence to pick the first result.
+- **The branch's term is wrong for the new biology.** A compartment in use is
+  evidence of convention, not of correctness. If the paper describes something
+  genuinely in a different place, propose the new term and say why the branch's
+  existing one does not cover it. Worked example: the rotavirus branch uses
+  `endocytic vesicle lumen` (GO:0071682) but has no membrane compartment, so
+  the VP7 pore needs `endocytic vesicle membrane` (GO:0030666) — new to the
+  branch, and correct.
 
 ---
 
