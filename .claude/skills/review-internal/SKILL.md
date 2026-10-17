@@ -17,6 +17,19 @@ Reference materials for entity and event name checking (Section 7):
  @Small_molecule_renaming.xlsx
  @bau060.pdf
 
+Data model reference, for any finding that turns on class semantics or on
+which slot a value belongs in — entity and event classes, modification
+classes, catalysis and regulation, disease annotation, and the complete
+relationship inventory in Appendix A. Open it for a specific term rather than
+reading it through; it is 43 pages:
+ Claude_ReactomeDataModelGlossary_V95_Final.docx.pdf
+
+Two slots it settles that are easy to get wrong in an infection pathway:
+`species` records the environment the reaction occurs in (the host), and
+`relatedSpecies` carries the pathogen. An infection-pathway event with
+`species` set and `relatedSpecies` empty is incomplete — check it rather than
+reading the host species as an error.
+
 ## Working directory and upload destination — set this up first
 
 To keep this repository clean, **never write generated files into it.** Before
