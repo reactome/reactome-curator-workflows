@@ -612,7 +612,30 @@ def slot_advisories(spec: Dict[str, Any]) -> List[str]:
                 "incomplete annotation, not a style choice."
             )
 
-    # 4. SimpleEntity takes no species.
+    # 4. A value with no query behind it is not a resolved value.
+    #    RESOLVED / AMBIGUOUS / JUDGEMENT all record what was checked; a bare
+    #    PENDING records only that the work was skipped. See
+    #    resolution_queries.md.
+    text = json.dumps(spec, ensure_ascii=False)
+    bare = len(re.findall(r"PENDING(?!\s*[-—–:]?\s*(RESOLVED|AMBIGUOUS))", text,
+                          re.IGNORECASE))
+    earned = len(re.findall(r"\b(RESOLVED|AMBIGUOUS|JUDGEMENT)\b", text))
+    if bare and not earned:
+        notes.append(
+            "%d value(s) are marked PENDING and none is marked RESOLVED, "
+            "AMBIGUOUS or JUDGEMENT. A value with no query behind it has not "
+            "been checked — resolve what the database can resolve (identity, "
+            "existence) and state explicitly where the open question is fit "
+            "rather than identity. See resolution_queries.md." % bare
+        )
+    elif bare:
+        notes.append(
+            "%d value(s) still marked PENDING against %d resolved. Confirm each "
+            "remaining one is genuinely a curator judgement rather than an "
+            "unrun query." % (bare, earned)
+        )
+
+    # 5. SimpleEntity takes no species.
     for idx, ent in enumerate(as_list(spec.get("new_entities")), start=1):
         if not isinstance(ent, dict):
             continue

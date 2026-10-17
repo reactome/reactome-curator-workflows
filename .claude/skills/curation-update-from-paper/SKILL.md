@@ -35,6 +35,9 @@ Reference documents — all bundled in this skill directory, nothing to upload:
       reference does NOT cover: updating existing content, evidence and
       inference, host-pathogen species/relatedSpecies/compartment rules, and
       retiring released events. Read §3 before any infection pathway.
+  resolution_queries.md                      How to resolve a proposed value
+      against the database instead of asserting it, and where a query stops
+      being able to decide. Run these before writing a value down.
   data_model_slots.md                        Which slots real events actually
       carry, measured across released gk_central content. Settles "does an RLE
       normally have this?" with a number. GO BP is a pathway slot, not a
@@ -299,8 +302,45 @@ checks:
 - **`SimpleEntity` takes no species.** It does not appear on SimpleEntity in
   released content at any threshold.
 
+### Resolve, don't prefer
+
+**A value is either resolved against the database or flagged for the curator —
+never asserted because it sounds right.** The queries are in
+`resolution_queries.md`; run them rather than reaching for a plausible answer.
+
+A query settles **identity and existence**. It does not settle **suitability**.
+Keep the two apart, because collapsing them is how a judgement gets presented
+as a fact:
+
+| State | When | Record |
+|---|---|---|
+| `RESOLVED` | one match | the identifier, and what made it unique |
+| `AMBIGUOUS` | several | all candidates with their identifiers |
+| `JUDGEMENT` | identity fine, fit is the question | what the query found, and why it doesn't settle it |
+
+Worked examples, all from the rotavirus run:
+
+- `80S ribosome [cytosol]` → **RESOLVED** `R-HSA-72500`: unique on name +
+  compartment + species. The same search returns *Oryza*, *Arabidopsis*,
+  *S. cerevisiae*, *Oryctolagus* and *Mus* instances — filter on all three
+  before claiming a match.
+- `Rotavirus` vs `Rotavirus A` → **RESOLVED** by NCBI taxId: 10912 is the genus,
+  28875 the species. They look like duplicates and are not. Display names do
+  not carry rank; `taxId` does.
+- `wide pore channel activity` → **JUDGEMENT**. `GO:0022829` is real, but its
+  definition covers gap junctions and porins. Whether a viral perforin-like
+  pore belongs there is the curator's call. Record the accession *and* the
+  reason it is still open.
+
+`PENDING CURATOR VERIFICATION` with no query behind it is none of these — it
+means the work was skipped, and the renderer counts and reports bare `PENDING`
+markers for exactly that reason. Never write a blanket "nothing was resolved"
+note; it goes stale the moment anything is, and then the document is simply
+wrong about itself.
+
 Every ontology term you name must be confirmed in OLS before it is written
-down — label *and* accession. A plausible-sounding GO label is not a GO label.
+down — label *and* accession. A plausible-sounding GO label is not a GO label:
+three of the first rotavirus draft's did not exist.
 
 ### What the data model cannot hold — check this before proposing an event
 
