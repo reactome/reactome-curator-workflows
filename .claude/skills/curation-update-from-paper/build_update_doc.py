@@ -751,6 +751,24 @@ def validate_spec(spec: Any) -> List[str]:
             errors.append(
                 "%s: invalid pmid_source %r - %s" % (where, source, allowed_desc)
             )
+        # A verbatim quote has to be attributable, or it cannot be checked.
+        if not is_blank(raw(event, "evidence_sentence")):
+            citation = raw(event, "evidence_citation") or raw(
+                event, "authors_year")
+            if is_blank(citation):
+                errors.append(
+                    "%s: carries an evidence_sentence with no "
+                    "evidence_citation (or authors_year). A verbatim quote "
+                    "must name its source." % where
+                )
+            if "evidence_page" not in (event if isinstance(event, dict) else {}):
+                errors.append(
+                    "%s: carries an evidence_sentence but no evidence_page "
+                    "key. Set it to the page the sentence was found on, or to "
+                    "null if it could not be located — but record that the "
+                    "question was asked." % where
+                )
+
         if has_pmid(event) and source is None:
             errors.append(
                 "%s: carries pmid %r but pmid_source is null - every bare PMID "
@@ -1190,6 +1208,54 @@ def render_attribute_grid(doc, rows, pairs_per_row: int = 2) -> None:
     set_column_widths(table, [label_w, value_w] * pairs_per_row)
 
 
+def add_evidence_attribution(doc, event: Dict[str, Any]) -> None:
+    """Put the source under the quote: citation, page, figure, PMID.
+
+    A verbatim sentence with no attribution cannot be checked, which is the
+    whole point of quoting it. Page is omitted rather than guessed when it
+    could not be located in the source.
+    """
+    if is_blank(raw(event, "evidence_sentence")):
+        return
+
+    citation = as_text(get(event, "evidence_citation")) or as_text(
+        get(event, "authors_year"))
+    page = as_text(get(event, "evidence_page"))
+    figure = as_text(get(event, "figure"))
+    pmid = as_text(get(event, "pmid"))
+    pmid_url = as_text(get(event, "pmid_url")) or (
+        PUBMED_BASE + pmid + "/" if pmid else "")
+
+    paragraph = doc.add_paragraph()
+    paragraph.paragraph_format.left_indent = Cm(0.9)
+    paragraph.paragraph_format.space_before = Pt(0)
+    paragraph.paragraph_format.space_after = Pt(8)
+
+    def small(text, italic=False):
+        run = paragraph.add_run(text)
+        run.font.size = Pt(8.5)
+        run.font.color.rgb = GREY
+        run.italic = italic
+        return run
+
+    small("— ")
+    small(citation or "citation not recorded", italic=not citation)
+
+    if page:
+        small(", p. %s" % page)
+    else:
+        warn = paragraph.add_run(", page not located in the source")
+        warn.font.size = Pt(8.5)
+        warn.italic = True
+        warn.font.color.rgb = PRIORITY_COLOR["MEDIUM"]
+
+    if figure:
+        small(", %s" % figure)
+    if pmid:
+        small("  PMID ")
+        add_hyperlink(paragraph, pmid_url, pmid, size=Pt(8.5))
+
+
 def render_event(doc, event: Dict[str, Any], index: int,
                  graphic_path: Optional[str] = None) -> None:
     label = as_text(get(event, "label"))
@@ -1220,6 +1286,7 @@ def render_event(doc, event: Dict[str, Any], index: int,
         doc, "Evidence sentence", get(event, "evidence_sentence"),
         italic_body=True, quoted=True,
     )
+    add_evidence_attribution(doc, event)
 
     flags = [as_text(f) for f in as_list(raw(event, "flags"))]
     flags = [f for f in flags if f]

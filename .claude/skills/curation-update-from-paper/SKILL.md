@@ -280,6 +280,48 @@ flag must say so.
 a new subpathway to sit in. Give it as `proposed_subpathway` — name, parent,
 GO BP, species, relatedSpecies, which events it holds, and a summation.
 
+### Every evidence sentence carries its citation and page
+
+A verbatim quote exists so a reviewer can go and check it. Unattributed, it
+cannot be checked, and it is indistinguishable from a paraphrase. So every
+`evidence_sentence` must be accompanied by:
+
+| Field | Content |
+|---|---|
+| `evidence_citation` | authors, journal, volume, year, pages |
+| `evidence_page` | the page the sentence is **on**, or `null` |
+| `figure` | the figure or table it supports |
+
+`build_update_doc.py` **refuses to render** a spec with an `evidence_sentence`
+and no citation, and requires the `evidence_page` key to be present even when
+its value is null — so that "not located" is a recorded answer rather than an
+omission. The attribution prints under the quote.
+
+**Derive the page, do not estimate it.** When you have the PDF, find the
+sentence in it rather than guessing from the figure number:
+
+```python
+import pypdf, re
+r = pypdf.PdfReader(paper_pdf)
+pages = {i + 1: (p.extract_text() or "") for i, p in enumerate(r.pages)}
+# normalise case/punctuation, then look for the first 10-14 words of the
+# sentence; accept the page only if exactly ONE page matches
+```
+
+Check the printed page label on page 1 — a reprint's PDF page 1 is usually not
+page 1 of the journal (this paper's PDF page 1 is printed page 1128). Cite the
+printed page.
+
+If the sentence is not found on exactly one page, set `evidence_page` to null
+and flag it. A sentence that is nowhere in the main text is often from
+supplementary material, which should be cited as such — two of the rotavirus
+evidence sentences read as Materials and Methods and could not be located in
+the 7-page article PDF.
+
+> Do not use `difflib.SequenceMatcher` for this without `autojunk=False`. On
+> strings this long its default junk heuristic silently destroys the match —
+> it reported 1% overlap for sentences that were present verbatim.
+
 ### Put each value in the slot curators actually use
 
 Check `data_model_slots.md` before filling a slot you are unsure about; it

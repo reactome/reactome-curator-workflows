@@ -92,7 +92,9 @@
         "Modelled as a BlackBoxEvent because the oligomer stoichiometry is not fully resolved.",
         "GO BP term is a candidate only - needs OLS confirmation."
       ],
-      "status": "PROPOSED"
+      "status": "PROPOSED",
+      "evidence_citation": "Kim J, Gupta R, Blanco LP, et al. Science 366 (2019): 1531-1536",
+      "evidence_page": null
     },
     {
       "label": "RXN-2",
@@ -121,7 +123,9 @@
       "pmc_url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11223344/",
       "authors_year": "Kim J et al., 2019",
       "flags": [],
-      "status": "PROPOSED - depends on RXN-1"
+      "status": "PROPOSED - depends on RXN-1",
+      "evidence_citation": "Kim J, Gupta R, Blanco LP, et al. Science 366 (2019): 1531-1536",
+      "evidence_page": null
     }
   ],
   "ontology_terms": [
