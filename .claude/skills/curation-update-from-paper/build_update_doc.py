@@ -561,7 +561,29 @@ def slot_advisories(spec: Dict[str, Any]) -> List[str]:
                                    + (" …" if len(with_go) > 6 else ""))
         )
 
-    # 2. relatedSpecies: a branch is host-pathogen or it is not.
+    # 2. Two species in one reaction have exactly two legal treatments: host in
+    #    species + other in relatedSpecies, or chimeric with all species listed.
+    for idx, event in enumerate(events, start=1):
+        species_text = as_text(get(event, "species"))
+        if not species_text:
+            continue
+        names = [n.strip() for n in re.split(r"[,;]| and ", species_text)
+                 if n.strip()]
+        if len(names) < 2:
+            continue
+        chimeric = as_text(get(event, "is_chimeric")).lower() in (
+            "true", "yes", "1")
+        if not chimeric:
+            notes.append(
+                "%s lists %d species in the species slot (%s) and is not marked "
+                "chimeric. Two species in one reaction means either the host in "
+                "species with the other in relatedSpecies, or a chimeric "
+                "reaction with all species listed and isChimeric set — not a "
+                "second species in the species slot."
+                % (label_of(event, idx), len(names), "; ".join(names))
+            )
+
+    # 3. relatedSpecies: a branch is host-pathogen or it is not.
     with_rs = [label_of(e, i) for i, e in enumerate(events, 1)
                if not is_blank(raw(e, "related_species"))]
     without_rs = [label_of(e, i) for i, e in enumerate(events, 1)
@@ -590,7 +612,7 @@ def slot_advisories(spec: Dict[str, Any]) -> List[str]:
                 "incomplete annotation, not a style choice."
             )
 
-    # 3. SimpleEntity takes no species.
+    # 4. SimpleEntity takes no species.
     for idx, ent in enumerate(as_list(spec.get("new_entities")), start=1):
         if not isinstance(ent, dict):
             continue

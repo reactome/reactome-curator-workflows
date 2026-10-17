@@ -105,12 +105,19 @@ belongs in the Infectious Diseases module.
 > process. In disease or immune system processes, the pathogen(s) would be
 > listed as 'relatedSpecies' in RLEs and complex instances."
 
-**Therefore, for a host–pathogen RLE:**
+**The rule, stated generally:** when two species take part in one reaction, the
+**host** goes in `species` and the **other organism** goes in `relatedSpecies`.
 
 | Slot | Value |
 |---|---|
-| `species` | the **host** — Homo sapiens for human curation |
-| `relatedSpecies` | the **pathogen** |
+| `species` | the **host** — Homo sapiens for human curation, but the rule is about the host; released content also has `Gallus gallus` as host |
+| `relatedSpecies` | the **other species** — in every released case so far, the pathogen |
+
+**Except for a chimeric reaction.** One built for inference — entities from
+several species combined in a single assay, usually in vitro — lists **all**
+species in `species` and sets `isChimeric`, and does not use `relatedSpecies`.
+Two species in a reaction therefore always means one treatment or the other,
+and never a second species sitting in `species` without `isChimeric`.
 
 This is not a departure from the Guide to be flagged — it *is* the Guide. A
 proposal that sets `species = Homo sapiens` and omits `relatedSpecies` is

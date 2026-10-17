@@ -79,16 +79,39 @@ subpathway, and leave the reactions without one unless there is a specific
 reason. Inventing seven reaction-level GO BP labels is how three non-existent
 GO terms entered the rotavirus draft.
 
-### `relatedSpecies` is the host-pathogen slot
+### `relatedSpecies`: the second species in a two-species reaction
 
-1,340 released RLEs carry it. **1,099 of those — 82% — are `isInDisease`.**
-Of the 2,071 released disease RLEs, 1,099 (53%) carry it.
+**The rule.** When two species take part in one reaction, the **host** is the
+`species` and the **other organism** is the `relatedSpecies`. For human
+curation the host is Homo sapiens, but the rule is about the host, not about
+humans — released content includes `Gallus gallus` as `species` with
+`Infectious bronchitis virus` as `relatedSpecies`.
 
-Read with Curator Guide pp.221–222 (`Curator_Guide_V94_Extract.md` §3.2): in a
-host-pathogen event `species` is the host and `relatedSpecies` is the pathogen.
-The low global percentage is not permission to skip it — it is low because most
-of Reactome is not infection biology. **Within an infection branch it is the
-norm**, so check the branch rather than the global number:
+**The one exception.** A **chimeric** reaction built for inference — entities
+from several species combined in one assay, usually in vitro — lists **all**
+species in the `species` slot and sets `isChimeric`, instead of using
+`relatedSpecies` (Curator Guide, `Curator_Guide_V94_Extract.md` §3.2). So two
+species in a reaction means one of two treatments, never a bare second species
+in `species`:
+
+| Situation | `species` | `relatedSpecies` |
+|---|---|---|
+| Host and another organism interacting | the host | the other organism |
+| Chimeric construct for inference | **all** species | — (set `isChimeric`) |
+
+**What it is used for in practice.** 1,340 released RLEs carry it, across **49
+distinct values — every one a pathogen**: viruses, bacteria, *Candida
+albicans*, *Leishmania major*, *Plasmodium falciparum*. 1,099 of those events
+(82%) are `isInDisease`; the remaining 18% are mostly innate-immune recognition
+where the host prevails, which the Guide classes as normal rather than disease.
+
+So the slot's definition is general but its exercise so far is entirely
+host–pathogen. A two-species reaction of another kind is not wrong, just
+unprecedented — propose it and say so.
+
+The 6% global figure is not permission to skip the slot: it is low because most
+of Reactome is single-species. **Within an infection branch it is the norm**,
+so check the branch rather than the global number:
 
 ```cypher
 MATCH (p:Pathway {stId:$stId})-[:hasEvent*]->(e:ReactionLikeEvent)

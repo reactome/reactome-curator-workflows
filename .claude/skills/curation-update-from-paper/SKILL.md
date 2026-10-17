@@ -200,15 +200,19 @@ What to take from this, and why each matters:
          collect(DISTINCT rs.displayName) AS relatedSpecies
   ```
 
-  For a **host-pathogen pathway this is settled by the Guide, not a local
-  convention**: `species` is the host (Homo sapiens for human curation, because
-  the slot records the environment the reaction happens in) and `relatedSpecies`
-  is the pathogen. See `Curator_Guide_V94_Extract.md` §3.2. An infection-pathway
-  event annotated `Homo sapiens` while the experiments are in a non-human strain
-  and cell line is therefore **correct and complete only if `relatedSpecies`
-  carries the pathogen** — omitting it is an incomplete annotation, not a stylistic
-  choice, and it is the error this skill is most likely to make. Do not flag the
-  host/evidence species difference as a departure from V94; it is V94.
+  **When two species take part in one reaction, the host goes in `species` and
+  the other organism in `relatedSpecies`.** This is settled by the Guide, not a
+  local convention — the `species` slot records the environment the reaction
+  happens in, which is the host. See `Curator_Guide_V94_Extract.md` §3.2. The
+  only exception is a chimeric reaction built for inference, which lists all
+  species in `species` and sets `isChimeric`.
+
+  So an event annotated `Homo sapiens` while the experiments are in a non-human
+  strain and cell line is **correct and complete only if `relatedSpecies`
+  carries the other organism** — omitting it is an incomplete annotation, not a
+  stylistic choice, and it is the error this skill is most likely to make. Do
+  not flag the host/evidence species difference as a departure from V94; it is
+  V94.
 
   The generic species/chimeric decision table in
   `/annotate-pathway-from-reviews-or-topic_name` applies to ordinary
@@ -285,9 +289,13 @@ checks:
   reaction's molecular function belongs on `catalystActivity` → GO MF. Do not
   invent a GO BP label per reaction — that is how three non-existent GO terms
   entered the first rotavirus draft.
-- **`relatedSpecies` on every event of a host-pathogen branch, or none.**
-  `species` is the host, `relatedSpecies` the pathogen. Verify against the
-  branch with the query in STEP 2.
+- **Two species in a reaction: host in `species`, the other in
+  `relatedSpecies`.** That is the rule, and it is about the host rather than
+  about humans — released content has `Gallus gallus` as host. The one
+  exception is a **chimeric** reaction built for inference, which lists all
+  species in `species` and sets `isChimeric`. A second species sitting in
+  `species` without `isChimeric` is wrong either way. Apply it to every event
+  of the branch or none, and verify with the STEP 2 query.
 - **`SimpleEntity` takes no species.** It does not appear on SimpleEntity in
   released content at any threshold.
 
