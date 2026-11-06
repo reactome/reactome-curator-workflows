@@ -15,7 +15,8 @@ description: >
   <pathway>", "draft a curation update for this paper", "we need to update
   <pathway> for this new Science/Nature paper", or hands over a paper plus an
   event export. Produces a proposal for curator review — it does NOT write to
-  the database.
+  the database. To build a NEW pathway from a review paper (filling curation
+  gaps around curator-named anchor nodes), use /curation-gap-fill instead.
 ---
 
 ## ON INVOCATION — PRINT THIS FIRST
@@ -23,6 +24,10 @@ description: >
 Before asking for inputs, show the curator what this run has to work with, as a
 short block. Check which MCP tools are actually present and say so; do not
 claim a server that is not there.
+
+If the curator has a review paper and wants a NEW pathway built (or wants to know what
+Reactome is missing for a topic), stop and point them to `/curation-gap-fill`, which
+shares this skill's reference documents and helpers.
 
 ```
 /curation-update-from-paper — reference material for this run

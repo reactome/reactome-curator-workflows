@@ -169,6 +169,47 @@ NCBI E-utilities and never recovered from training data. Pre-curation draft.
 /extract-reactions "Wnt Signaling Pathway"
 ```
 
+### `/curation-update-from-paper`
+
+Turns a newly published primary paper into a curation update proposal for an
+**existing** pathway. Give it the paper (PDF, PMID or DOI) plus the Curator Tool event
+export for the pathway it affects. It works out the delta (what the paper ADDS,
+REFINES, CONTRADICTS or CONFIRMS for each affected event) and writes one formatted
+DOCX. The DOCX carries the logic, the gap analysis, proposed entities and events with
+full anatomy and draft summations, ontology terms, verified references, open questions
+and a pre-submission checklist. With the `gk-central` server on, it reuses existing
+entities rather than duplicating them. Every reference is matched to its PubMed record
+before the document renders. Proposes only; never writes to the database.
+
+```
+/curation-update-from-paper
+```
+
+### `/curation-gap-fill`
+
+Fills curation gaps from a **review paper**. Give it one paper, usually a review; it
+asks you for **anchor nodes**, the existing ST_IDs you think matter. It then proposes
+a **new** pathway: existing Reactome content is linked (whole pathways first, single
+reactions only where needed), and new reactions are added only where human primary
+evidence supports them. Agents read the paper's text and its figures, survey
+gk_central, search the human primary literature, compare the proposal with
+WikiPathways, KEGG and GO, and check every subpathway's event chain for gaps. Inference
+from another species is a last resort, and a review agent re-tests the draft against
+the `/review-internal` standards until no HIGH issue remains.
+
+It produces two things, written under `output/<topic>/` (git-ignored):
+- **A curator-facing DOCX**, with the decisions you need to make first, then a table of
+  contents, the paper's figures, a hierarchy map and tree, a chain diagram for each
+  subpathway, reaction tables, the topology checks, and the record of the agents'
+  arguments. Every open question lists its options and the exact edit for each.
+- **A staging markdown file**, which converts to the JSON that WebBench's **Load
+  staged instances from a local file** button accepts. Only new instances are
+  staged; existing content is linked, never edited.
+
+```
+/curation-gap-fill
+```
+
 ### `/release-doi-batch`
 
 Generates a CrossRef DOI batch XML file (schema 5.3.1) for a release from DOIs.xlsx.
@@ -241,8 +282,9 @@ password, new server address, new software versions, or checking that the nightl
 gk_central refresh has run). Passwords go into the macOS Keychain from your own
 terminal — never into the repo, a Claude config file, or the chat — and gk_central
 connection details come from a connection card (curators email Marc Gillespie for
-it), not this public repo. Once a server is on, `/review-internal` and
-`/release-doi-batch` use it for optional database cross-checks.
+it), not this public repo. Once a server is on, `/review-internal`,
+`/release-doi-batch`, `/curation-update-from-paper` and `/curation-gap-fill` use it for
+database and ontology cross-checks.
 
 ```
 /analysis-reactome-mcp            # opens the menu
@@ -264,15 +306,19 @@ it), not this public repo. Once a server is on, `/review-internal` and
 | `/release-qa-tracker` | Python 3 with `openpyxl`; two QA output directories, or an existing comparison file |
 | `/curation-build-illustration` | Python 3 (stdlib only); network access to `reactome.org` for name search and icon/EHLD download (accession lookup works offline); a base-EHLD ST_ID for Mode A, or a sample image for Mode C |
 | `/admin-drive-readme` | Python 3; Google API client libraries (in `requirements.txt`); OAuth credentials at `~/.config/reactome/credentials.json` |
+| `/curation-update-from-paper` | The paper (PDF, PMID or DOI) and the pathway's Curator Tool event export or ST_ID; Python 3 with `python-docx` (and `matplotlib` for diagrams); access to `eutils.ncbi.nlm.nih.gov`; `gk-central` and `ols` servers recommended |
+| `/curation-gap-fill` | The paper (PDF preferred, so its figures can be read) and your anchor-node ST_IDs; Python 3 with `python-docx` and `matplotlib`; macOS (figure rendering uses the built-in PDFKit via `swift`); the `gk-central` and `ols` servers (see `/analysis-reactome-mcp`); network access to `eutils.ncbi.nlm.nih.gov`, `reactome.org`, `www.wikipathways.org`, `rest.kegg.jp`, `api.geneontology.org` and `www.guidetopharmacology.org`; the `curation-update-from-paper` folder alongside it (shared helpers) |
 | `/spotlight-article-drafter` | The candidate paper (PDF, DOI, or URL) |
 | `/analysis-reactome-mcp` | Python 3 (stdlib only); `uv`; Claude Code and/or Claude Desktop; the gk_central connection card — email Marc Gillespie for it (for `gk-central`) |
 
 > **Host allowlisting.** In Claude Code launched from the repo root,
 > `.claude/settings.json` allows `WebFetch` to `eutils.ncbi.nlm.nih.gov` and
 > `reactome.org`, so `/extract-reactions` resolves PMIDs without a prompt.
-> `/curation-build-illustration` fetches through its bundled Python helper instead,
-> so it asks for Bash approval on first run — that is expected, not a
-> misconfiguration. In claude.ai (browser), add both hosts manually via
+> `/curation-build-illustration` and `/curation-gap-fill` fetch through their bundled
+> Python helpers instead, so they ask for Bash approval on first run — that is
+> expected, not a misconfiguration. (`/curation-gap-fill` reaches NCBI, reactome.org,
+> WikiPathways, KEGG, the Gene Ontology API and Guide to Pharmacology; KEGG is used
+> as a comparison only and nothing from it is copied into a proposal.) In claude.ai (browser), add both hosts manually via
 > **Settings → Capabilities → Domain allowlist**. Without network access, PMID
 > resolution and icon search fail rather than falling back to fabricated values.
 
@@ -286,6 +332,9 @@ To use a skill in the claude.ai desktop app, zip its directory and upload it via
 ```bash
 zip -r review-internal.zip .claude/skills/review-internal/
 ```
+
+`/curation-gap-fill` uses helpers and reference documents from the
+`curation-update-from-paper` folder, so zip both folders together for that skill.
 
 ---
 
@@ -336,6 +385,7 @@ reactome-curator-workflows/
 ├── requirements.txt               ← pinned Python dependencies for all skills
 ├── .gitignore
 ├── illustrations/                 ← generated illustration outputs (git-ignored)
+├── output/                        ← generated skill outputs, e.g. proposals (git-ignored)
 └── .claude/
     ├── settings.json              ← host allowlist + read-only MCP tool permissions
     └── skills/
@@ -347,6 +397,11 @@ reactome-curator-workflows/
         ├── release-qa-tracker/                          ← + compare_dirs.sh
         ├── curation-build-illustration/                 ← + EHLD/Icon Library specs,
         │                                                  icon_mappings/, reactome_icons.py
+        ├── curation-update-from-paper/                  ← + RLE reference, Guide extract,
+        │                                                  build_update_doc.py (shared helpers)
+        ├── curation-gap-fill/                           ← + build_pathway_proposal.py,
+        │                                                  staging_from_md.py, graphics and
+        │                                                  comparison helpers
         ├── admin-drive-readme/                           ← + update_drive_readme.py
         ├── spotlight-article-drafter/
         └── analysis-reactome-mcp/                        ← + reactome_mcp.py

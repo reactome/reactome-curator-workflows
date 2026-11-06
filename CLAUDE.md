@@ -36,6 +36,7 @@ reactome-curator-workflows/
         ├── analysis-reactome-mcp/                    ← /analysis-reactome-mcp
         ├── curation-build-illustration/                ← /curation-build-illustration
         ├── curation-update-from-paper/                 ← /curation-update-from-paper
+        ├── curation-gap-fill/                          ← /curation-gap-fill
         └── spotlight-article-drafter/                ← /spotlight-article-drafter
 ```
 
@@ -186,6 +187,34 @@ inputs, and options.
   probed against reactome.org and only released ones are linked, since an
   in-progress branch is not public and would otherwise 404. Proposes only — never
   writes to the database.
+  To build a new pathway from a review paper instead, use `/curation-gap-fill`.
+
+- **`/curation-gap-fill`**: fills curation gaps from a review paper. It starts from
+  one paper, usually a review, and asks the curator for anchor nodes (existing
+  ST_IDs). Agents extract candidate events from the text and the figures, survey
+  gk_central, find human primary evidence, and compare the proposal with
+  WikiPathways, KEGG (comparison only, never copied) and GO (`compare_resources.py`).
+  The orchestrator assembles a new hierarchy. It reuses existing content as whole
+  pathways first, single reactions only where a parent pathway is mostly unrelated,
+  and entities always. It checks every subpathway's event chain for breaks, and infers
+  from another species only as a last resort: a non-human reaction plus a human one
+  citing it in `inferredFrom`. Each new event and pathway gets an explicit
+  event-class assessment and a disease status (judged on the biology, not on drug
+  participation), and cell type where the evidence places it. A review agent tests
+  the draft against the `/review-internal` standards until no HIGH issue remains.
+  Outputs:
+  - a curator-facing DOCX (`build_pathway_proposal.py`): decisions first, a table of
+    contents, the source figures, a hierarchy map and tree, chain diagrams per
+    subpathway (`pathway_graphics.py`), reaction tables, checks, and the agents'
+    arguments; each open question lists its options and the exact edit for each
+  - a staging markdown that `staging_from_md.py` converts to the JSON WebBench's
+    "Load staged instances from a local file" accepts. It stages new instances only,
+    checking every slot against the bundled `reactome_domain_model.json`.
+
+  `gtopdb_lookup.py` resolves Guide to Pharmacology ligand IDs from GtoPdb's keyless
+  bulk files. The skill shares its reference documents and DOCX, diagram and PubMed
+  helpers with `/curation-update-from-paper`. It proposes only and never writes to
+  the database.
 
 - **`/spotlight-article-drafter`** — Drafts a candidate Reactome "Research Spotlight"
   article from a paper that used Reactome data or tools, producing both forms at once:
@@ -237,8 +266,10 @@ Note which mechanism each skill actually uses. `/extract-reactions` resolves PMI
 `/curation-build-illustration` reaches `reactome.org` through its bundled
 `reactome_icons.py` (python urllib, run under Bash), so it is governed by Bash
 approval rather than this rule — the `reactome.org` entry covers `WebFetch` access to
-the same host. A new skill that fetches via Bash needs a Bash permission, not a
-`WebFetch(domain:…)` line.
+the same host. `/curation-gap-fill` is the same: its helpers (PubMed checks, the
+WikiPathways/KEGG/GO comparison, the Guide to Pharmacology bulk files) run under Bash,
+so curators approve them on first use. A new skill that fetches via Bash needs a Bash
+permission, not a `WebFetch(domain:…)` line.
 
 > **claude.ai (browser) users:** the allowlist file does not apply — add those hosts
 > manually via **Settings → Capabilities → Domain allowlist**, or PMID resolution and

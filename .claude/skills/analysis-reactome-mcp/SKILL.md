@@ -1,6 +1,6 @@
 ---
 name: analysis-reactome-mcp
-description: Set up and manage the two read-only Reactome MCP servers — gk-central (a nightly-refreshed copy of the gk_central editing database on the curator server) and ols (EBI Ontology Lookup Service) — for Claude Code and Claude Desktop. Three functions, chosen from an opening menu — (1) install both servers, explaining how they work and exactly what changes on the curator's computer; (2) enable or disable them; (3) update them when the curator asks (password or endpoint change, new server versions, checking that the nightly gk_central refresh has run). Passwords are held in the macOS Keychain and never in the repo, a Claude config file, or the chat. Use when a curator wants database or ontology access in Claude, wants to turn it on or off, or something has changed. /review-internal and /release-doi-batch use these servers when present.
+description: Set up and manage the two read-only Reactome MCP servers — gk-central (a nightly-refreshed copy of the gk_central editing database on the curator server) and ols (EBI Ontology Lookup Service) — for Claude Code and Claude Desktop. Three functions, chosen from an opening menu — (1) install both servers, explaining how they work and exactly what changes on the curator's computer; (2) enable or disable them; (3) update them when the curator asks (password or endpoint change, new server versions, checking that the nightly gk_central refresh has run). Passwords are held in the macOS Keychain and never in the repo, a Claude config file, or the chat. Use when a curator wants database or ontology access in Claude, wants to turn it on or off, or something has changed. /review-internal, /release-doi-batch, /curation-update-from-paper and /curation-gap-fill use these servers when present.
 ---
 
 # Reactome MCP servers
@@ -21,8 +21,10 @@ This skill does three things, and the curator picks one when it starts:
 | `gk-central` | Read-only queries against Guanming Wu's Neo4j copy of **gk_central**, the editing database, on the curator server, refreshed nightly. Includes unreleased curation. Mostly human (R-HSA) plus other species' directly curated pathways, e.g. *Arabidopsis*, rice, *Drosophila*; no computationally inferred events, which are generated at release. | The connection card — email Marc Gillespie for it |
 | `ols` | Live lookups in the EBI Ontology Lookup Service: GO, ChEBI, HP, EFO and 300+ others. | Internet only |
 
-Other skills in this repo (`/review-internal`, `/release-doi-batch`) use the
-servers when they're on and run as before when they're off.
+Other skills in this repo (`/review-internal`, `/release-doi-batch`,
+`/curation-update-from-paper`, `/curation-gap-fill`) use the servers when they're
+on and run as before when they're off. `/curation-gap-fill` depends on them most:
+without `gk-central` it cannot check what already exists.
 
 ---
 
